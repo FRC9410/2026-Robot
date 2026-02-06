@@ -7,6 +7,8 @@ import edu.wpi.first.wpilibj.RobotBase;
 import java.awt.geom.Point2D;
 import java.util.List;
 
+import com.ctre.phoenix6.CANBus;
+
 public final class Constants {
 
   public static final Mode simMode = Mode.SIM;
@@ -31,7 +33,7 @@ public final class Constants {
   }
 
   public static final class CanBusConstants {
-    public static final String CANIVORE_BUS = "canivore";
+    public static final CANBus CANIVORE_BUS = new CANBus("canivore");
   }
 
   public static final class AutoConstants {
@@ -58,6 +60,41 @@ public final class Constants {
     public static final String RIGHT_TABLE = "limelight-right"; // Placeholder table name
   }
 
+  public static final class IntakeConstants {
+    public static final int ROLLER_CAN_ID = 20;
+    public static final int PRIMARY_PIVOT_CAN_ID = 21;
+    public static final int SECONDARY_PIVOT_CAN_ID = 22;
+    public static final int ENCODER_CAN_ID = 23;
+
+    public static final double INTAKE_DOWN_SETPOINT = 0; //placeholder
+    public static final double INTAKE_UP_SETPOINT = 0; //placeholder
+    public static final double INTAKE_ROLLER_VOLTAGE = 0; //placeholder
+
+    
+  }
+
+  public static final class SpindexerConstants {
+    public static final int CAN_ID = 30;
+    public static final int LASER_1_CAN_ID = 31;
+    public static final int LASER_2_CAN_ID = 32;
+  }
+
+  public static final class FeederConstants {
+    public static final int PRIMARY_CAN_ID = 40;
+    public static final int SECONDARY_CAN_ID = 41;
+    public static final int CANDI1_CAN_ID = 42;
+    public static final int CANDI2_CAN_ID = 43;
+  }
+  public static final class ShooterConstants {
+    public static final int HOOD_CAN_ID = 50;
+    public static final int PRIMARY_FLYWHEELS_CAN_ID = 51;
+    public static final int SECNODARY_FLYWHEELS_CAN_ID = 52;
+    public static final int ENCODER_CAN_ID = 53;
+  }
+  public static final class TurretConstants {
+    public static final int MOTOR_ID = 60;
+    public static final int ENCODER_ID = 61;
+  }
 
   public static final class FieldConstants {
     public static final double X_MIN = 0.0;
