@@ -5,11 +5,16 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
+
+import java.util.List;
+import java.util.function.BiConsumer;
+
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.io.MotorConfig;
 
 
 public class VelocitySubsystem extends Subsystem9410 {
@@ -17,8 +22,8 @@ public class VelocitySubsystem extends Subsystem9410 {
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
 
-  public VelocitySubsystem() {
-    super();
+  public VelocitySubsystem(List<MotorConfig> config, BiConsumer<String, Object> updateData) {
+    super(config, updateData);
   }
 
   @Override

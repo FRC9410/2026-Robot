@@ -6,6 +6,9 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.Rotations;
 
+import java.util.List;
+import java.util.function.BiConsumer;
+
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -18,14 +21,15 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import frc.robot.Constants;
 import frc.robot.util.MotorCancoderRequest;
+import frc.robot.io.MotorConfig;
 
 public class PositionSubsystem extends Subsystem9410 {
 
   /** Primary position-controlled motor (with fused CANcoder when using initAndRegisterPositionMotor). */
   protected TalonFX positionMotor;
 
-  public PositionSubsystem() {
-    super();
+  public PositionSubsystem(List<MotorConfig> config, BiConsumer<String, Object> updateData) {
+    super(config, updateData);
   }
 
   @Override

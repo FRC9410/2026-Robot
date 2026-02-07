@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiConsumer;
+
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.Feeder;
@@ -16,10 +20,13 @@ import frc.robot.subsystems.ShooterHood;
 import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Turret;
+import frc.robot.subsystems.VelocitySubsystem;
 import frc.robot.subsystems.Vision;
 import frc.robot.util.MotorCancoderRequest;
 
 public class RobotContainer {
+  private Map<String, Object> subsystemData = new HashMap<>();
+  public static final BiConsumer<String, Object> UPDATE_DATA = ((k, v) -> updateSubsystemData(k, v));
 
   private final LED led = new LED();
   private final Turret turret = new Turret();
@@ -28,9 +35,10 @@ public class RobotContainer {
   private final IntakeRoller intakeRoller = new IntakeRoller();
   private final IntakeWrist intakeWrist = new IntakeWrist();
   private final Spindexer spindexer = new Spindexer();
-  private final Feeder feeder = new Feeder();
+  private final VelocitySubsystem feeder = new VelocitySubsystem(Constants.FeederConstants.MOTOR_CONFIGS, UPDATE_DATA);
   private final Vision vision = new Vision();
   private final StateMachine stateMachine = new StateMachine();
+  private final HashMap<String, Object> info = new HashMap<>();
 
   public RobotContainer() {
     configureBindings();
@@ -74,11 +82,19 @@ public class RobotContainer {
     return spindexer;
   }
 
-  public Feeder getFeeder() {
+  public VelocitySubsystem getFeeder() {
     return feeder;
   }
 
   public StateMachine getStateMachine() {
     return stateMachine;
+  }
+
+  public void updateSubsystemData(String key, Object value) {
+    subsystemData.put(key, value);
+  }
+  
+  public static void updateData (String k, Object v) {
+    subsystemData.put(k, v);
   }
 }

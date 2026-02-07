@@ -3,8 +3,12 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.io.MotorConfig;
+
+import java.util.List;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.signals.NeutralModeValue;
 
 public final class Constants {
 
@@ -90,6 +94,11 @@ public final class Constants {
     public static final int SECONDARY_CAN_ID = 41;
     public static final int CANDI1_CAN_ID = 42;
     public static final int CANDI2_CAN_ID = 43;
+
+    public static final List<MotorConfig> MOTOR_CONFIGS = List.of(
+      MotorConfig.leader(PRIMARY_CAN_ID, NeutralModeValue.Coast),
+      MotorConfig.follower(SECONDARY_CAN_ID)
+    );
   }
   public static final class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;

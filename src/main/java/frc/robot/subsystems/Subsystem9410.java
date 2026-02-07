@@ -11,8 +11,12 @@ import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.io.MotorConfig;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 /**
  * Subsystem9410: extensible subsystem with helpers for controlling devices by CAN ID.
@@ -28,9 +32,38 @@ public class Subsystem9410 extends SubsystemBase {
    * Constructor for subclasses that register their own motors (e.g. velocity/position configured).
    *
    */
-  protected Subsystem9410() {
+  protected Subsystem9410(List<MotorConfig> configList, BiConsumer<String, Object> updateData) {
+    super();
+
     this.bus = Constants.CanBusConstants.CANIVORE_BUS;
     this.motorsByCanId = new HashMap<>();
+
+    int leaderCanId = -1;
+
+    // Get the leader motor and register it
+    for (MotorConfig motorConfig : configList) {
+      if (!motorConfig.isFollower()) {
+        leaderCanId = motorConfig.canId();
+
+        registerMotor(motorConfig.canId(), motorConfig.neutralMode());
+      }
+    }
+
+    // Register and setup all motors
+    for (MotorConfig motorConfig : configList) {
+      if (motorConfig.isFollower()) {
+        registerMotor(motorConfig.canId(), motorConfig.neutralMode());
+        
+        if (leaderCanId == -1) {
+          continue; // Theres no leader to follow so no need to continue
+        }
+
+        // Reverse it relative to the leader
+        if (motorConfig.isReversed()) {
+          setFollower(motorConfig.canId(), leaderCanId, true);
+        }
+      }
+    }
   }
 
   /** Returns the CAN bus used by this subsystem (for subclasses that build custom devices). */
@@ -86,11 +119,12 @@ public class Subsystem9410 extends SubsystemBase {
    * Configures a motor as a follower of another (by leader CAN ID). Leader must already be
    * registered or exist on the bus.
    */
-  public void setFollower(int followerCanId, int leaderCanId) {
+  public void setFollower(int followerCanId, int leaderCanId, boolean inverted) {
     TalonFX follower = getMotor(followerCanId);
     if (follower != null) {
       follower.setControl(
-          new Follower(leaderCanId, MotorAlignmentValue.Aligned));
+        new Follower(leaderCanId, inverted ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned)
+      );
     }
   }
 
