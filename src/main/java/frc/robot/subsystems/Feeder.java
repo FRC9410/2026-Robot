@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.controls.Follower;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -16,6 +17,7 @@ public class Feeder extends SubsystemBase {
 
   private final TalonFX primaryMotor;
   private final TalonFX secondaryMotor;
+  private double setPoint;
 
   public Feeder() {
     primaryMotor =
@@ -31,10 +33,20 @@ public class Feeder extends SubsystemBase {
     secondaryMotor.setNeutralMode(NeutralModeValue.Coast);
     secondaryMotor.setControl(
         new Follower(Constants.FeederConstants.PRIMARY_CAN_ID, MotorAlignmentValue.Aligned));
+
+    setPoint = 0;
   }
 
   @Override
   public void periodic() {}
+  
+  public void setVelocity (double mmVelocityVoltage, double velocity, TalonFX velocityMotor) {
+      setPoint = velocity;
+
+      MotionMagicVelocityVoltage motionMagicRequest = new MotionMagicVelocityVoltage(mmVelocityVoltage);
+
+      velocityMotor.setControl(motionMagicRequest.withVelocity(velocity).withSlot(0));
+  }
 
   /** Set feeder output (positive = feed toward shooter). */
   public void setOutput(double output) {
