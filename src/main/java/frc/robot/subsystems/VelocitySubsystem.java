@@ -14,6 +14,8 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.RobotContainer;
+import frc.robot.RobotContainer9410;
 import frc.robot.io.MotorConfig;
 
 
@@ -22,12 +24,22 @@ public class VelocitySubsystem extends Subsystem9410 {
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
 
-  public VelocitySubsystem(List<MotorConfig> config, BiConsumer<String, Object> updateData) {
-    super(config, updateData);
+  public VelocitySubsystem(List<MotorConfig> config) {
+    super(config);
   }
 
   @Override
   public void periodic() {}
+
+  @Override
+  public void readFromContainer() {
+    // Read shared data via RobotContainer9410.getData(key) or RobotContainer9410.getData(key, default)
+  }
+
+  @Override
+  public void writeToContainer() {
+    // Publish state via RobotContainer9410.setData(key, value)
+  }
 
   /**
    * Initializes a TalonFX with PID and Motion Magic velocity config and registers it with the

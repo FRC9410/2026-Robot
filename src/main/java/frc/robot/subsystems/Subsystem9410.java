@@ -22,8 +22,12 @@ import java.util.function.BiConsumer;
  * Subsystem9410: extensible subsystem with helpers for controlling devices by CAN ID.
  * Use {@link #registerMotor(int)}, {@link #setOutput(int, double)}, and related helpers
  * to add and control TalonFX devices without duplicating setup code.
+ * <p>
+ * Implements {@link SharedDataSubsystem}; subclasses must implement
+ * {@link #readFromContainer()} and {@link #writeToContainer()}, using
+ * {@link frc.robot.RobotContainer9410#getData(String)} and {@link frc.robot.RobotContainer9410#setData(String, Object)}.
  */
-public class Subsystem9410 extends SubsystemBase {
+public abstract class Subsystem9410 extends SubsystemBase {
 
   private final CANBus bus;
   private final Map<Integer, TalonFX> motorsByCanId;
@@ -32,7 +36,7 @@ public class Subsystem9410 extends SubsystemBase {
    * Constructor for subclasses that register their own motors (e.g. velocity/position configured).
    *
    */
-  protected Subsystem9410(List<MotorConfig> configList, BiConsumer<String, Object> updateData) {
+  protected Subsystem9410(List<MotorConfig> configList) {
     super();
 
     this.bus = Constants.CanBusConstants.CANIVORE_BUS;

@@ -20,6 +20,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import frc.robot.Constants;
+import frc.robot.RobotContainer9410;
 import frc.robot.util.MotorCancoderRequest;
 import frc.robot.io.MotorConfig;
 
@@ -27,9 +28,10 @@ public class PositionSubsystem extends Subsystem9410 {
 
   /** Primary position-controlled motor (with fused CANcoder when using initAndRegisterPositionMotor). */
   protected TalonFX positionMotor;
+  
 
-  public PositionSubsystem(List<MotorConfig> config, BiConsumer<String, Object> updateData) {
-    super(config, updateData);
+  public PositionSubsystem(List<MotorConfig> config) {
+    super(config);
   }
 
   @Override
