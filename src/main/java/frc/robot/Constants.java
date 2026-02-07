@@ -62,6 +62,7 @@ public final class Constants {
     // Additional Vision constants for Reef Vision:
     public static final String LEFT_TABLE = "limelight-left"; // Placeholder table name
     public static final String RIGHT_TABLE = "limelight-right"; // Placeholder table name
+    public static final String TURRET_TABLE = "limelight-turret"; // Turret-mounted Limelight
   }
 
   public static final class IntakeConstants {

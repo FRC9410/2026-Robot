@@ -4,21 +4,33 @@
 
 package frc.robot.subsystems;
 
+import java.util.Arrays;
+import java.util.List;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.LimelightHelpers;
 
 /** Subsystem for vision (Limelight) – targets and robot pose. */
 public class Vision extends SubsystemBase {
 
   private final NetworkTable table;
+  final List<Integer> blueTagIds = Arrays.asList(12, 13, 16, 17, 18, 19, 20, 21, 22); //needs new tagIDs probably
+  final List<Integer> redTagIds = Arrays.asList(1, 2, 3, 6, 7, 8, 9, 10, 11);
+  final List<Integer> tagIds;
 
   public Vision() {
     table = NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.CAMERA_NAME);
+
+    tagIds =
+        DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? redTagIds : blueTagIds;
   }
 
   /**
@@ -68,6 +80,7 @@ public class Vision extends SubsystemBase {
     return new Pose2d();
   }
 
+
   /** Set pipeline index (0-based). */
   public void setPipeline(int index) {
     table.getEntry("pipeline").setNumber(index);
@@ -77,4 +90,49 @@ public class Vision extends SubsystemBase {
   public void setLEDMode(int mode) {
     table.getEntry("ledMode").setNumber(mode);
   }
+
+  public int getTagId(NetworkTable table) {
+    return (int) table.getEntry("tid").getInteger(0);
+  }
+
+
+  public String getBestLimelight() {
+    final NetworkTable leftLimelight =
+        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.LEFT_TABLE);
+    final NetworkTable rightLimelight =
+        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.RIGHT_TABLE);
+    final NetworkTable turretLimelight =
+        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.TURRET_TABLE);
+
+    LimelightHelpers.PoseEstimate leftPerimeterMeasurement =
+        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-left");
+    LimelightHelpers.PoseEstimate rightPerimeterMeasurement =
+        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-right");
+    LimelightHelpers.PoseEstimate turretPerimeterMeasurement =
+        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-turret");
+
+    String bestLimelight = "";
+    double bestArea = 0;
+
+    if (turretPerimeterMeasurement != null && tagIds.contains(getTagId(turretLimelight))
+        && turretPerimeterMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-turret";
+      bestArea = turretPerimeterMeasurement.avgTagArea;
+    }
+
+    if (leftPerimeterMeasurement != null && tagIds.contains(getTagId(leftLimelight))
+        && leftPerimeterMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-left";
+      bestArea = leftPerimeterMeasurement.avgTagArea;
+    }
+
+    if (rightPerimeterMeasurement != null && tagIds.contains(getTagId(rightLimelight))
+        && rightPerimeterMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-right";
+      bestArea = rightPerimeterMeasurement.avgTagArea;
+    }
+
+    return bestLimelight;
+  }
+
 }
