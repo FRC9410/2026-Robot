@@ -20,84 +20,83 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import frc.robot.Constants;
-import frc.robot.RobotContainer9410;
-import frc.robot.util.MotorCancoderRequest;
+import frc.robot.io.CancoderConfig;
+import frc.robot.io.LeadMotorConfig;
+import frc.robot.io.MotionMagicConfig;
 import frc.robot.io.MotorConfig;
 
 public class PositionSubsystem extends Subsystem9410 {
 
-  /** Primary position-controlled motor (with fused CANcoder when using initAndRegisterPositionMotor). */
+  /** Primary position-controlled motor (with fused CANcoder from config constructor). */
   protected TalonFX positionMotor;
-  
 
-  public PositionSubsystem(List<MotorConfig> config) {
+  /**
+   * Constructor that uses the leader motor already registered by the base from {@code config},
+   * and configures it with the given lead, CANcoder, and motion magic configs.
+   *
+   * @param config motor configs (first non-follower is the leader)
+   * @param leadConfig PID and feedback ratios for the leader
+   * @param cancoderConfig CANcoder ID and magnet settings
+   * @param motionMagicConfig cruise velocity and acceleration
+   */
+  public PositionSubsystem(
+      List<MotorConfig> config,
+      LeadMotorConfig leadConfig,
+      CancoderConfig cancoderConfig,
+      MotionMagicConfig motionMagicConfig) {
     super(config);
+    TalonFX leader = getLeaderMotor();
+    if (leader != null) {
+      configureMotorWithCancoder(leader, leadConfig, cancoderConfig, motionMagicConfig);
+      this.positionMotor = leader;
+    }
   }
 
   @Override
   public void periodic() {}
 
   /**
-   * Initializes a TalonFX + CANcoder pair with PID and Motion Magic from a request.
-   * Use from any subsystem that needs position control with an external CANcoder.
-   *
-   * @param request configuration (motor/encoder IDs, PID gains, ratios, motion magic, encoder config)
-   * @return the configured TalonFX (with fused CANcoder); use MotionMagicVoltage for position setpoints
+   * Configures an existing TalonFX with a CANcoder and the given lead, CANcoder, and motion magic
+   * configs. Used by the config-list constructor.
    */
-  public static TalonFX initMotorCancoderPair(MotorCancoderRequest request) {
-    TalonFX motor =
-        new TalonFX(request.motorId(), Constants.CanBusConstants.CANIVORE_BUS);
-
+  private static void configureMotorWithCancoder(
+      TalonFX motor,
+      LeadMotorConfig leadConfig,
+      CancoderConfig cancoderConfig,
+      MotionMagicConfig motionMagicConfig) {
     @SuppressWarnings("resource") // CANcoder is fused to motor, lifecycle tied to subsystem
     CANcoder cancoder =
-        new CANcoder(request.encoderId(), Constants.CanBusConstants.CANIVORE_BUS);
+        new CANcoder(cancoderConfig.encoderId(), Constants.CanBusConstants.CANIVORE_BUS);
 
-    MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
-    TalonFXConfiguration talonConfig = new TalonFXConfiguration();
-
     encoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(
-        Rotations.of(request.discontinuityPointRotations()));
+        Rotations.of(cancoderConfig.discontinuityPointRotations()));
     encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-    encoderConfig.MagnetSensor.withMagnetOffset(Rotations.of(request.magnetOffsetRotations()));
+    encoderConfig.MagnetSensor.withMagnetOffset(Rotations.of(cancoderConfig.magnetOffsetRotations()));
+    cancoder.getConfigurator().apply(encoderConfig);
 
-    talonConfig.Slot0.kP = request.kP();
-    talonConfig.Slot0.kI = request.kI();
-    talonConfig.Slot0.kD = request.kD();
-    talonConfig.Slot0.kG = request.kG();
+    TalonFXConfiguration talonConfig = new TalonFXConfiguration();
+    talonConfig.Slot0.kP = leadConfig.kP();
+    talonConfig.Slot0.kI = leadConfig.kI();
+    talonConfig.Slot0.kD = leadConfig.kD();
+    talonConfig.Slot0.kG = leadConfig.kG();
     talonConfig.Feedback.FeedbackRemoteSensorID = cancoder.getDeviceID();
     talonConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-    talonConfig.Feedback.SensorToMechanismRatio = request.sensorToMechanismRatio();
-    talonConfig.Feedback.RotorToSensorRatio = request.rotorToSensorRatio();
+    talonConfig.Feedback.SensorToMechanismRatio = leadConfig.sensorToMechanismRatio();
+    talonConfig.Feedback.RotorToSensorRatio = leadConfig.rotorToSensorRatio();
 
     motor.getConfigurator().apply(talonConfig);
 
+    MotionMagicConfigs mmConfigs = new MotionMagicConfigs();
     mmConfigs
-        .withMotionMagicCruiseVelocity(request.mmCruiseVelocity())
-        .withMotionMagicAcceleration(request.mmAcceleration());
-
+        .withMotionMagicCruiseVelocity(motionMagicConfig.cruiseVelocity())
+        .withMotionMagicAcceleration(motionMagicConfig.acceleration());
     motor.getConfigurator().apply(mmConfigs);
 
     BaseStatusSignal.setUpdateFrequencyForAll(100, cancoder.getPosition(), cancoder.getVelocity());
     motor.setNeutralMode(NeutralModeValue.Brake);
 
     motor.setControl(new MotionMagicVoltage(0).withPosition(0.07).withSlot(0));
-
-    return motor;
-  }
-
-  /**
-   * Initializes a TalonFX + CANcoder pair with PID and Motion Magic from a request, and registers
-   * the motor with the parent. Call from subclass constructor.
-   *
-   * @param request configuration (motor/encoder IDs, PID, ratios, motion magic, encoder config)
-   * @return the configured TalonFX; use {@link #setPositionRotations(double)} for setpoints
-   */
-  protected TalonFX initAndRegisterPositionMotor(MotorCancoderRequest request) {
-    TalonFX motor = initMotorCancoderPair(request);
-    registerMotor(request.motorId(), motor);
-    this.positionMotor = motor;
-    return motor;
   }
 
   /**

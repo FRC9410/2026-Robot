@@ -12,11 +12,9 @@ import java.util.function.BiConsumer;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
-import com.ctre.phoenix6.signals.NeutralModeValue;
-import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.RobotContainer;
-import frc.robot.RobotContainer9410;
 import frc.robot.io.MotorConfig;
+import frc.robot.io.LeadMotorConfig;
+import frc.robot.io.MotionMagicConfig;
 
 
 public class VelocitySubsystem extends Subsystem9410 {
@@ -24,65 +22,47 @@ public class VelocitySubsystem extends Subsystem9410 {
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
 
-  public VelocitySubsystem(List<MotorConfig> config) {
+  /**
+   * Constructor that uses the leader motor already registered by the base from {@code config},
+   * and configures it with the given lead and motion magic configs.
+   *
+   * @param config motor configs (first non-follower is the leader)
+   * @param leadConfig PID gains for the leader (ratios unused for velocity)
+   * @param motionMagicConfig motion magic acceleration (cruise velocity unused)
+   */
+  public VelocitySubsystem(
+      List<MotorConfig> config,
+      LeadMotorConfig leadConfig,
+      MotionMagicConfig motionMagicConfig) {
     super(config);
+    TalonFX leader = getLeaderMotor();
+    if (leader != null) {
+      configureMotorForVelocity(leader, leadConfig, motionMagicConfig);
+      this.velocityMotor = leader;
+    }
   }
 
   @Override
   public void periodic() {}
 
-  @Override
-  public void readFromContainer() {
-    // Read shared data via RobotContainer9410.getData(key) or RobotContainer9410.getData(key, default)
-  }
-
-  @Override
-  public void writeToContainer() {
-    // Publish state via RobotContainer9410.setData(key, value)
-  }
-
   /**
-   * Initializes a TalonFX with PID and Motion Magic velocity config and registers it with the
-   * parent. Uses this subsystem's CAN bus. Call from subclass constructor.
-   *
-   * @param request configuration (CAN id, PID gains, stop voltage, MM acceleration)
-   * @return the configured TalonFX; use {@link #setVelocity(double)} or MotionMagicVelocityVoltage
+   * Applies lead and motion magic config to an existing TalonFX for velocity control.
    */
-  protected TalonFX initAndRegisterVelocityMotor(VelocityConfigRequest request) {
-    TalonFX motor = initFromRequest(request);
-    registerMotor(request.canId(), motor);
-    this.velocityMotor = motor;
-    return motor;
-  }
-
-  /**
-   * Initializes a TalonFX with PID and Motion Magic velocity config from a request (standalone;
-   * does not register). Use when you need to build a motor without extending, or register via
-   * {@link Subsystem9410#registerMotor(int, TalonFX)}.
-   *
-   * @param request configuration (CAN id, bus, PID gains, stop voltage, MM acceleration)
-   * @return the configured TalonFX; use MotionMagicVelocityVoltage for velocity setpoints
-   */
-  public static TalonFX initFromRequest(VelocityConfigRequest request) {
-    TalonFX motor = new TalonFX(request.canId(), request.canBus());
-
-    motor.setNeutralMode(NeutralModeValue.Brake);
-    motor.setVoltage(request.stopVoltage());
-
+  private static void configureMotorForVelocity(
+      TalonFX motor,
+      LeadMotorConfig leadConfig,
+      MotionMagicConfig motionMagicConfig) {
     TalonFXConfiguration config = new TalonFXConfiguration();
-    config.Slot0.kP = request.kP();
-    config.Slot0.kI = request.kI();
-    config.Slot0.kD = request.kD();
-    config.Slot0.kG = request.kG();
+    config.Slot0.kP = leadConfig.kP();
+    config.Slot0.kI = leadConfig.kI();
+    config.Slot0.kD = leadConfig.kD();
+    config.Slot0.kG = leadConfig.kG();
 
     MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
-    motionMagicConfigs.withMotionMagicAcceleration(request.mmAcceleration());
+    motionMagicConfigs.withMotionMagicAcceleration(motionMagicConfig.acceleration());
 
     motor.getConfigurator().apply(config);
     motor.getConfigurator().apply(motionMagicConfigs);
-    motor.setNeutralMode(NeutralModeValue.Brake);
-
-    return motor;
   }
 
   /**

@@ -6,30 +6,51 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
-import frc.robot.subsystems.Feeder;
-import frc.robot.subsystems.IntakeRoller;
-import frc.robot.subsystems.IntakeWrist;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.PositionSubsystem;
-import frc.robot.subsystems.Shooter;
-import frc.robot.subsystems.ShooterHood;
-import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.StateMachine;
-import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.VelocitySubsystem;
 import frc.robot.subsystems.Vision;
-import frc.robot.util.MotorCancoderRequest;
 
 public class RobotContainer implements RobotContainer9410 {
 
+  // --- Position subsystems ---
+  private final PositionSubsystem turret = new PositionSubsystem(
+      Constants.TurretConstants.TURRET_MOTOR_CONFIGS,
+      Constants.TurretConstants.TURRET_LEAD_CONFIG,
+      Constants.TurretConstants.TURRET_CANCODER_CONFIG,
+      Constants.TurretConstants.TURRET_MOTION_MAGIC_CONFIG);
+  private final PositionSubsystem shooterHood = new PositionSubsystem(
+      Constants.ShooterConstants.HOOD_MOTOR_CONFIGS,
+      Constants.ShooterConstants.HOOD_LEAD_CONFIG,
+      Constants.ShooterConstants.HOOD_CANCODER_CONFIG,
+      Constants.ShooterConstants.HOOD_MOTION_MAGIC_CONFIG);
+  private final PositionSubsystem intakeWrist = new PositionSubsystem(
+      Constants.IntakeConstants.WRIST_MOTOR_CONFIGS,
+      Constants.IntakeConstants.WRIST_LEAD_CONFIG,
+      Constants.IntakeConstants.WRIST_CANCODER_CONFIG,
+      Constants.IntakeConstants.WRIST_MOTION_MAGIC_CONFIG);
+
+  // --- Velocity subsystems ---
+  private final VelocitySubsystem shooter = new VelocitySubsystem(
+      Constants.ShooterConstants.FLYWHEEL_MOTOR_CONFIGS,
+      Constants.ShooterConstants.FLYWHEEL_LEAD_CONFIG,
+      Constants.ShooterConstants.FLYWHEEL_MOTION_MAGIC_CONFIG);
+  private final VelocitySubsystem intakeRoller = new VelocitySubsystem(
+      Constants.IntakeConstants.ROLLER_MOTOR_CONFIGS,
+      Constants.IntakeConstants.ROLLER_LEAD_CONFIG,
+      Constants.IntakeConstants.ROLLER_MOTION_MAGIC_CONFIG);
+  private final VelocitySubsystem spindexer = new VelocitySubsystem(
+      Constants.SpindexerConstants.SPINDEXER_MOTOR_CONFIGS,
+      Constants.SpindexerConstants.SPINDEXER_LEAD_CONFIG,
+      Constants.SpindexerConstants.SPINDEXER_MOTION_MAGIC_CONFIG);
+  private final VelocitySubsystem feeder = new VelocitySubsystem(
+      Constants.FeederConstants.MOTOR_CONFIGS,
+      Constants.FeederConstants.FEEDER_LEAD_CONFIG,
+      Constants.FeederConstants.FEEDER_MOTION_MAGIC_CONFIG);
+
+  // --- Other ---
   private final LED led = new LED();
-  private final Turret turret = new Turret();
-  private final Shooter shooter = new Shooter();
-  private final ShooterHood shooterHood = new ShooterHood();
-  private final IntakeRoller intakeRoller = new IntakeRoller();
-  private final IntakeWrist intakeWrist = new IntakeWrist();
-  private final Spindexer spindexer = new Spindexer();
-  private final VelocitySubsystem feeder = new VelocitySubsystem(Constants.FeederConstants.MOTOR_CONFIGS);
   private final Vision vision = new Vision();
   private final StateMachine stateMachine = new StateMachine();
 
@@ -47,15 +68,15 @@ public class RobotContainer implements RobotContainer9410 {
     return led;
   }
 
-  public Turret getTurret() {
+  public PositionSubsystem getTurret() {
     return turret;
   }
 
-  public Shooter getShooter() {
+  public VelocitySubsystem getShooter() {
     return shooter;
   }
 
-  public ShooterHood getShooterHood() {
+  public PositionSubsystem getShooterHood() {
     return shooterHood;
   }
 
@@ -63,15 +84,15 @@ public class RobotContainer implements RobotContainer9410 {
     return vision;
   }
 
-  public IntakeRoller getIntakeRoller() {
+  public VelocitySubsystem getIntakeRoller() {
     return intakeRoller;
   }
 
-  public IntakeWrist getIntakeWrist() {
+  public PositionSubsystem getIntakeWrist() {
     return intakeWrist;
   }
 
-  public Spindexer getSpindexer() {
+  public VelocitySubsystem getSpindexer() {
     return spindexer;
   }
 

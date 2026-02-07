@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.io.MotorConfig;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ public abstract class Subsystem9410 extends SubsystemBase {
 
   private final CANBus bus;
   private final Map<Integer, TalonFX> motorsByCanId;
+  private Integer leaderCanId;
 
   /**
    * Constructor for subclasses that register their own motors (e.g. velocity/position configured).
@@ -42,13 +44,12 @@ public abstract class Subsystem9410 extends SubsystemBase {
     this.bus = Constants.CanBusConstants.CANIVORE_BUS;
     this.motorsByCanId = new HashMap<>();
 
-    int leaderCanId = -1;
-
     // Get the leader motor and register it
     for (MotorConfig motorConfig : configList) {
       if (!motorConfig.isFollower()) {
-        leaderCanId = motorConfig.canId();
-
+        if (this.leaderCanId == null) {
+          this.leaderCanId = motorConfig.canId();
+        }
         registerMotor(motorConfig.canId(), motorConfig.neutralMode());
       }
     }
@@ -57,14 +58,14 @@ public abstract class Subsystem9410 extends SubsystemBase {
     for (MotorConfig motorConfig : configList) {
       if (motorConfig.isFollower()) {
         registerMotor(motorConfig.canId(), motorConfig.neutralMode());
-        
-        if (leaderCanId == -1) {
+
+        if (this.leaderCanId == null) {
           continue; // Theres no leader to follow so no need to continue
         }
 
         // Reverse it relative to the leader
         if (motorConfig.isReversed()) {
-          setFollower(motorConfig.canId(), leaderCanId, true);
+          setFollower(motorConfig.canId(), this.leaderCanId, true);
         }
       }
     }
@@ -96,7 +97,7 @@ public abstract class Subsystem9410 extends SubsystemBase {
 
   /**
    * Registers a new TalonFX by CAN ID (creates it on the default bus with brake neutral mode).
-   * Enables control via {@link #setOutput(int, double)}, {@link #stop(int)}, {@link #getMotor(int)}.
+   * Enables control via {@link #setOutput(int, double)}, {@link #stop(int)}, {@link #getMotorById(int)}.
    */
   public TalonFX registerMotor(int canId) {
     return registerMotor(canId, NeutralModeValue.Brake);
@@ -106,6 +107,9 @@ public abstract class Subsystem9410 extends SubsystemBase {
    * Registers a new TalonFX by CAN ID with the given neutral mode.
    */
   public TalonFX registerMotor(int canId, NeutralModeValue neutralMode) {
+    if (leaderCanId == null) {
+      leaderCanId = canId;
+    }
     TalonFX motor = createTalonFx(canId, neutralMode);
     motorsByCanId.put(canId, motor);
     return motor;
@@ -116,6 +120,9 @@ public abstract class Subsystem9410 extends SubsystemBase {
    * double)} and other helpers.
    */
   public void registerMotor(int canId, TalonFX motor) {
+    if (leaderCanId == null) {
+      leaderCanId = canId;
+    }
     motorsByCanId.put(canId, motor);
   }
 
@@ -124,7 +131,7 @@ public abstract class Subsystem9410 extends SubsystemBase {
    * registered or exist on the bus.
    */
   public void setFollower(int followerCanId, int leaderCanId, boolean inverted) {
-    TalonFX follower = getMotor(followerCanId);
+    TalonFX follower = getMotorById(followerCanId);
     if (follower != null) {
       follower.setControl(
         new Follower(leaderCanId, inverted ? MotorAlignmentValue.Opposed : MotorAlignmentValue.Aligned)
@@ -132,9 +139,27 @@ public abstract class Subsystem9410 extends SubsystemBase {
     }
   }
 
-  /** Returns the TalonFX registered for the given CAN ID, or null if not registered. */
-  public TalonFX getMotor(int canId) {
+  /**
+   * Returns an unmodifiable view of all motors by CAN ID. For use by subclasses only.
+   */
+  protected Map<Integer, TalonFX> getMotors() {
+    return Collections.unmodifiableMap(motorsByCanId);
+  }
+
+  /**
+   * Returns the TalonFX registered for the given CAN ID, or null if not registered.
+   * For use by subclasses only.
+   */
+  protected TalonFX getMotorById(int canId) {
     return motorsByCanId.get(canId);
+  }
+
+  /**
+   * Returns the leader (first registered / first non-follower) motor, or null if none.
+   * For use by subclasses only.
+   */
+  protected TalonFX getLeaderMotor() {
+    return leaderCanId == null ? null : motorsByCanId.get(leaderCanId);
   }
 
   /** Sets percent output for the device at the given CAN ID (if registered). */
