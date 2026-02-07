@@ -5,7 +5,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.CANdle;
-import com.ctre.phoenix6.controls.RainbowAnimation;
 import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.signals.RGBWColor;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -46,12 +45,6 @@ public class LED extends SubsystemBase {
       case SOLID_RED:
         setSolid(255, 0, 0);
         break;
-      // case RAINBOW:
-      //   candle.setControl(
-      //       new RainbowAnimation(1.0, 0.5, Constants.LEDConstants.STRIP_LENGTH)
-      //           .withLEDStartIndex(ledStartIndex)
-      //           .withLEDEndIndex(ledEndIndex));
-      //   break;
       case ALLIANCE:
         if (DriverStation.getAlliance().isPresent()
             && DriverStation.getAlliance().get() == Alliance.Red) {
@@ -84,7 +77,6 @@ public class LED extends SubsystemBase {
     SOLID_GREEN,
     SOLID_BLUE,
     SOLID_RED,
-    RAINBOW,
     ALLIANCE
   }
 }

@@ -43,14 +43,14 @@ public class Turret extends SubsystemBase {
   }
 
   /** Get current position from the CANcoder (rotations). */
-  // public double getPositionRotations() {
-  //   return encoder.getPosition().getValue();
-  // }
+  public double getPositionRotations() {
+    return encoder.getPosition().getValueAsDouble();
+  }
 
   /** Get current position in degrees. */
-  // public double getPositionDegrees() {
-  //   return getPositionRotations() * 360.0;
-  // }
+  public double getPositionDegrees() {
+    return getPositionRotations() * 360.0;
+  }
 
   public TalonFX getMotor() {
     return motor;

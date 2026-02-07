@@ -37,9 +37,9 @@ public class ShooterHood extends SubsystemBase {
   }
 
   /** Get hood position in rotations (use for closed-loop when encoder is configured). */
-  // public double getPositionRotations() {
-  //   return motor.getPosition().getValue();
-  // }
+  public double getPositionRotations() {
+    return motor.getPosition().getValueAsDouble();
+  }
 
   public TalonFX getMotor() {
     return motor;

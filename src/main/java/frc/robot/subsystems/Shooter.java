@@ -6,6 +6,7 @@ package frc.robot.subsystems;
 
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -28,7 +29,7 @@ public class Shooter extends SubsystemBase {
 
     primaryMotor.setNeutralMode(NeutralModeValue.Coast);
     secondaryMotor.setNeutralMode(NeutralModeValue.Coast);
-    // secondaryMotor.setControl(new Follower(Constants.ShooterConstants.PRIMARY_FLYWHEELS_CAN_ID, true));
+    secondaryMotor.setControl(new Follower(Constants.ShooterConstants.PRIMARY_FLYWHEELS_CAN_ID, MotorAlignmentValue.Aligned));
   }
 
   @Override
@@ -50,9 +51,9 @@ public class Shooter extends SubsystemBase {
   }
 
   /** Get primary flywheel velocity in rotations per second. */
-  // public double getVelocityRPS() {
-  //   return primaryMotor.getVelocity().getValue();
-  // }
+  public double getVelocityRPS() {
+    return primaryMotor.getPosition().getValueAsDouble();
+  }
 
   public TalonFX getPrimaryMotor() {
     return primaryMotor;
