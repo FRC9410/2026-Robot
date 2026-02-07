@@ -2,10 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.RobotBase;
-import java.awt.geom.Point2D;
-import java.util.List;
 
 import com.ctre.phoenix6.CANBus;
 
@@ -88,8 +85,17 @@ public final class Constants {
   public static final class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;
     public static final int PRIMARY_FLYWHEELS_CAN_ID = 51;
-    public static final int SECNODARY_FLYWHEELS_CAN_ID = 52;
+    public static final int SECONDARY_FLYWHEELS_CAN_ID = 52;
     public static final int ENCODER_CAN_ID = 53;
+  }
+
+  public static final class LEDConstants {
+    /** CAN ID of the CTRE CANdle. */
+    public static final int CANDLE_CAN_ID = 0;
+    /** Number of LEDs (onboard 0–7 + strip; use 8 to 8+N-1 for strip only). */
+    public static final int STRIP_LENGTH = 60;
+    /** First LED index for the strip on the CANdle (8 = first strip LED). */
+    public static final int STRIP_START_INDEX = 8;
   }
   public static final class TurretConstants {
     public static final int MOTOR_ID = 60;
