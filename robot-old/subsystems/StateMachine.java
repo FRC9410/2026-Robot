@@ -67,7 +67,7 @@ public class StateMachine extends SubsystemBase {
   }
 
   private boolean isReadyState() {
-    if () { // check subsystems for readiness
+    if (true) { // check subsystems for readiness
       return true;
     }
     return false;

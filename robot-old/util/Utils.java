@@ -4,8 +4,6 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
-import frc.robot.Constants.ReefConstants;
-import frc.robot.Constants.WaypointConstants;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.HashMap;
