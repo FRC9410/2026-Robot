@@ -117,6 +117,7 @@ public final class Constants {
     /** First LED index for the strip on the CANdle (8 = first strip LED). */
     public static final int STRIP_START_INDEX = 8;
   }
+
   public static final class TurretConstants {
     public static final int MOTOR_ID = 60;
     public static final int ENCODER_ID = 61;

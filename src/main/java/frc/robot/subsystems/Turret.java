@@ -8,7 +8,6 @@ import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.hardware.TalonFX;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.util.EncoderHelpers;
 import frc.robot.util.MotorCancoderRequest;
 
 /** Subsystem for turret rotation (yaw) using Motion Magic profiler. */
@@ -29,7 +28,7 @@ public class Turret extends SubsystemBase {
             Constants.TurretConstants.TURRET_ROTOR_TO_SENSOR_RATIO,
             Constants.TurretConstants.TURRET_MM_CRUISE_VELOCITY,
             Constants.TurretConstants.TURRET_MM_ACCELERATION);
-    motor = EncoderHelpers.initMotorCancoderPair(request);
+    motor = PositionSubsystem.initMotorCancoderPair(request);
   }
 
   @Override

@@ -10,7 +10,6 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.util.EncoderHelpers;
 import frc.robot.util.MotorCancoderRequest;
 
 /** Subsystem for intake wrist/pivot (raises and lowers intake) using Motion Magic. */
@@ -32,7 +31,7 @@ public class IntakeWrist extends SubsystemBase {
             Constants.IntakeConstants.WRIST_ROTOR_TO_SENSOR_RATIO,
             Constants.IntakeConstants.WRIST_MM_CRUISE_VELOCITY,
             Constants.IntakeConstants.WRIST_MM_ACCELERATION);
-    primaryMotor = EncoderHelpers.initMotorCancoderPair(request);
+    primaryMotor = PositionSubsystem.initMotorCancoderPair(request);
 
     secondaryMotor =
         new TalonFX(

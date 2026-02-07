@@ -2,7 +2,7 @@ package frc.robot.util;
 
 /**
  * Request object for initializing a TalonFX + CANcoder pair with PID and Motion Magic.
- * Use with {@link EncoderHelpers#initMotorCancoderPair(MotorCancoderRequest)}.
+ * Use with {@link frc.robot.subsystems.PositionSubsystem#initMotorCancoderPair(MotorCancoderRequest)}.
  */
 public record MotorCancoderRequest(
     int motorId,
