@@ -6,9 +6,13 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import frc.robot.subsystems.Feeder;
+import frc.robot.subsystems.IntakeRoller;
+import frc.robot.subsystems.IntakeWrist;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.ShooterHood;
+import frc.robot.subsystems.Spindexer;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Turret;
 import frc.robot.subsystems.Vision;
@@ -19,6 +23,10 @@ public class RobotContainer {
   private final Turret turret = new Turret();
   private final Shooter shooter = new Shooter();
   private final ShooterHood shooterHood = new ShooterHood();
+  private final IntakeRoller intakeRoller = new IntakeRoller();
+  private final IntakeWrist intakeWrist = new IntakeWrist();
+  private final Spindexer spindexer = new Spindexer();
+  private final Feeder feeder = new Feeder();
   private final Vision vision = new Vision();
   private final StateMachine stateMachine = new StateMachine();
 
@@ -50,6 +58,22 @@ public class RobotContainer {
 
   public Vision getVision() {
     return vision;
+  }
+
+  public IntakeRoller getIntakeRoller() {
+    return intakeRoller;
+  }
+
+  public IntakeWrist getIntakeWrist() {
+    return intakeWrist;
+  }
+
+  public Spindexer getSpindexer() {
+    return spindexer;
+  }
+
+  public Feeder getFeeder() {
+    return feeder;
   }
 
   public StateMachine getStateMachine() {

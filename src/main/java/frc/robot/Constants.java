@@ -63,11 +63,20 @@ public final class Constants {
     public static final int SECONDARY_PIVOT_CAN_ID = 22;
     public static final int ENCODER_CAN_ID = 23;
 
-    public static final double INTAKE_DOWN_SETPOINT = 0; //placeholder
-    public static final double INTAKE_UP_SETPOINT = 0; //placeholder
-    public static final double INTAKE_ROLLER_VOLTAGE = 0; //placeholder
+    public static final double INTAKE_DOWN_SETPOINT = 0; // placeholder rotations
+    public static final double INTAKE_UP_SETPOINT = 0; // placeholder rotations
+    /** Roller percent output for intake (e.g. 0.5–1.0); tune as needed. */
+    public static final double INTAKE_ROLLER_OUTPUT = 0.8;
 
-    
+    /** Wrist PID (Slot0). Tune as needed. */
+    public static final int WRIST_KP = 20;
+    public static final int WRIST_KI = 0;
+    public static final int WRIST_KD = 0;
+    public static final int WRIST_KG = 0;
+    public static final int WRIST_SENSOR_TO_MECHANISM_RATIO = 1;
+    public static final int WRIST_ROTOR_TO_SENSOR_RATIO = 1;
+    public static final int WRIST_MM_CRUISE_VELOCITY = 20;
+    public static final int WRIST_MM_ACCELERATION = 40;
   }
 
   public static final class SpindexerConstants {
@@ -84,9 +93,20 @@ public final class Constants {
   }
   public static final class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;
+    public static final int HOOD_ENCODER_CAN_ID = 53;
     public static final int PRIMARY_FLYWHEELS_CAN_ID = 51;
     public static final int SECONDARY_FLYWHEELS_CAN_ID = 52;
     public static final int ENCODER_CAN_ID = 53;
+
+    /** Hood PID (Slot0). Tune as needed. */
+    public static final int HOOD_KP = 20;
+    public static final int HOOD_KI = 0;
+    public static final int HOOD_KD = 0;
+    public static final int HOOD_KG = 0;
+    public static final int HOOD_SENSOR_TO_MECHANISM_RATIO = 1;
+    public static final int HOOD_ROTOR_TO_SENSOR_RATIO = 1;
+    public static final int HOOD_MM_CRUISE_VELOCITY = 20;
+    public static final int HOOD_MM_ACCELERATION = 40;
   }
 
   public static final class LEDConstants {
@@ -114,6 +134,10 @@ public final class Constants {
     /** Motion Magic profiler. */
     public static final int TURRET_MM_CRUISE_VELOCITY = 20;
     public static final int TURRET_MM_ACCELERATION = 40;
+
+    // TODO: fix placeholder values
+    public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0; // in inches
+    public static final int TURRET_RADIUS = 0; // in inches
   }
 
   public static final class FieldConstants {
