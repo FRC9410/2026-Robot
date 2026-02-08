@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems;
+package frc.lib.team9410.subsystems;
 
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 
@@ -12,12 +12,13 @@ import java.util.function.BiConsumer;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
-import frc.robot.io.MotorConfig;
-import frc.robot.io.LeadMotorConfig;
-import frc.robot.io.MotionMagicConfig;
+import frc.lib.team9410.PowerRobotContainer;
+import frc.lib.team9410.configs.LeadMotorConfig;
+import frc.lib.team9410.configs.MotionMagicConfig;
+import frc.lib.team9410.configs.MotorConfig;
 
 
-public class VelocitySubsystem extends Subsystem9410 {
+public class VelocitySubsystem extends PowerSubsystem {
 
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
@@ -43,7 +44,16 @@ public class VelocitySubsystem extends Subsystem9410 {
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    var oldNumber = PowerRobotContainer.getData("number");
+    if (oldNumber != null) {
+      int newNumber = (int) PowerRobotContainer.getData("number") + 1;
+      PowerRobotContainer.setData("number", newNumber);
+    }
+    else {
+      PowerRobotContainer.setData("number", 0);
+    }
+  }
 
   /**
    * Applies lead and motion magic config to an existing TalonFX for velocity control.

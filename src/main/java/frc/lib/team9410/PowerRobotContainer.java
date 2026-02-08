@@ -2,25 +2,25 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot;
+package frc.lib.team9410;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Contract for the shared data container used by subsystems. Implemented by {@link RobotContainer}.
+ * Contract for the shared data container used by subsystems. Implemented by {@link frc.robot.RobotContainer}.
  * Subsystems that participate in shared data must implement {@link frc.robot.subsystems.SharedDataSubsystem}.
  * <p>
  * Call {@link #setData(String, Object)}, {@link #getData(String)}, or {@link #getData(String, Object)}
- * statically: {@code RobotContainer9410.setData(key, value)} and {@code RobotContainer9410.getData(key)}.
+ * statically: {@code PowerRobotContainer.setData(key, value)} and {@code PowerRobotContainer.getData(key)}.
  */
-public interface RobotContainer9410 {
+public interface PowerRobotContainer {
 
   /** Shared storage for subsystem data. Defined on the interface so the static API is guaranteed. */
   Map<String, Object> SUBSYSTEM_DATA = new HashMap<>();
 
   /**
-   * Stores a value in the shared data container. Call from anywhere via {@code RobotContainer9410.setData(key, value)}.
+   * Stores a value in the shared data container. Call from anywhere via {@code PowerRobotContainer.setData(key, value)}.
    *
    * @param key   key to associate with the value
    * @param value value to store (may be null)

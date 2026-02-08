@@ -5,14 +5,15 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.lib.team9410.PowerRobotContainer;
 import edu.wpi.first.wpilibj2.command.Commands;
 import frc.robot.subsystems.LED;
-import frc.robot.subsystems.PositionSubsystem;
 import frc.robot.subsystems.StateMachine;
-import frc.robot.subsystems.VelocitySubsystem;
+import frc.lib.team9410.subsystems.PositionSubsystem;
+import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.subsystems.Vision;
 
-public class RobotContainer implements RobotContainer9410 {
+public class RobotContainer implements PowerRobotContainer {
 
   // --- Position subsystems ---
   private final PositionSubsystem turret = new PositionSubsystem(

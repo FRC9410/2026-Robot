@@ -7,6 +7,7 @@ package frc.robot.subsystems;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.team9410.PowerRobotContainer;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
 public class StateMachine extends SubsystemBase {
@@ -28,6 +29,8 @@ public class StateMachine extends SubsystemBase {
 
   @Override
   public void periodic() {
+    // print number of keys in system data
+    System.out.println(PowerRobotContainer.getData("number"));
     handleStateTransitions();
     executeState();
   }

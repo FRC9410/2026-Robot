@@ -3,10 +3,10 @@ package frc.robot;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.RobotBase;
-import frc.robot.io.CancoderConfig;
-import frc.robot.io.LeadMotorConfig;
-import frc.robot.io.MotionMagicConfig;
-import frc.robot.io.MotorConfig;
+import frc.lib.team9410.configs.CancoderConfig;
+import frc.lib.team9410.configs.LeadMotorConfig;
+import frc.lib.team9410.configs.MotionMagicConfig;
+import frc.lib.team9410.configs.MotorConfig;
 
 import java.util.List;
 

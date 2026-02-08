@@ -2,7 +2,7 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
-package frc.robot.subsystems;
+package frc.lib.team9410.subsystems;
 
 import static edu.wpi.first.units.Units.Rotations;
 
@@ -20,12 +20,12 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import frc.robot.Constants;
-import frc.robot.io.CancoderConfig;
-import frc.robot.io.LeadMotorConfig;
-import frc.robot.io.MotionMagicConfig;
-import frc.robot.io.MotorConfig;
+import frc.lib.team9410.configs.CancoderConfig;
+import frc.lib.team9410.configs.LeadMotorConfig;
+import frc.lib.team9410.configs.MotionMagicConfig;
+import frc.lib.team9410.configs.MotorConfig;
 
-public class PositionSubsystem extends Subsystem9410 {
+public class PositionSubsystem extends PowerSubsystem {
 
   /** Primary position-controlled motor (with fused CANcoder from config constructor). */
   protected TalonFX positionMotor;
