@@ -7,11 +7,17 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.StateMachine;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.subsystems.Vision;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+
+
+
+
 
 public class RobotContainer implements PowerRobotContainer {
 
@@ -65,11 +71,32 @@ public class RobotContainer implements PowerRobotContainer {
   private final Vision vision = new Vision();
   private final StateMachine stateMachine = new StateMachine();
 
+  // Controller
+  private final CommandXboxController DriverController = new CommandXboxController(0);
+  private final CommandXboxController TestController = new CommandXboxController(5);
+
   public RobotContainer() {
     configureBindings();
+    configureTestBindings();
+
   }
 
-  private void configureBindings() {}
+  private void configureBindings() {
+
+
+  }
+
+  private void configureTestBindings() {
+    TestController.a().toggleOnTrue(new InstantCommand(
+      () -> spindexer.setVelocity(24)
+    ));
+     TestController.b().toggleOnTrue(new InstantCommand(
+      () -> feeder.setVelocity(24)
+    ));
+     TestController.y().toggleOnTrue(new InstantCommand(
+      () -> shooter.setVelocity(24)
+    ));
+  }
 
   public Command getAutonomousCommand() {
     return Commands.print("No autonomous command configured");
