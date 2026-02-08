@@ -7,9 +7,9 @@ package frc.lib.team9410.subsystems;
 import static edu.wpi.first.units.Units.Rotations;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 
 import com.ctre.phoenix6.BaseStatusSignal;
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -29,6 +29,8 @@ public class PositionSubsystem extends PowerSubsystem {
 
   /** Primary position-controlled motor (with fused CANcoder from config constructor). */
   protected TalonFX positionMotor;
+  private String subsystemName;
+  private String units;
 
   /**
    * Constructor that uses the leader motor already registered by the base from {@code config},
@@ -43,17 +45,23 @@ public class PositionSubsystem extends PowerSubsystem {
       List<MotorConfig> config,
       LeadMotorConfig leadConfig,
       CancoderConfig cancoderConfig,
-      MotionMagicConfig motionMagicConfig) {
-    super(config);
+      MotionMagicConfig motionMagicConfig,
+      String subsystemName,
+      String units) {
+    super(config, subsystemName);
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
       configureMotorWithCancoder(leader, leadConfig, cancoderConfig, motionMagicConfig);
       this.positionMotor = leader;
     }
+    this.subsystemName = subsystemName;
+    this.units = units;
   }
 
   @Override
-  public void periodic() {}
+  public void periodic() {
+    SignalLogger.writeDouble(subsystemName + " Position", getLeaderMotor().getPosition().getValueAsDouble(), units);
+  }
 
   /**
    * Configures an existing TalonFX with a CANcoder and the given lead, CANcoder, and motion magic

@@ -32,16 +32,18 @@ public abstract class PowerSubsystem extends SubsystemBase {
   private final CANBus bus;
   private final Map<Integer, TalonFX> motorsByCanId;
   private Integer leaderCanId;
+  private String subsystemName;
 
   /**
    * Constructor for subclasses that register their own motors (e.g. velocity/position configured).
    *
    */
-  protected PowerSubsystem(List<MotorConfig> configList) {
+  protected PowerSubsystem(List<MotorConfig> configList, String subsystemName) {
     super();
 
     this.bus = Constants.CanBusConstants.CANIVORE_BUS;
     this.motorsByCanId = new HashMap<>();
+    this.subsystemName = subsystemName;
 
     // Get the leader motor and register it
     for (MotorConfig motorConfig : configList) {

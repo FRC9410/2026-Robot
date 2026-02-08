@@ -20,35 +20,45 @@ public class RobotContainer implements PowerRobotContainer {
       Constants.TurretConstants.TURRET_MOTOR_CONFIGS,
       Constants.TurretConstants.TURRET_LEAD_CONFIG,
       Constants.TurretConstants.TURRET_CANCODER_CONFIG,
-      Constants.TurretConstants.TURRET_MOTION_MAGIC_CONFIG);
+      Constants.TurretConstants.TURRET_MOTION_MAGIC_CONFIG,
+      "Turret",
+      "degrees");
   private final PositionSubsystem shooterHood = new PositionSubsystem(
       Constants.ShooterConstants.HOOD_MOTOR_CONFIGS,
       Constants.ShooterConstants.HOOD_LEAD_CONFIG,
       Constants.ShooterConstants.HOOD_CANCODER_CONFIG,
-      Constants.ShooterConstants.HOOD_MOTION_MAGIC_CONFIG);
+      Constants.ShooterConstants.HOOD_MOTION_MAGIC_CONFIG,
+      "Shooter Hood",
+      "degrees");
   private final PositionSubsystem intakeWrist = new PositionSubsystem(
       Constants.IntakeConstants.WRIST_MOTOR_CONFIGS,
       Constants.IntakeConstants.WRIST_LEAD_CONFIG,
       Constants.IntakeConstants.WRIST_CANCODER_CONFIG,
-      Constants.IntakeConstants.WRIST_MOTION_MAGIC_CONFIG);
+      Constants.IntakeConstants.WRIST_MOTION_MAGIC_CONFIG,
+      "Intake Wrist",
+      "degrees");
 
   // --- Velocity subsystems ---
   private final VelocitySubsystem shooter = new VelocitySubsystem(
       Constants.ShooterConstants.FLYWHEEL_MOTOR_CONFIGS,
       Constants.ShooterConstants.FLYWHEEL_LEAD_CONFIG,
-      Constants.ShooterConstants.FLYWHEEL_MOTION_MAGIC_CONFIG);
+      Constants.ShooterConstants.FLYWHEEL_MOTION_MAGIC_CONFIG,
+      "Shooter");
   private final VelocitySubsystem intakeRoller = new VelocitySubsystem(
       Constants.IntakeConstants.ROLLER_MOTOR_CONFIGS,
       Constants.IntakeConstants.ROLLER_LEAD_CONFIG,
-      Constants.IntakeConstants.ROLLER_MOTION_MAGIC_CONFIG);
+      Constants.IntakeConstants.ROLLER_MOTION_MAGIC_CONFIG,
+      "Intake Roller");
   private final VelocitySubsystem spindexer = new VelocitySubsystem(
       Constants.SpindexerConstants.SPINDEXER_MOTOR_CONFIGS,
       Constants.SpindexerConstants.SPINDEXER_LEAD_CONFIG,
-      Constants.SpindexerConstants.SPINDEXER_MOTION_MAGIC_CONFIG);
+      Constants.SpindexerConstants.SPINDEXER_MOTION_MAGIC_CONFIG,
+      "Spindexer");
   private final VelocitySubsystem feeder = new VelocitySubsystem(
       Constants.FeederConstants.MOTOR_CONFIGS,
       Constants.FeederConstants.FEEDER_LEAD_CONFIG,
-      Constants.FeederConstants.FEEDER_MOTION_MAGIC_CONFIG);
+      Constants.FeederConstants.FEEDER_MOTION_MAGIC_CONFIG,
+      "Feeder");
 
   // --- Other ---
   private final LED led = new LED();

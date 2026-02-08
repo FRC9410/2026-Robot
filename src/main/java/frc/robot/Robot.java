@@ -4,10 +4,12 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.SignalLogger;
+
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.utils.LoggingHelpers;
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
@@ -15,16 +17,19 @@ public class Robot extends TimedRobot {
   private final RobotContainer m_robotContainer;
 
   public Robot() {
+    SignalLogger.setPath("/media/sda1/ctre-logs/");
     m_robotContainer = new RobotContainer();
   }
 
   @Override
   public void robotInit() {
-    LoggingHelpers.startLogging();
   }
 
   @Override
   public void robotPeriodic() {
+    SignalLogger.writeDouble("Voltage", RobotController.getBatteryVoltage(), "V");
+    SignalLogger.writeDouble("CAN Utilization", RobotController.getCANStatus().percentBusUtilization, "%");
+    SignalLogger.writeDouble("CAN Error Count", RobotController.getCANStatus().receiveErrorCount, "#");
     CommandScheduler.getInstance().run();
   }
 

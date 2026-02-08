@@ -7,8 +7,8 @@ package frc.lib.team9410.subsystems;
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 
 import java.util.List;
-import java.util.function.BiConsumer;
 
+import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -22,6 +22,7 @@ public class VelocitySubsystem extends PowerSubsystem {
 
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
+  private String subsystemName;
 
   /**
    * Constructor that uses the leader motor already registered by the base from {@code config},
@@ -34,25 +35,20 @@ public class VelocitySubsystem extends PowerSubsystem {
   public VelocitySubsystem(
       List<MotorConfig> config,
       LeadMotorConfig leadConfig,
-      MotionMagicConfig motionMagicConfig) {
-    super(config);
+      MotionMagicConfig motionMagicConfig,
+      String subsystemName) {
+    super(config, subsystemName);
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
       configureMotorForVelocity(leader, leadConfig, motionMagicConfig);
       this.velocityMotor = leader;
     }
+    this.subsystemName = subsystemName;
   }
 
   @Override
   public void periodic() {
-    var oldNumber = PowerRobotContainer.getData("number");
-    if (oldNumber != null) {
-      int newNumber = (int) PowerRobotContainer.getData("number") + 1;
-      PowerRobotContainer.setData("number", newNumber);
-    }
-    else {
-      PowerRobotContainer.setData("number", 0);
-    }
+    SignalLogger.writeDouble(subsystemName + " Velocity", getLeaderMotor().getRotorVelocity().getValueAsDouble(), "rotations per second");
   }
 
   /**
