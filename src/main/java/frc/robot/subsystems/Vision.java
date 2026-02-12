@@ -80,7 +80,6 @@ public class Vision extends SubsystemBase {
     return new Pose2d();
   }
 
-
   /** Set pipeline index (0-based). */
   public void setPipeline(int index) {
     table.getEntry("pipeline").setNumber(index);
@@ -94,7 +93,6 @@ public class Vision extends SubsystemBase {
   public int getTagId(NetworkTable table) {
     return (int) table.getEntry("tid").getInteger(0);
   }
-
 
   public String getBestLimelight() {
     final NetworkTable leftLimelight =

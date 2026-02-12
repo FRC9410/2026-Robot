@@ -15,10 +15,6 @@ import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.subsystems.Vision;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
-
-
-
-
 public class RobotContainer implements PowerRobotContainer {
 
   // --- Position subsystems ---
