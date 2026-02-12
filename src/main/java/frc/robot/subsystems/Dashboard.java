@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.team9410.PowerRobotContainer;
 
 public class Dashboard extends SubsystemBase {
   private final NetworkTableInstance inst;
@@ -21,20 +22,8 @@ public class Dashboard extends SubsystemBase {
     inst = NetworkTableInstance.getDefault();
     table = inst.getTable("Scoring");
     drivingTable = inst.getTable("Driving PIDs");
-
-    table.getEntry("leftL1").setBoolean(false);
-    table.getEntry("leftL2").setBoolean(false);
-    table.getEntry("leftL3").setBoolean(false);
-    table.getEntry("leftL4").setBoolean(false);
-    table.getEntry("rightL1").setBoolean(false);
-    table.getEntry("rightL2").setBoolean(false);
-    table.getEntry("rightL3").setBoolean(false);
-    table.getEntry("rightL4").setBoolean(false);
-    table.getEntry("blueLeft").setBoolean(false);
-    table.getEntry("blueRight").setBoolean(false);
-    table.getEntry("redLeft").setBoolean(false);
-    table.getEntry("redRight").setBoolean(false);
-    drivingTable.getEntry("useIncreasedFfValue").setBoolean(false);
+    
+    table.getEntry("robotState").setString(PowerRobotContainer.getData("robotState").toString());
   }
 
   @Override

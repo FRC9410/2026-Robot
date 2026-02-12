@@ -40,6 +40,7 @@ public class StateMachine extends SubsystemBase {
       previousState = currentState;
       if (canTransitionTo(wantedState)) {
         currentState = wantedState;
+        PowerRobotContainer.setData("robotState", currentState);
       }
     }
   }
