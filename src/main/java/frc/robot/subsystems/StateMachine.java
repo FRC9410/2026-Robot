@@ -84,7 +84,7 @@ public class StateMachine extends SubsystemBase {
 
   private void executePassing() {}
 
-  private void executeClimbing() {}
+  private void executeClimbing() {} // we arent doing this im pretty sure
 
   public void setWantedState(RobotState state) {
     wantedState = state;
