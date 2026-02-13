@@ -81,13 +81,13 @@ public class Vision extends SubsystemBase {
 
   /** Robot pose from Limelight (when using 2D or 3D pose). */
   public Pose2d getRobotPose(NetworkTable table) {
-    double[] arr = table.getEntry("botpose").getDoubleArray(new double[6]);
-    if (arr.length >= 6) {
-      return new Pose2d(
-          new Translation2d(arr[0], arr[1]),
-          Rotation2d.fromDegrees(arr[5]));
-    }
-    return new Pose2d();
+    // double[] arr = table.getEntry("botpose").getDoubleArray(new double[6]);
+    // if (arr.length >= 6) {
+    //   return new Pose2d(
+    //       new Translation2d(arr[0], arr[1]),
+    //       Rotation2d.fromDegrees(arr[5]));
+    // }
+    return new Pose2d(10.0, 10.0, new Rotation2d(10.0));
   }
 
   /** Set pipeline index (0-based). */
