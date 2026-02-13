@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import frc.robot.subsystems.Dashboard;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.StateMachine;
 import frc.lib.team9410.subsystems.PositionSubsystem;
@@ -67,6 +68,7 @@ public class RobotContainer implements PowerRobotContainer {
   private final LED led = new LED();
   private final Vision vision = new Vision();
   private final StateMachine stateMachine = new StateMachine();
+  private final Dashboard dashboard = new Dashboard();
 
   /** Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via {@link #startGameTimer()}. */
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40

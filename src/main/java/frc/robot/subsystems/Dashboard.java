@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -15,107 +16,41 @@ public class Dashboard extends SubsystemBase {
   private final NetworkTableInstance inst;
   private final NetworkTable table;
   private final NetworkTable drivingTable;
-  private Auto auto;
+  private final NetworkTable testingTable;
 
   /** Creates a new Dashboard. */
   public Dashboard() {
     inst = NetworkTableInstance.getDefault();
     table = inst.getTable("Scoring");
     drivingTable = inst.getTable("Driving PIDs");
-    
-    table.getEntry("robotState").setString(PowerRobotContainer.getData("robotState").toString());
+    testingTable = inst.getTable("Robot Testing");
+
+
+
+    //testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState").toString());
+    testingTable.getEntry("message").setString("All hail claude");
+
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
 
-    final Auto newAuto = getAuto();
-    if (newAuto != auto) {
-      setAuto(newAuto);
-    }
+
+
+    // Update Robot Testing dashboard: current state, pose, and auto routines
+    //updateTestingDashboard();
   }
 
-  public Auto getAuto() {
-    if (table.getEntry("blueLeft").getBoolean(false) && auto != Auto.BLUE_LEFT) {
-      return Auto.BLUE_LEFT;
-    } else if (table.getEntry("blueRight").getBoolean(false) && auto != Auto.BLUE_RIGHT) {
-      return Auto.BLUE_RIGHT;
-    } else if (table.getEntry("redLeft").getBoolean(false) && auto != Auto.RED_LEFT) {
-      return Auto.RED_LEFT;
-    } else if (table.getEntry("redRight").getBoolean(false) && auto != Auto.RED_RIGHT) {
-      return Auto.RED_RIGHT;
-    }
-    return auto;
+  private void updateTestingDashboard() {
+    Object stateObj = PowerRobotContainer.getData("robotState");
+    testingTable.getEntry("robotState").setString(stateObj != null ? stateObj.toString() : "UNKNOWN");
+
+    Pose2d pose = PowerRobotContainer.getData("RobotPose", new Pose2d());
+    testingTable.getEntry("poseX").setDouble(pose.getX());
+    testingTable.getEntry("poseY").setDouble(pose.getY());
+    testingTable.getEntry("poseRotationDegrees").setDouble(pose.getRotation().getDegrees());
   }
 
-  public Auto getAutoFromDash() {
-    if (table.getEntry("blueLeft").getBoolean(false)) {
-      return Auto.BLUE_LEFT;
-    } else if (table.getEntry("blueRight").getBoolean(false)) {
-      return Auto.BLUE_RIGHT;
-    } else if (table.getEntry("redLeft").getBoolean(false)) {
-      return Auto.RED_LEFT;
-    } else if (table.getEntry("redRight").getBoolean(false)) {
-      return Auto.RED_RIGHT;
-    }
-    return auto;
-  }
-
-  public void clearAutoSelections() {
-    table.getEntry("blueLeft").setBoolean(false);
-    table.getEntry("blueRight").setBoolean(false);
-    table.getEntry("redLeft").setBoolean(false);
-    table.getEntry("redRight").setBoolean(false);
-  }
-
-  public void clearSelections() {
-    table.getEntry("front").setBoolean(false);
-    table.getEntry("front_left").setBoolean(false);
-    table.getEntry("front_right").setBoolean(false);
-    table.getEntry("back").setBoolean(false);
-    table.getEntry("back_left").setBoolean(false);
-    table.getEntry("back_right").setBoolean(false);
-    table.getEntry("left").setBoolean(false);
-    table.getEntry("right").setBoolean(false);
-    table.getEntry("redLeft").setBoolean(false);
-    table.getEntry("redRight").setBoolean(false);
-    table.getEntry("blueLeft").setBoolean(false);
-    table.getEntry("blueRight").setBoolean(false);
-    table
-        .getEntry("isRed")
-        .setBoolean(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red);
-
-    auto = null;
-  }
-
-  public void setAuto(Auto auto) {
-    if (auto == null) {
-      return;
-    }
-
-    clearAutoSelections();
-    this.auto = auto;
-    switch (auto) {
-      case RED_LEFT:
-        table.getEntry("redLeft").setBoolean(true);
-        break;
-      case RED_RIGHT:
-        table.getEntry("redRight").setBoolean(true);
-        break;
-      case BLUE_LEFT:
-        table.getEntry("blueLeft").setBoolean(true);
-        break;
-      case BLUE_RIGHT:
-        table.getEntry("blueRight").setBoolean(true);
-        break;
-    }
-  }
-
-  public enum Auto {
-    RED_LEFT,
-    RED_RIGHT,
-    BLUE_LEFT,
-    BLUE_RIGHT
-  }
+ 
 }
