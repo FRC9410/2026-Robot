@@ -153,11 +153,6 @@ public class RobotContainer implements PowerRobotContainer {
     }
   }
 
-  /** Game time in seconds, counting up from 0 to {@value #GAME_DURATION_SECONDS}. Use this for display or logic. */
-  public double getGameTime() {
-    return gameTimer.get();
-  }
-
   /** Same as {@link #getGameTime()} — elapsed seconds counting up from 0. */
   public double getGameTimeElapsed() {
     return gameTimer.get();
