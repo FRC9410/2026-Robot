@@ -5,6 +5,8 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.hardware.CANdle;
+import com.ctre.phoenix.led.RainbowAnimation;
+import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.SolidColor;
 import com.ctre.phoenix6.signals.RGBWColor;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -31,7 +33,9 @@ public class LED extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {
+  public void periodic() {}
+  
+  public void updateColorMode() {
     switch (mode) {
       case OFF:
         setSolid(0, 0, 0);
@@ -53,9 +57,23 @@ public class LED extends SubsystemBase {
           setSolid(0, 0, 255);
         }
         break;
-      default:
+      case SOLID_PURPLE:
+        setSolid(164, 94, 229);
+      case SOLID_ORANGE:
+        setSolid(231, 109, 44);
+      case SOLID_YELLOW:
+        setSolid(221, 214, 24);
+      case RAINBOW:
+        candle.setControl((ControlRequest) new RainbowAnimation(1, 0.2, ledEndIndex - ledStartIndex));
+      default:        
         setSolid(0, 0, 0);
     }
+  }
+
+  private void setSolidOne(int i, int r, int g, int b) {
+    candle.setControl(
+        new SolidColor(ledStartIndex + i, ledStartIndex + i)
+            .withColor(new RGBWColor(r, g, b, 0)));
   }
 
   private void setSolid(int r, int g, int b) {
@@ -66,6 +84,7 @@ public class LED extends SubsystemBase {
 
   public void setMode(LEDMode mode) {
     this.mode = mode;
+    updateColorMode();
   }
 
   public LEDMode getMode() {
@@ -77,6 +96,10 @@ public class LED extends SubsystemBase {
     SOLID_GREEN,
     SOLID_BLUE,
     SOLID_RED,
+    SOLID_PURPLE,
+    SOLID_YELLOW,
+    SOLID_ORANGE,
+    RAINBOW,
     ALLIANCE
   }
 }
