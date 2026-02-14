@@ -12,6 +12,7 @@ import com.ctre.phoenix6.signals.RGBWColor;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 
 /** Subsystem for controlling LEDs via the CTRE CANdle. */
@@ -36,6 +37,8 @@ public class LED extends SubsystemBase {
   public void periodic() {}
   
   public void updateColorMode() {
+    PowerRobotContainer.setData("ledColor", mode.toString());
+
     switch (mode) {
       case OFF:
         setSolid(0, 0, 0);

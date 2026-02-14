@@ -29,8 +29,6 @@ public class StateMachine extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // print number of keys in system data
-    System.out.println(PowerRobotContainer.getData("number"));
     handleStateTransitions();
     executeState();
   }

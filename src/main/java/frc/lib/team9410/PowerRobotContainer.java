@@ -33,7 +33,7 @@ public interface PowerRobotContainer {
    * Retrieves a value from the shared data container, or null if the key is not present.
    *
    * @param key key to look up
-   * @return the value, or null if the key is not present
+   * @return the value, or "null" if the key is not present
    */
   static Object getData(String key) {
     return SUBSYSTEM_DATA.get(key);

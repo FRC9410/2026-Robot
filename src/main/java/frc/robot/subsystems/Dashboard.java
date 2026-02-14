@@ -27,9 +27,9 @@ public class Dashboard extends SubsystemBase {
 
 
 
-    //testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState").toString());
-    testingTable.getEntry("message").setString("All hail claude");
-
+    testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null").toString());
+    testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null").toString());
+    testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null").toString());
   }
 
   @Override

@@ -51,7 +51,7 @@ public class Vision extends SubsystemBase {
 
   @Override
   public void periodic() {  
-    PowerRobotContainer.setData("RobotPose", getRobotPose(getBestLimelight()));
+    PowerRobotContainer.setData("robotPose", getRobotPose(getBestLimelight()));
   }
 
   /** Whether the camera has at least one valid target. */
