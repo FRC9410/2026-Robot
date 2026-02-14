@@ -30,6 +30,10 @@ public class Robot extends TimedRobot {
     SignalLogger.writeDouble("Voltage", RobotController.getBatteryVoltage(), "V");
     SignalLogger.writeDouble("CAN Utilization", RobotController.getCANStatus().percentBusUtilization, "%");
     SignalLogger.writeDouble("CAN Error Count", RobotController.getCANStatus().receiveErrorCount, "#");
+
+    m_robotContainer.startGameTimer(); 
+    m_robotContainer.updateSharedData();
+
     CommandScheduler.getInstance().run();
   }
 

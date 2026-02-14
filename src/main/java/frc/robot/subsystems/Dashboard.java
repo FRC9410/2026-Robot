@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
+import frc.robot.RobotContainer;
 
 public class Dashboard extends SubsystemBase {
   private final NetworkTableInstance inst;
@@ -25,31 +26,23 @@ public class Dashboard extends SubsystemBase {
     drivingTable = inst.getTable("Driving PIDs");
     testingTable = inst.getTable("Robot Testing");
 
-
-
     testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null").toString());
     testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null").toString());
     testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null").toString());
+    testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
   }
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-
-
-
-    // Update Robot Testing dashboard: current state, pose, and auto routines
-    //updateTestingDashboard();
+    updateTestingDashboard();
   }
 
   private void updateTestingDashboard() {
-    Object stateObj = PowerRobotContainer.getData("robotState");
-    testingTable.getEntry("robotState").setString(stateObj != null ? stateObj.toString() : "UNKNOWN");
 
-    Pose2d pose = PowerRobotContainer.getData("RobotPose", new Pose2d());
-    testingTable.getEntry("poseX").setDouble(pose.getX());
-    testingTable.getEntry("poseY").setDouble(pose.getY());
-    testingTable.getEntry("poseRotationDegrees").setDouble(pose.getRotation().getDegrees());
+    // testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null").toString());
+    // testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null"));
+    // testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null").toString());
+    testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
   }
 
  

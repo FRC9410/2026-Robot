@@ -167,4 +167,17 @@ public class RobotContainer implements PowerRobotContainer {
   public boolean isGameTimeUp() {
     return gameTimer.get() >= GAME_DURATION_SECONDS;
   }
+
+  // get time until next shift
+  public double getTimeToNextShift () {
+    double timeSinceTele = gameTimer.get() - Constants.FieldConstants.AUTO_LENGTH_IN_TIME;
+
+    return Constants.FieldConstants.TIME_BETWEEN_SHIFTS - 
+      ( timeSinceTele % Constants.FieldConstants.TIME_BETWEEN_SHIFTS);
+  }
+
+  /** Publishes shared data so subsystems (e.g. Dashboard) can read it. Call from robotPeriodic. */
+  public void updateSharedData() {
+    PowerRobotContainer.setData("timeToShift", getTimeToNextShift());
+  }
 }
