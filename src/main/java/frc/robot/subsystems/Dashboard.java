@@ -9,6 +9,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.RobotContainer;
@@ -25,11 +26,20 @@ public class Dashboard extends SubsystemBase {
     table = inst.getTable("Scoring");
     drivingTable = inst.getTable("Driving PIDs");
     testingTable = inst.getTable("Robot Testing");
+    
+    // velos
+    testingTable.getEntry("spindexerVelocity").setInteger(PowerRobotContainer.getData("spindexerVelocity", 24));
+    testingTable.getEntry("feederVelocity").setInteger(PowerRobotContainer.getData("feederVelocity", 24));
+    testingTable.getEntry("shooterVelocity").setInteger(PowerRobotContainer.getData("shooterVelocity", 24));
   }
 
   @Override
   public void periodic() {
     updateTestingDashboard();
+  }
+
+  public double getValue (String key) {
+    return testingTable.getEntry(key).getDouble(0.0);
   }
 
   private void updateTestingDashboard() {

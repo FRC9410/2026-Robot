@@ -92,20 +92,19 @@ public class RobotContainer implements PowerRobotContainer {
 
   }
 
-  private void runSubsystem (VelocitySubsystem subsystem) {
-    // System.out.println(subsystem.getClass().getName());
-    subsystem.setVelocity(24);
+  private void runSubsystem (VelocitySubsystem subsystem, String key) {
+    subsystem.setVelocity(dashboard.getValue(key));
   }
 
   private void configureTestBindings() {
     TestController.a().toggleOnTrue(new InstantCommand(
-      () -> runSubsystem(spindexer)
+      () -> runSubsystem(spindexer, "spindexerVelocity")
     ));
     TestController.b().toggleOnTrue(new InstantCommand(
-      () -> runSubsystem(feeder)
+      () -> runSubsystem(feeder, "feederVelocity")
     ));
     TestController.y().toggleOnTrue(new InstantCommand(
-      () -> runSubsystem(shooter)
+      () -> runSubsystem(shooter, "shooterVelocity")
     ));
   }
 
