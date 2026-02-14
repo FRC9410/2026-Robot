@@ -32,7 +32,7 @@ public class Robot extends TimedRobot {
     SignalLogger.writeDouble("CAN Error Count", RobotController.getCANStatus().receiveErrorCount, "#");
 
     m_robotContainer.startGameTimer(); 
-    m_robotContainer.updateSharedData();
+    // m_robotContainer.updateSharedData();
 
     CommandScheduler.getInstance().run();
   }

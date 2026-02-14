@@ -7,6 +7,8 @@ import frc.lib.team9410.configs.CancoderConfig;
 import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
 import frc.lib.team9410.configs.MotorConfig;
+import frc.lib.team9410.configs.PositionSubsystemConfig;
+import frc.lib.team9410.configs.VelocitySubsystemConfig;
 
 import java.util.List;
 
@@ -127,6 +129,15 @@ public final class Constants {
     /** Motion Magic config for wrist. */
     public static final MotionMagicConfig WRIST_MOTION_MAGIC_CONFIG = new MotionMagicConfig(
         WRIST_MM_CRUISE_VELOCITY, WRIST_MM_ACCELERATION);
+
+    /** Position subsystem config for intake wrist. */
+    public static final PositionSubsystemConfig WRIST_CONFIG = new PositionSubsystemConfig(
+        WRIST_MOTOR_CONFIGS, WRIST_LEAD_CONFIG, WRIST_CANCODER_CONFIG, WRIST_MOTION_MAGIC_CONFIG,
+        "Intake Wrist", "degrees");
+
+    /** Velocity subsystem config for intake roller. */
+    public static final VelocitySubsystemConfig ROLLER_CONFIG = new VelocitySubsystemConfig(
+        ROLLER_MOTOR_CONFIGS, ROLLER_LEAD_CONFIG, ROLLER_MOTION_MAGIC_CONFIG, "Intake Roller");
   }
 
   public static final class SpindexerConstants {
@@ -152,6 +163,10 @@ public final class Constants {
     /** Motion Magic config for spindexer velocity. */
     public static final MotionMagicConfig SPINDEXER_MOTION_MAGIC_CONFIG =
         MotionMagicConfig.forVelocity(SPINDEXER_MM_ACCELERATION);
+
+    /** Velocity subsystem config for spindexer. */
+    public static final VelocitySubsystemConfig SPINDEXER_CONFIG = new VelocitySubsystemConfig(
+        SPINDEXER_MOTOR_CONFIGS, SPINDEXER_LEAD_CONFIG, SPINDEXER_MOTION_MAGIC_CONFIG, "Spindexer");
   }
 
   public static final class FeederConstants {
@@ -179,6 +194,10 @@ public final class Constants {
     /** Motion Magic config for feeder velocity. */
     public static final MotionMagicConfig FEEDER_MOTION_MAGIC_CONFIG =
         MotionMagicConfig.forVelocity(FEEDER_MM_ACCELERATION);
+
+    /** Velocity subsystem config for feeder. */
+    public static final VelocitySubsystemConfig FEEDER_CONFIG = new VelocitySubsystemConfig(
+        MOTOR_CONFIGS, FEEDER_LEAD_CONFIG, FEEDER_MOTION_MAGIC_CONFIG, "Feeder");
   }
   public static final class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;
@@ -237,6 +256,15 @@ public final class Constants {
     /** Motion Magic config for hood. */
     public static final MotionMagicConfig HOOD_MOTION_MAGIC_CONFIG = new MotionMagicConfig(
         HOOD_MM_CRUISE_VELOCITY, HOOD_MM_ACCELERATION);
+
+    /** Position subsystem config for shooter hood. */
+    public static final PositionSubsystemConfig HOOD_CONFIG = new PositionSubsystemConfig(
+        HOOD_MOTOR_CONFIGS, HOOD_LEAD_CONFIG, HOOD_CANCODER_CONFIG, HOOD_MOTION_MAGIC_CONFIG,
+        "Shooter Hood", "degrees");
+
+    /** Velocity subsystem config for flywheel. */
+    public static final VelocitySubsystemConfig FLYWHEEL_CONFIG = new VelocitySubsystemConfig(
+        FLYWHEEL_MOTOR_CONFIGS, FLYWHEEL_LEAD_CONFIG, FLYWHEEL_MOTION_MAGIC_CONFIG, "Shooter");
   }
 
   public static final class LEDConstants {
@@ -285,6 +313,11 @@ public final class Constants {
     /** Motion Magic config for turret. */
     public static final MotionMagicConfig TURRET_MOTION_MAGIC_CONFIG = new MotionMagicConfig(
         TURRET_MM_CRUISE_VELOCITY, TURRET_MM_ACCELERATION);
+
+    /** Position subsystem config for turret. */
+    public static final PositionSubsystemConfig TURRET_CONFIG = new PositionSubsystemConfig(
+        TURRET_MOTOR_CONFIGS, TURRET_LEAD_CONFIG, TURRET_CANCODER_CONFIG, TURRET_MOTION_MAGIC_CONFIG,
+        "Turret", "degrees");
 
     // TODO: fix placeholder values
     public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0; // in inches

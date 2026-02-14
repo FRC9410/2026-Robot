@@ -6,8 +6,6 @@ package frc.lib.team9410.subsystems;
 
 import static edu.wpi.first.units.Units.Rotations;
 
-import java.util.List;
-
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.CANcoderConfiguration;
@@ -23,7 +21,7 @@ import frc.robot.Constants;
 import frc.lib.team9410.configs.CancoderConfig;
 import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
-import frc.lib.team9410.configs.MotorConfig;
+import frc.lib.team9410.configs.PositionSubsystemConfig;
 
 public class PositionSubsystem extends PowerSubsystem {
 
@@ -33,29 +31,20 @@ public class PositionSubsystem extends PowerSubsystem {
   private String units;
 
   /**
-   * Constructor that uses the leader motor already registered by the base from {@code config},
-   * and configures it with the given lead, CANcoder, and motion magic configs.
+   * Constructor that uses the leader motor from the config and configures it with lead, CANcoder,
+   * and motion magic settings from the same config.
    *
-   * @param config motor configs (first non-follower is the leader)
-   * @param leadConfig PID and feedback ratios for the leader
-   * @param cancoderConfig CANcoder ID and magnet settings
-   * @param motionMagicConfig cruise velocity and acceleration
+   * @param config single config containing motor configs, lead, CANcoder, motion magic, name, and units
    */
-  public PositionSubsystem(
-      List<MotorConfig> config,
-      LeadMotorConfig leadConfig,
-      CancoderConfig cancoderConfig,
-      MotionMagicConfig motionMagicConfig,
-      String subsystemName,
-      String units) {
-    super(config, subsystemName);
+  public PositionSubsystem(PositionSubsystemConfig config) {
+    super(config.motorConfigs(), config.subsystemName());
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
-      configureMotorWithCancoder(leader, leadConfig, cancoderConfig, motionMagicConfig);
+      configureMotorWithCancoder(leader, config.leadConfig(), config.cancoderConfig(), config.motionMagicConfig());
       this.positionMotor = leader;
     }
-    this.subsystemName = subsystemName;
-    this.units = units;
+    this.subsystemName = config.subsystemName();
+    this.units = config.units();
   }
 
   @Override

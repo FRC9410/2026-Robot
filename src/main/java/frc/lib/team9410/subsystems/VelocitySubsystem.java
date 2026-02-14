@@ -6,8 +6,6 @@ package frc.lib.team9410.subsystems;
 
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 
-import java.util.List;
-
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -15,7 +13,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
-import frc.lib.team9410.configs.MotorConfig;
+import frc.lib.team9410.configs.VelocitySubsystemConfig;
 
 
 public class VelocitySubsystem extends PowerSubsystem {
@@ -25,25 +23,19 @@ public class VelocitySubsystem extends PowerSubsystem {
   private String subsystemName;
 
   /**
-   * Constructor that uses the leader motor already registered by the base from {@code config},
-   * and configures it with the given lead and motion magic configs.
+   * Constructor that uses the leader motor from the config and configures it with lead and motion
+   * magic settings from the same config.
    *
-   * @param config motor configs (first non-follower is the leader)
-   * @param leadConfig PID gains for the leader (ratios unused for velocity)
-   * @param motionMagicConfig motion magic acceleration (cruise velocity unused)
+   * @param config single config containing motor configs, lead, motion magic, and name
    */
-  public VelocitySubsystem(
-      List<MotorConfig> config,
-      LeadMotorConfig leadConfig,
-      MotionMagicConfig motionMagicConfig,
-      String subsystemName) {
-    super(config, subsystemName);
+  public VelocitySubsystem(VelocitySubsystemConfig config) {
+    super(config.motorConfigs(), config.subsystemName());
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
-      configureMotorForVelocity(leader, leadConfig, motionMagicConfig);
+      configureMotorForVelocity(leader, config.leadConfig(), config.motionMagicConfig());
       this.velocityMotor = leader;
     }
-    this.subsystemName = subsystemName;
+    this.subsystemName = config.subsystemName();
   }
 
   @Override
