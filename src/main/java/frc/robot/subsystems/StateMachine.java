@@ -28,15 +28,15 @@ public class StateMachine extends SubsystemBase {
   private RobotState previousState = RobotState.READY;
 
   // --- Position subsystems ---
-  public final PositionSubsystem turret = new PositionSubsystem(Constants.TurretConstants.TURRET_CONFIG);
-  public final PositionSubsystem shooterHood = new PositionSubsystem(Constants.ShooterConstants.HOOD_CONFIG);
-  public final PositionSubsystem intakeWrist = new PositionSubsystem(Constants.IntakeConstants.WRIST_CONFIG);
+  public final PositionSubsystem turret = new PositionSubsystem(Constants.Turret.TURRET_CONFIG);
+  public final PositionSubsystem shooterHood = new PositionSubsystem(Constants.Shooter.HOOD_CONFIG);
+  public final PositionSubsystem intakeWrist = new PositionSubsystem(Constants.Intake.WRIST_CONFIG);
 
   // --- Velocity subsystems ---
-  public final VelocitySubsystem shooter = new VelocitySubsystem(Constants.ShooterConstants.FLYWHEEL_CONFIG);
-  public final VelocitySubsystem intakeRoller = new VelocitySubsystem(Constants.IntakeConstants.ROLLER_CONFIG);
-  public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.SpindexerConstants.SPINDEXER_CONFIG);
-  public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.FeederConstants.FEEDER_CONFIG);
+  public final VelocitySubsystem shooter = new VelocitySubsystem(Constants.Shooter.FLYWHEEL_CONFIG);
+  public final VelocitySubsystem intakeRoller = new VelocitySubsystem(Constants.Intake.ROLLER_CONFIG);
+  public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.Spindexer.SPINDEXER_CONFIG);
+  public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.Feeder.FEEDER_CONFIG);
 
   // other
   private final LED led = new LED();
@@ -152,15 +152,15 @@ public class StateMachine extends SubsystemBase {
   public GameZone getZone (Pose2d pose) {
     double x = pose.getX();
 
-    if (Constants.FieldConstants.BLUE_START_X < x && Constants.FieldConstants.BLUE_END_X > x) {
+    if (Constants.Field.BLUE_START_X < x && Constants.Field.BLUE_END_X > x) {
       return GameZone.BLUE_ALLIANCE;
     }
 
-    if (Constants.FieldConstants.CENTER_START_X < x && Constants.FieldConstants.CENTER_END_X > x) {
+    if (Constants.Field.CENTER_START_X < x && Constants.Field.CENTER_END_X > x) {
       return GameZone.NEUTRAL;
     }
 
-    if (Constants.FieldConstants.RED_START_X < x && Constants.FieldConstants.RED_END_X > x) {
+    if (Constants.Field.RED_START_X < x && Constants.Field.RED_END_X > x) {
       return GameZone.RED_ALLIANCE;
     }
 

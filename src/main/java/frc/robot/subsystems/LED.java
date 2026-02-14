@@ -26,11 +26,11 @@ public class LED extends SubsystemBase {
   public LED() {
     candle =
         new CANdle(
-            Constants.LEDConstants.CANDLE_CAN_ID,
-            Constants.CanBusConstants.CANIVORE_BUS);
-    ledStartIndex = Constants.LEDConstants.STRIP_START_INDEX;
+            Constants.LED.CANDLE_CAN_ID,
+            Constants.CanBus.CANIVORE_BUS);
+    ledStartIndex = Constants.LED.STRIP_START_INDEX;
     ledEndIndex =
-        Constants.LEDConstants.STRIP_START_INDEX + Constants.LEDConstants.STRIP_LENGTH - 1;
+        Constants.LED.STRIP_START_INDEX + Constants.LED.STRIP_LENGTH - 1;
 
     PowerRobotContainer.setData("ledColor", mode.name());
   }

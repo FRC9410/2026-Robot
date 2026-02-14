@@ -63,7 +63,7 @@ public class PositionSubsystem extends PowerSubsystem {
       MotionMagicConfig motionMagicConfig) {
     @SuppressWarnings("resource") // CANcoder is fused to motor, lifecycle tied to subsystem
     CANcoder cancoder =
-        new CANcoder(cancoderConfig.encoderId(), Constants.CanBusConstants.CANIVORE_BUS);
+        new CANcoder(cancoderConfig.encoderId(), Constants.CanBus.CANIVORE_BUS);
 
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(

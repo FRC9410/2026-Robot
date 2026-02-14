@@ -15,8 +15,8 @@ public class TurretHelpers {
         double turretRadians = Math.toRadians(turretDegrees);
 
         return new Pose2d(
-            Constants.TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER + Math.cos(turretRadians) * Constants.TurretConstants.TURRET_RADIUS,
-            Math.sin(turretRadians) * Constants.TurretConstants.TURRET_RADIUS,
+            Constants.Turret.TURRET_DIST_FROM_ROBOT_CENTER + Math.cos(turretRadians) * Constants.Turret.TURRET_RADIUS,
+            Math.sin(turretRadians) * Constants.Turret.TURRET_RADIUS,
             Rotation2d.fromRadians(turretRadians)
         );
     }

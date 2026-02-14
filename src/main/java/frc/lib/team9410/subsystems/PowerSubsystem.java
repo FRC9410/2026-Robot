@@ -41,7 +41,7 @@ public abstract class PowerSubsystem extends SubsystemBase {
   protected PowerSubsystem(List<MotorConfig> configList, String subsystemName) {
     super();
 
-    this.bus = Constants.CanBusConstants.CANIVORE_BUS;
+    this.bus = Constants.CanBus.CANIVORE_BUS;
     this.motorsByCanId = new HashMap<>();
     this.subsystemName = subsystemName;
 

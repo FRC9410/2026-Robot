@@ -31,11 +31,11 @@ public class Vision extends SubsystemBase {
 
   public Vision() {
     leftLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.LEFT_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.LEFT_TABLE);
     rightLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.RIGHT_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.RIGHT_TABLE);
     turretLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.TURRET_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.TURRET_TABLE);
 
     tagIds =
         DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? redTagIds : blueTagIds;
@@ -106,11 +106,11 @@ public class Vision extends SubsystemBase {
 
   public NetworkTable getBestLimelight() {
     final NetworkTable leftLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.LEFT_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.LEFT_TABLE);
     final NetworkTable rightLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.RIGHT_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.RIGHT_TABLE);
     final NetworkTable turretLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.VisionConstants.TURRET_TABLE);
+        NetworkTableInstance.getDefault().getTable(Constants.Vision.TURRET_TABLE);
 
     LimelightHelpers.PoseEstimate leftPerimeterMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-left");
