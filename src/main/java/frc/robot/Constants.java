@@ -308,5 +308,4 @@ public final class Constants {
     public static final double AUTO_LENGTH_IN_TIME = 15;
     public static final double TIME_BETWEEN_SHIFTS = 25;
   }
-
 }

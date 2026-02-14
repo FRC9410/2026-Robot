@@ -93,7 +93,7 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   private void runSubsystem (VelocitySubsystem subsystem) {
-    System.out.println(subsystem.getClass().getName());
+    // System.out.println(subsystem.getClass().getName());
     subsystem.setVelocity(24);
   }
 
