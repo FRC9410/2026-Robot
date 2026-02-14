@@ -1,7 +1,10 @@
 package frc.robot.utils;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation3d;
+import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 
 public class TurretHelpers {
@@ -19,5 +22,25 @@ public class TurretHelpers {
             Math.sin(turretRadians) * Constants.Turret.TURRET_RADIUS,
             Rotation2d.fromRadians(turretRadians)
         );
+    }
+
+    /// DOES NOT PREDICT FOR VELO
+    public static double getRotationToTargetDirect () {
+        return 0.0;
+    }
+
+    /// DOES NOT PREDICT FOR VELO
+    public static double getElevationToTarget () {
+        return 0.0;
+    }
+
+    /// sets prc.data("turretTarget") as Translation3d
+    public static void setTarget (Translation3d pos) {
+        PowerRobotContainer.setData("turretTarget", pos);
+    }
+
+    /// does nothing as of now
+    public static double predictRotationToTarget () {
+        return 0.0;
     }
 }

@@ -24,7 +24,6 @@ public class RobotContainer implements PowerRobotContainer {
 
   /** Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via {@link #startGameTimer()}. */
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
-  private final Timer gameTimer = new Timer();
 
   // Controller
   private final CommandXboxController DriverController = new CommandXboxController(0);
@@ -59,28 +58,5 @@ public class RobotContainer implements PowerRobotContainer {
 
   public StateMachine getStateMachine() {
     return stateMachine;
-  }
-
-  /** Call when the match starts (e.g. from Robot.java on first enable) to start the game timer. */
-  public void startGameTimer() {
-    if (!gameTimer.isRunning()) {
-      gameTimer.reset(); // start from 0
-      gameTimer.start();
-    }
-  }
-
-  /** Same as {@link #getGameTime()} — elapsed seconds counting up from 0. */
-  public double getGameTimeElapsed() {
-    return gameTimer.get();
-  }
-
-  /** Remaining game time in seconds (0 when elapsed >= 2:40). */
-  public double getGameTimeRemaining() {
-    return Math.max(0, GAME_DURATION_SECONDS - gameTimer.get());
-  }
-
-  /** True when elapsed time has reached or passed 2 minutes 40 seconds. */
-  public boolean isGameTimeUp() {
-    return gameTimer.get() >= GAME_DURATION_SECONDS;
   }
 }

@@ -47,5 +47,9 @@ public class Dashboard extends SubsystemBase {
     // testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null"));
     testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null"));
     testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
+
+    testingTable.getEntry("matchTime").setDouble(DriverStation.getMatchTime());
+    testingTable.getEntry("matchLocation").setValue(DriverStation.getLocation().getAsInt());
+    testingTable.getEntry("matchMessage").setString(DriverStation.getGameSpecificMessage());
   }
 }

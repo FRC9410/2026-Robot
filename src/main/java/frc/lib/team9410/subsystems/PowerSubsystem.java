@@ -198,4 +198,20 @@ public abstract class PowerSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {}
+
+  public boolean isMotorRunning (int id) {
+    return motorsByCanId.get(id).getVelocity().getValueAsDouble() == 0.0;
+  }
+
+  public boolean isAllMotorsRunning () {
+    for (int key : motorsByCanId.keySet()) {
+      
+      if (!isMotorRunning(key)) {
+        return false; 
+      }
+
+    }
+
+    return true;
+  }
 }

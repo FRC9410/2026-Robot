@@ -4,7 +4,10 @@
 
 package frc.robot.subsystems;
 
+import java.util.Optional;
+
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -12,6 +15,7 @@ import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.Constants;
+import frc.robot.utils.TurretHelpers;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
 public class StateMachine extends SubsystemBase {
@@ -43,7 +47,10 @@ public class StateMachine extends SubsystemBase {
   private final Vision vision = new Vision();
   private final Dashboard dashboard = new Dashboard();
 
-  public StateMachine() {}
+  private boolean winAuto = true;
+
+  public StateMachine() {
+  }
 
   @Override
   public void periodic() {
@@ -70,7 +77,7 @@ public class StateMachine extends SubsystemBase {
     switch (currentState) {
       case READY:
         executeReady();
-        break; 
+        break;
       case SCORING:
         executeShooting();
         break;
@@ -85,7 +92,8 @@ public class StateMachine extends SubsystemBase {
     }
   }
 
-  private void executeReady() {}
+  private void executeReady() {
+  }
 
   private void executeShooting() {
     Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
@@ -96,14 +104,55 @@ public class StateMachine extends SubsystemBase {
     GameZone zone = getZone(pose);
 
     if (getAllianceZone() == zone) { // we are in our zone
-      // if ()
+      if (isHubActive()) {
+        // remember to check for balls
+        
+        if (!shooter.isAllMotorsRunning()) {
+          shooter.setVelocity(1); //placeholder
+        }
+      } else {
+        if (shooter.isAllMotorsRunning()) {
+          shooter.stopAll();
+        }
+      }
     } else { // we are not in our zone
-      
+      if (shooter.isAllMotorsRunning()) {
+        shooter.stopAll(); // stop shooter flywheels
+      }
     }
   }
 
   private void executePassing() {
+    Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
+    if (PowerRobotContainer.getData("robotPose") == null) {
+      return; // pose hasnt been updated yet
+    }
 
+    GameZone zone = getZone(pose);
+
+    if (getAllianceZone() == zone) { // we are in our zone
+      if (shooter.isAllMotorsRunning()) {
+        shooter.stopAll();
+      }
+    } else { // we are not in our zone
+      if (!shooter.isAllMotorsRunning()) {
+        shooter.setVelocity(1); // placeholder i think
+      }
+
+      if (pose.getY() > 4.0) { // we are on top half of field
+        if (isBlueAlliance()) {
+          TurretHelpers.setTarget(Constants.Field.BLUE_TOP_CORNER);
+        } else {
+          TurretHelpers.setTarget(Constants.Field.BLUE_BOTTOM_CORNER);
+        }
+      } else { // bottom half of the field
+        if (isBlueAlliance()) {
+          TurretHelpers.setTarget(Constants.Field.RED_TOP_CORNER);
+        } else {
+          TurretHelpers.setTarget(Constants.Field.RED_BOTTOM_CORNER);
+        }
+      }
+    }
   }
 
   private void executeClimbing() {
@@ -128,13 +177,14 @@ public class StateMachine extends SubsystemBase {
 
   /** Convenience: is the robot on the blue alliance? */
   public boolean isBlueAlliance() {
-    if (DriverStation.getAlliance().isEmpty()) return true;
+    if (DriverStation.getAlliance().isEmpty())
+      return true;
     return DriverStation.getAlliance().get
-    
+
     () == Alliance.Blue;
   }
 
-  public GameZone getAllianceZone () {
+  public GameZone getAllianceZone() {
     if (isBlueAlliance()) {
       return GameZone.BLUE_ALLIANCE;
     } else {
@@ -149,7 +199,7 @@ public class StateMachine extends SubsystemBase {
     INTERCHANGE // not in any specific zone, between alliance and neutral aka going over bump
   }
 
-  public GameZone getZone (Pose2d pose) {
+  public GameZone getZone(Pose2d pose) {
     double x = pose.getX();
 
     if (Constants.Field.BLUE_START_X < x && Constants.Field.BLUE_END_X > x) {
@@ -165,5 +215,67 @@ public class StateMachine extends SubsystemBase {
     }
 
     return GameZone.INTERCHANGE;
+  }
+
+  // thanks wpilib
+  // https://docs.wpilib.org/en/stable/docs/yearly-overview/2026-game-data.html
+  public boolean isHubActive() {
+    Optional<Alliance> alliance = DriverStation.getAlliance();
+    // If we have no alliance, we cannot be enabled, therefore no hub.
+    if (alliance.isEmpty()) {
+      return false;
+    }
+    // Hub is always enabled in autonomous.
+    if (DriverStation.isAutonomousEnabled()) {
+      return true;
+    }
+    // At this point, if we're not teleop enabled, there is no hub.
+    if (!DriverStation.isTeleopEnabled()) {
+      return false;
+    }
+
+    // We're teleop enabled, compute.
+    double matchTime = DriverStation.getMatchTime();
+    String gameData = DriverStation.getGameSpecificMessage();
+    // If we have no game data, we cannot compute, assume hub is active, as its
+    // likely early in teleop.
+    if (gameData.isEmpty()) {
+      return true;
+    }
+    boolean redInactiveFirst = false;
+    switch (gameData.charAt(0)) {
+      case 'R' -> redInactiveFirst = true;
+      case 'B' -> redInactiveFirst = false;
+      default -> {
+        // If we have invalid game data, assume hub is active.
+        return true;
+      }
+    }
+
+    // Shift was is active for blue if red won auto, or red if blue won auto.
+    boolean shift1Active = switch (alliance.get()) {
+      case Red -> !redInactiveFirst;
+      case Blue -> redInactiveFirst;
+    };
+
+    if (matchTime > 130) {
+      // Transition shift, hub is active.
+      return true;
+    } else if (matchTime > 105) {
+      // Shift 1
+      return shift1Active;
+    } else if (matchTime > 80) {
+      // Shift 2
+      return !shift1Active;
+    } else if (matchTime > 55) {
+      // Shift 3
+      return shift1Active;
+    } else if (matchTime > 30) {
+      // Shift 4
+      return !shift1Active;
+    } else {
+      // End game, hub always active.
+      return true;
+    }
   }
 }

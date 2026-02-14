@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -30,9 +31,6 @@ public class Robot extends TimedRobot {
     SignalLogger.writeDouble("Voltage", RobotController.getBatteryVoltage(), "V");
     SignalLogger.writeDouble("CAN Utilization", RobotController.getCANStatus().percentBusUtilization, "%");
     SignalLogger.writeDouble("CAN Error Count", RobotController.getCANStatus().receiveErrorCount, "#");
-
-    m_robotContainer.startGameTimer(); 
-    // m_robotContainer.updateSharedData();
 
     CommandScheduler.getInstance().run();
   }

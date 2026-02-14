@@ -83,4 +83,8 @@ public class VelocitySubsystem extends PowerSubsystem {
   public TalonFX getVelocityMotor() {
     return velocityMotor;
   }
+
+  public boolean isRunning () {
+    return velocityMotor.getVelocity().getValueAsDouble() <= 0.1;
+  }
 }
