@@ -82,6 +82,9 @@ public class RobotContainer implements PowerRobotContainer {
     configureBindings();
     configureTestBindings();
 
+    PowerRobotContainer.setData("spindexerVelocity", 24);
+    PowerRobotContainer.setData("feederVelocity", 24);
+    PowerRobotContainer.setData("shooterVelocity", 24);
   }
 
   private void configureBindings() {
@@ -89,15 +92,20 @@ public class RobotContainer implements PowerRobotContainer {
 
   }
 
+  private void runSubsystem (VelocitySubsystem subsystem) {
+    System.out.println(subsystem.getClass().getName());
+    subsystem.setVelocity(24);
+  }
+
   private void configureTestBindings() {
     TestController.a().toggleOnTrue(new InstantCommand(
-      () -> spindexer.setVelocity(24)
+      () -> runSubsystem(spindexer)
     ));
-     TestController.b().toggleOnTrue(new InstantCommand(
-      () -> feeder.setVelocity(24)
+    TestController.b().toggleOnTrue(new InstantCommand(
+      () -> runSubsystem(feeder)
     ));
-     TestController.y().toggleOnTrue(new InstantCommand(
-      () -> shooter.setVelocity(24)
+    TestController.y().toggleOnTrue(new InstantCommand(
+      () -> runSubsystem(shooter)
     ));
   }
 

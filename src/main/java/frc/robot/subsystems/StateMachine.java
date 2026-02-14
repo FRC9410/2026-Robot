@@ -31,6 +31,7 @@ public class StateMachine extends SubsystemBase {
   public void periodic() {
     handleStateTransitions();
     executeState();
+    PowerRobotContainer.setData("robotState", currentState.name());
   }
 
   private void handleStateTransitions() {
@@ -38,7 +39,6 @@ public class StateMachine extends SubsystemBase {
       previousState = currentState;
       if (canTransitionTo(wantedState)) {
         currentState = wantedState;
-        PowerRobotContainer.setData("robotState", currentState);
       }
     }
   }

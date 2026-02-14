@@ -31,13 +31,15 @@ public class LED extends SubsystemBase {
     ledStartIndex = Constants.LEDConstants.STRIP_START_INDEX;
     ledEndIndex =
         Constants.LEDConstants.STRIP_START_INDEX + Constants.LEDConstants.STRIP_LENGTH - 1;
+
+    PowerRobotContainer.setData("ledColor", mode.name());
   }
 
   @Override
   public void periodic() {}
   
   public void updateColorMode() {
-    PowerRobotContainer.setData("ledColor", mode.toString());
+    PowerRobotContainer.setData("ledColor", mode.name());
 
     switch (mode) {
       case OFF:

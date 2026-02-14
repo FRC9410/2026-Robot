@@ -25,11 +25,7 @@ public class Dashboard extends SubsystemBase {
     table = inst.getTable("Scoring");
     drivingTable = inst.getTable("Driving PIDs");
     testingTable = inst.getTable("Robot Testing");
-
-    testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null").toString());
-    testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null").toString());
-    testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null").toString());
-    testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
+    testingTable.getEntry("eeee").setDouble(0);
   }
 
   @Override
@@ -39,10 +35,11 @@ public class Dashboard extends SubsystemBase {
 
   private void updateTestingDashboard() {
 
-    // testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null").toString());
+    testingTable.getEntry("robotState").setString(PowerRobotContainer.getData("robotState", "robotState is null"));
     // testingTable.getEntry("robotPose").setValue(PowerRobotContainer.getData("robotPose", "robotPose is null"));
-    // testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null").toString());
+    testingTable.getEntry("ledColor").setString(PowerRobotContainer.getData("ledColor", "ledColor is null"));
     testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
+    
   }
 
  
