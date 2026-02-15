@@ -51,8 +51,7 @@ public class StateMachine extends SubsystemBase {
 
   private boolean winAuto = true;
 
-  public StateMachine() {
-  }
+  public StateMachine() {}
 
   @Override
   public void periodic() {
