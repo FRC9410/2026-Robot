@@ -41,6 +41,7 @@ public class VelocitySubsystem extends PowerSubsystem {
   @Override
   public void periodic() {
     SignalLogger.writeDouble(subsystemName + " Velocity", getLeaderMotor().getRotorVelocity().getValueAsDouble(), "rotations per second");
+    PowerRobotContainer.setData(subsystemName + "Velocity", getLeaderMotor().getRotorVelocity().getValueAsDouble());
   }
 
   /**

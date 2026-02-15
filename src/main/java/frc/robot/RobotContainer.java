@@ -25,8 +25,6 @@ public class RobotContainer implements PowerRobotContainer {
   private final CommandXboxController DriverController = new CommandXboxController(0);
   private final CommandXboxController TestController = new CommandXboxController(5);
 
-  public final Swerve drivetrain = TunerConstants.createDrivetrain();
-
   public RobotContainer() {
     configureBindings();
     configureTestBindings();

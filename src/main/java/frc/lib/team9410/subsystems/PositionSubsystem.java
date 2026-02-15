@@ -18,6 +18,7 @@ import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import frc.robot.Constants;
+import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.configs.CancoderConfig;
 import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
@@ -50,6 +51,7 @@ public class PositionSubsystem extends PowerSubsystem {
   @Override
   public void periodic() {
     SignalLogger.writeDouble(subsystemName + " Position", getLeaderMotor().getPosition().getValueAsDouble(), units);
+    PowerRobotContainer.setData(subsystemName + "Position", getLeaderMotor().getPosition().getValueAsDouble());
   }
 
   /**
