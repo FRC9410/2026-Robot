@@ -22,7 +22,7 @@ public class TurretConstants {
   public static final double TURRET_SENSOR_TO_MECHANISM_RATIO = 1;
   public static final double TURRET_ROTOR_TO_SENSOR_RATIO = 1;
 
-  public static final double TURRET_MM_CRUISE_VELOCITY = 20;
+  public static final double TURRET_MM_CRUISE_VELOCITY = 0.01;
   public static final double TURRET_MM_ACCELERATION = 40;
   public static final double TURRET_MAGNET_OFFSET_ROTATIONS = -0.1;
   public static final double TURRET_DISCONTINUITY_POINT_ROTATIONS = 1.0;

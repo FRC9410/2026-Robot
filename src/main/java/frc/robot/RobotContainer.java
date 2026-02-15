@@ -4,17 +4,13 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import frc.robot.subsystems.Dashboard;
-import frc.robot.subsystems.LED;
+import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.StateMachine;
-import frc.lib.team9410.subsystems.PositionSubsystem;
-import frc.lib.team9410.subsystems.VelocitySubsystem;
-import frc.robot.subsystems.Vision;
+import frc.robot.subsystems.Swerve;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 
 public class RobotContainer implements PowerRobotContainer {
@@ -28,6 +24,8 @@ public class RobotContainer implements PowerRobotContainer {
   // Controller
   private final CommandXboxController DriverController = new CommandXboxController(0);
   private final CommandXboxController TestController = new CommandXboxController(5);
+
+  public final Swerve drivetrain = TunerConstants.createDrivetrain();
 
   public RobotContainer() {
     configureBindings();

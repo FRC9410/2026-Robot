@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -15,6 +14,7 @@ import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.Constants;
+import frc.robot.constants.TunerConstants;
 import frc.robot.utils.TurretHelpers;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
@@ -46,6 +46,8 @@ public class StateMachine extends SubsystemBase {
   private final LED led = new LED();
   private final Vision vision = new Vision();
   private final Dashboard dashboard = new Dashboard();
+
+  public final Swerve drivetrain = TunerConstants.createDrivetrain();
 
   private boolean winAuto = true;
 
