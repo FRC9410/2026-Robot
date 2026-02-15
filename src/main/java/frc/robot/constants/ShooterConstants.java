@@ -16,7 +16,6 @@ public class ShooterConstants {
   public static final int HOOD_ENCODER_CAN_ID = 53;
   public static final int PRIMARY_FLYWHEELS_CAN_ID = 51;
   public static final int SECONDARY_FLYWHEELS_CAN_ID = 52;
-  public static final int ENCODER_CAN_ID = 53;
 
   // Flywheel velocity PID
   public static final double FLYWHEEL_KP = 0.1;
@@ -41,7 +40,7 @@ public class ShooterConstants {
   public static final double HOOD_KD = 0;
   public static final double HOOD_KG = 0;
   public static final double HOOD_SENSOR_TO_MECHANISM_RATIO = 1;
-  public static final double HOOD_ROTOR_TO_SENSOR_RATIO = 1;
+  public static final double HOOD_ROTOR_TO_SENSOR_RATIO = 60;
   public static final double HOOD_MM_CRUISE_VELOCITY = 0.01;
   public static final double HOOD_MM_ACCELERATION = 40;
   public static final double HOOD_MAGNET_OFFSET_ROTATIONS = -0.1;
