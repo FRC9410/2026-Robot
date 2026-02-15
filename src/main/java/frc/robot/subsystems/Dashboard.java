@@ -49,7 +49,18 @@ public class Dashboard extends SubsystemBase {
     testingTable.getEntry("timeToShift").setDouble(PowerRobotContainer.getData("timeToShift", -1.0));
 
     testingTable.getEntry("matchTime").setDouble(DriverStation.getMatchTime());
-    testingTable.getEntry("matchLocation").setValue(DriverStation.getLocation().getAsInt());
+    // testingTable.getEntry("matchLocation").setValue(DriverStation.getLocation().getAsInt());
     testingTable.getEntry("matchMessage").setString(DriverStation.getGameSpecificMessage());
+
+    // pos
+    testingTable.getEntry("turretEncoder").setDouble(PowerRobotContainer.getData("TurretPosition", -1.0));
+    testingTable.getEntry("shooterHoodEncoder").setDouble(PowerRobotContainer.getData("Shooter HoodPosition", -1.0));
+    testingTable.getEntry("intakeWristEncoder").setDouble(PowerRobotContainer.getData("Intake WristPosition", -1.0));
+
+    // velo
+    testingTable.getEntry("shooterVelocity").setDouble(PowerRobotContainer.getData("ShooterVelocity", -1.0));
+    testingTable.getEntry("intakeRollerVelocity").setDouble(PowerRobotContainer.getData("Intake RollerVelocity", -1.0));
+    testingTable.getEntry("spindexerVelocity").setDouble(PowerRobotContainer.getData("SpindexerVelocity", -1.0));
+    testingTable.getEntry("feederVelocity").setDouble(PowerRobotContainer.getData("FeederVelocity", -1.0));
   }
 }
