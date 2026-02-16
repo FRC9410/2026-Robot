@@ -95,7 +95,9 @@ public class PositionSubsystem extends PowerSubsystem {
     BaseStatusSignal.setUpdateFrequencyForAll(100, cancoder.getPosition(), cancoder.getVelocity());
     motor.setNeutralMode(NeutralModeValue.Brake);
 
-    motor.setControl(new MotionMagicVoltage(0).withPosition(0.07).withSlot(0));
+    double currentPos = motor.getPosition().getValueAsDouble();
+
+    motor.setControl(new MotionMagicVoltage(0).withPosition(currentPos).withSlot(0));
   }
 
   /**

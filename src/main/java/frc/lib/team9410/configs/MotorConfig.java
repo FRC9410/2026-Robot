@@ -55,4 +55,13 @@ public class MotorConfig {
   public static MotorConfig follower(int canId) {
     return new MotorConfig(canId, NeutralModeValue.Brake, true, false);
   }
+
+  /**
+   * Creates a follower motor config (no neutral mode/direction applied at config level).
+   *
+   * @param canId CAN ID of the follower motor
+   */
+  public static MotorConfig follower(int canId, boolean reversed) {
+    return new MotorConfig(canId, NeutralModeValue.Brake, true, reversed);
+  }
 }

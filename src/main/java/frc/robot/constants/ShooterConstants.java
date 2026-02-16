@@ -26,7 +26,7 @@ public class ShooterConstants {
 
   public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
       MotorConfig.leader(PRIMARY_FLYWHEELS_CAN_ID, NeutralModeValue.Coast),
-      MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID));
+      MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID, true));
 
   public static final LeadMotorConfig FLYWHEEL_LEAD_CONFIG = new LeadMotorConfig(
       FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, 1.0, 1.0);
