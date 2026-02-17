@@ -24,6 +24,13 @@ public class RobotContainer implements PowerRobotContainer {
   // --- Other ---
   private final StateMachine stateMachine = new StateMachine();
 
+  private boolean spindexerOn = false;
+  private boolean shooterOn = false;
+  private boolean feederOn = false;
+  private boolean intakeOn = false;
+  private boolean shooterHoodOn = false;
+  private boolean turretOn = false;
+
   /** Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via {@link #startGameTimer()}. */
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
 
@@ -46,15 +53,80 @@ public class RobotContainer implements PowerRobotContainer {
 
   }
 
+
   private void configureTestBindings() {
-    TestController.a().toggleOnTrue(new InstantCommand(
-      () -> stateMachine.spindexer.setVelocity(24)
+    TestController.a().onTrue(new InstantCommand(
+      () -> {
+        if (spindexerOn) {
+          stateMachine.spindexer.stopVelocity();
+        } else {
+          stateMachine.spindexer.setVelocity(175);
+        }
+
+        spindexerOn = !spindexerOn;
+      }
     ));
-     TestController.b().toggleOnTrue(new InstantCommand(
-      () -> stateMachine.feeder.setVelocity(24)
+     TestController.b().onTrue(new InstantCommand(
+      () -> {
+        if (feederOn) {
+          stateMachine.feeder.stopVelocity();
+        } else {
+          stateMachine.feeder.setVelocity(200);
+        }
+
+        feederOn = !feederOn;
+      }
     ));
-     TestController.y().toggleOnTrue(new InstantCommand(
-      () -> stateMachine.shooter.setVelocity(24)
+      TestController.leftBumper().onTrue(new InstantCommand(
+      () -> {
+        if (turretOn) {
+          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MIN);
+        } else {
+          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+        }
+
+        turretOn = !turretOn;
+      }
+    ));
+
+        
+
+
+
+
+
+     TestController.y().onTrue(new InstantCommand(
+      () -> {
+        if (shooterOn) {
+          stateMachine.shooter.stopVelocity();
+        } else {
+          stateMachine.shooter.setVelocity(-100);
+        }
+
+        shooterOn = !shooterOn;
+      }
+    ));
+    TestController.x().onTrue(new InstantCommand(
+      () -> {
+        if (intakeOn) {
+          stateMachine.intakeRoller.stopVelocity();
+        } else {
+          stateMachine.intakeRoller.setVelocity(100); // 200 works if needed or wanted
+        }
+
+        intakeOn = !intakeOn;
+      }
+    ));
+    TestController.rightBumper().onTrue(new InstantCommand(
+      () -> {
+        if (shooterHoodOn) {
+          stateMachine.shooterHood.setPositionRotations(0.05);
+        } else {
+          stateMachine.shooterHood.setPositionRotations(Constants.Shooter.SHOOTER_HOOD_MIN);
+        }
+
+        shooterHoodOn = !shooterHoodOn;
+      }
     ));
   }
   

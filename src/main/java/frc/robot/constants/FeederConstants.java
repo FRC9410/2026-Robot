@@ -15,11 +15,11 @@ public class FeederConstants {
   public static final int CANDI1_CAN_ID = 42;
   public static final int CANDI2_CAN_ID = 43;
 
-  public static final double FEEDER_KP = 0.1;
+  public static final double FEEDER_KP = 0.4;
   public static final double FEEDER_KI = 0;
   public static final double FEEDER_KD = 0;
   public static final double FEEDER_KG = 0;
-  public static final double FEEDER_MM_ACCELERATION = 40;
+  public static final double FEEDER_MM_ACCELERATION = 200;
 
   public static final List<MotorConfig> MOTOR_CONFIGS = List.of(
       MotorConfig.leader(PRIMARY_CAN_ID, NeutralModeValue.Coast),

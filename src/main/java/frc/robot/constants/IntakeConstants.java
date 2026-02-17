@@ -22,12 +22,15 @@ public class IntakeConstants {
   public static final double INTAKE_ROLLER_OUTPUT = 0.8;
   public static final double ROLLER_TARGET_RPS = 10;
 
+  public static final double INTAKE_MIN = -0.09;
+  public static final double INTAKE_MAX = -0.44;
+
   // Roller velocity PID
-  public static final double ROLLER_KP = 0.1;
+  public static final double ROLLER_KP = 0.4;
   public static final double ROLLER_KI = 0;
   public static final double ROLLER_KD = 0;
   public static final double ROLLER_KG = 0;
-  public static final double ROLLER_MM_ACCELERATION = 30;
+  public static final double ROLLER_MM_ACCELERATION = 200;
 
   public static final List<MotorConfig> ROLLER_MOTOR_CONFIGS = List.of(
       MotorConfig.leader(ROLLER_CAN_ID, NeutralModeValue.Coast));
@@ -39,15 +42,15 @@ public class IntakeConstants {
       MotionMagicConfig.forVelocity(ROLLER_MM_ACCELERATION);
 
   // Wrist PID
-  public static final double WRIST_KP = 20;
+  public static final double WRIST_KP = 30;
   public static final double WRIST_KI = 0;
   public static final double WRIST_KD = 0;
   public static final double WRIST_KG = 0;
-  public static final double WRIST_SENSOR_TO_MECHANISM_RATIO = 1;
+  public static final double WRIST_SENSOR_TO_MECHANISM_RATIO = -1;
   public static final double WRIST_ROTOR_TO_SENSOR_RATIO = 44.444;
-  public static final double WRIST_MM_CRUISE_VELOCITY = 0.01;
-  public static final double WRIST_MM_ACCELERATION = 40;
-  public static final double WRIST_MAGNET_OFFSET_ROTATIONS = -0.1;
+  public static final double WRIST_MM_CRUISE_VELOCITY = 5;
+  public static final double WRIST_MM_ACCELERATION = 20;
+  public static final double WRIST_MAGNET_OFFSET_ROTATIONS = 0.285;
   public static final double WRIST_DISCONTINUITY_POINT_ROTATIONS = 1.0;
 
   public static final List<MotorConfig> WRIST_MOTOR_CONFIGS = List.of(

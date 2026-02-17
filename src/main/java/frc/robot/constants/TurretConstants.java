@@ -14,21 +14,24 @@ public class TurretConstants {
   public static final int MOTOR_ID = 60;
   public static final int ENCODER_ID = 61;
 
-  public static final double TURRET_KP = 20;
+  public static final double TURRET_KP = 54;
   public static final double TURRET_KI = 0;
   public static final double TURRET_KD = 0;
   public static final double TURRET_KG = 0;
 
-  public static final double TURRET_SENSOR_TO_MECHANISM_RATIO = 1;
+  public static final double TURRET_MIN = -0.481;
+  public static final double TURRET_MAX = 0.46;
+
+  public static final double TURRET_SENSOR_TO_MECHANISM_RATIO = -1;
   public static final double TURRET_ROTOR_TO_SENSOR_RATIO = 51;
 
-  public static final double TURRET_MM_CRUISE_VELOCITY = 0.01;
-  public static final double TURRET_MM_ACCELERATION = 40;
-  public static final double TURRET_MAGNET_OFFSET_ROTATIONS = -0.1;
+  public static final double TURRET_MM_CRUISE_VELOCITY = 5;
+  public static final double TURRET_MM_ACCELERATION = 60;
+  public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.701;
   public static final double TURRET_DISCONTINUITY_POINT_ROTATIONS = 1.0;
 
   public static final List<MotorConfig> TURRET_MOTOR_CONFIGS = List.of(
-      MotorConfig.leader(MOTOR_ID, NeutralModeValue.Brake));
+      MotorConfig.leader(MOTOR_ID, NeutralModeValue.Brake, true));
 
   public static final LeadMotorConfig TURRET_LEAD_CONFIG = new LeadMotorConfig(
       TURRET_KP, TURRET_KI, TURRET_KD, TURRET_KG,

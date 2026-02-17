@@ -48,6 +48,16 @@ public class MotorConfig {
   }
 
   /**
+   * Creates a leader motor config (not a follower, not reversed).
+   *
+   * @param canId CAN ID of the motor
+   * @param neutralMode brake or coast
+   */
+  public static MotorConfig leader(int canId, NeutralModeValue neutralMode, boolean isReversed) {
+    return new MotorConfig(canId, neutralMode, false, isReversed);
+  }
+
+  /**
    * Creates a follower motor config (no neutral mode/direction applied at config level).
    *
    * @param canId CAN ID of the follower motor

@@ -5,8 +5,10 @@
 package frc.lib.team9410.subsystems;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.MotorAlignmentValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -51,7 +53,7 @@ public abstract class PowerSubsystem extends SubsystemBase {
         if (this.leaderCanId == null) {
           this.leaderCanId = motorConfig.canId();
         }
-        registerMotor(motorConfig.canId(), motorConfig.neutralMode());
+        registerMotor(motorConfig.canId(), motorConfig.neutralMode(), motorConfig.isReversed());
       }
     }
 
@@ -115,6 +117,21 @@ public abstract class PowerSubsystem extends SubsystemBase {
     motorsByCanId.put(canId, motor);
     return motor;
   }
+
+  public TalonFX registerMotor(int canId, NeutralModeValue neutralMode, boolean isInverted) {
+    if (leaderCanId == null) {
+      leaderCanId = canId;
+    }
+    TalonFX motor = createTalonFx(canId, neutralMode);
+    if (isInverted) {
+      TalonFXConfiguration cfg = new TalonFXConfiguration();
+      cfg.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
+      motor.getConfigurator().apply(cfg);
+    }
+    motorsByCanId.put(canId, motor);
+    return motor;
+  }
+  
 
   /**
    * Registers an existing TalonFX under a CAN ID so it can be controlled by {@link #setOutput(int,

@@ -18,7 +18,7 @@ public class SpindexerConstants {
   public static final double SPINDEXER_KI = 0;
   public static final double SPINDEXER_KD = 0;
   public static final double SPINDEXER_KG = 0;
-  public static final double SPINDEXER_MM_ACCELERATION = 30;
+  public static final double SPINDEXER_MM_ACCELERATION = 200;
 
   public static final List<MotorConfig> SPINDEXER_MOTOR_CONFIGS = List.of(
       MotorConfig.leader(CAN_ID, NeutralModeValue.Brake));

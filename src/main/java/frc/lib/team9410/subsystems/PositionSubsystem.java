@@ -70,7 +70,7 @@ public class PositionSubsystem extends PowerSubsystem {
     CANcoderConfiguration encoderConfig = new CANcoderConfiguration();
     encoderConfig.MagnetSensor.withAbsoluteSensorDiscontinuityPoint(
         Rotations.of(cancoderConfig.discontinuityPointRotations()));
-    encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
+    encoderConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
     encoderConfig.MagnetSensor.withMagnetOffset(Rotations.of(cancoderConfig.magnetOffsetRotations()));
     cancoder.getConfigurator().apply(encoderConfig);
 
