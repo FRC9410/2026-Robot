@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.StateMachine.RobotState;
 import frc.robot.utils.CommandBuilder;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
@@ -35,11 +36,11 @@ public class RobotContainer implements PowerRobotContainer {
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
 
   // Controller
-  private final CommandXboxController DriverController = new CommandXboxController(0);
-  private final CommandXboxController TestController = new CommandXboxController(5);
+  private final CommandXboxController driverController = new CommandXboxController(0);
+  private final CommandXboxController testController = new CommandXboxController(5);
 
   private final SendableChooser<SequentialCommandGroup> autoChooser = 
-    new AutoBuilder(stateMachine.drivetrain, TestController, stateMachine).build();
+    new AutoBuilder(stateMachine.drivetrain, testController, stateMachine).build();
 
   public RobotContainer() {
     configureBindings();
@@ -49,13 +50,38 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   private void configureBindings() {
-    
+    driverController.rightTrigger(0.5)
+    .or(driverController.leftTrigger(0.5))
+      .onTrue(new InstantCommand(
+        () -> {
+          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+          stateMachine.intakeRoller.setVelocity(125);
+        }
+      ))
+      .onFalse(new InstantCommand(
+        () -> {
+          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+          stateMachine.intakeRoller.brake();
+        }
+      ));
 
+    driverController.leftBumper().onTrue(new InstantCommand(
+      ()-> {
+        stateMachine.setWantedState(RobotState.PASSING);
+      }
+    ));
+    driverController.rightBumper().onTrue(new InstantCommand(
+      ()-> {
+        stateMachine.setWantedState(RobotState.SCORING);
+      }
+    ));
+
+    
   }
 
 
   private void configureTestBindings() {
-    TestController.a().onTrue(new InstantCommand(
+    testController.a().onTrue(new InstantCommand(
       () -> {
         if (spindexerOn) {
           stateMachine.spindexer.stopVelocity();
@@ -66,7 +92,7 @@ public class RobotContainer implements PowerRobotContainer {
         spindexerOn = !spindexerOn;
       }
     ));
-     TestController.b().onTrue(new InstantCommand(
+     testController.b().onTrue(new InstantCommand(
       () -> {
         if (feederOn) {
           stateMachine.feeder.stopVelocity();
@@ -77,7 +103,7 @@ public class RobotContainer implements PowerRobotContainer {
         feederOn = !feederOn;
       }
     ));
-      TestController.leftBumper().onTrue(new InstantCommand(
+      testController.leftBumper().onTrue(new InstantCommand(
       () -> {
         if (turretOn) {
           stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MIN);
@@ -89,13 +115,7 @@ public class RobotContainer implements PowerRobotContainer {
       }
     ));
 
-        
-
-
-
-
-
-     TestController.y().onTrue(new InstantCommand(
+     testController.y().onTrue(new InstantCommand(
       () -> {
         if (shooterOn) {
           stateMachine.shooter.stopVelocity();
@@ -106,7 +126,7 @@ public class RobotContainer implements PowerRobotContainer {
         shooterOn = !shooterOn;
       }
     ));
-    TestController.x().onTrue(new InstantCommand(
+    testController.x().onTrue(new InstantCommand(
       () -> {
         if (intakeOn) {
           stateMachine.intakeRoller.stopVelocity();
@@ -117,7 +137,7 @@ public class RobotContainer implements PowerRobotContainer {
         intakeOn = !intakeOn;
       }
     ));
-    TestController.rightBumper().onTrue(new InstantCommand(
+    testController.rightBumper().onTrue(new InstantCommand(
       () -> {
         if (shooterHoodOn) {
           stateMachine.shooterHood.setPositionRotations(0.05);

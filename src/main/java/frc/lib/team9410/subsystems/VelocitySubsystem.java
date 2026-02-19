@@ -5,11 +5,13 @@
 package frc.lib.team9410.subsystems;
 
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
-
+import com.ctre.phoenix6.controls.NeutralOut;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
 import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
@@ -21,7 +23,7 @@ public class VelocitySubsystem extends PowerSubsystem {
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
   private String subsystemName;
-
+  private static final NeutralOut brake = new NeutralOut();
   /**
    * Constructor that uses the leader motor from the config and configures it with lead and motion
    * magic settings from the same config.
@@ -87,5 +89,9 @@ public class VelocitySubsystem extends PowerSubsystem {
 
   public boolean isRunning () {
     return velocityMotor.getVelocity().getValueAsDouble() <= 0.1;
+  }
+  
+  public void brake () {
+    velocityMotor.setControl(brake);
   }
 }
