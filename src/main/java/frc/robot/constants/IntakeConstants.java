@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -24,6 +25,7 @@ public class IntakeConstants {
 
   public static final double INTAKE_MIN = -0.09;
   public static final double INTAKE_MAX = -0.44;
+  public static final double INTAKE_DEFAULT = INTAKE_MIN;
 
   // Roller velocity PID
   public static final double ROLLER_KP = 0.4;
@@ -69,7 +71,7 @@ public class IntakeConstants {
 
   public static final PositionSubsystemConfig WRIST_CONFIG = new PositionSubsystemConfig(
       WRIST_MOTOR_CONFIGS, WRIST_LEAD_CONFIG, WRIST_CANCODER_CONFIG, WRIST_MOTION_MAGIC_CONFIG,
-      "Intake Wrist", "degrees");
+      "Intake Wrist", "degrees", Optional.of(INTAKE_DEFAULT));
 
   public static final VelocitySubsystemConfig ROLLER_CONFIG = new VelocitySubsystemConfig(
       ROLLER_MOTOR_CONFIGS, ROLLER_LEAD_CONFIG, ROLLER_MOTION_MAGIC_CONFIG, "Intake Roller");

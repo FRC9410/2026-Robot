@@ -5,6 +5,7 @@
 package frc.lib.team9410.configs;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Single-parameter config for {@link frc.lib.team9410.subsystems.PositionSubsystem}.
@@ -16,4 +17,5 @@ public record PositionSubsystemConfig(
     CancoderConfig cancoderConfig,
     MotionMagicConfig motionMagicConfig,
     String subsystemName,
-    String units) {}
+    String units,
+    Optional<Double> defaultPosition) {}
