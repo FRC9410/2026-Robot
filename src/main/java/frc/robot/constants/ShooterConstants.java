@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -19,6 +20,7 @@ public class ShooterConstants {
 
   public static final double SHOOTER_HOOD_MIN = 0.005;
   public static final double SHOOTER_HOOD_MAX = 0.14;
+  public static final double SHOOTER_HOOD_DEFAULT = SHOOTER_HOOD_MIN;
 
   // Flywheel velocity PID
   public static final double FLYWHEEL_KP = 0.4;
@@ -64,7 +66,7 @@ public class ShooterConstants {
 
   public static final PositionSubsystemConfig HOOD_CONFIG = new PositionSubsystemConfig(
       HOOD_MOTOR_CONFIGS, HOOD_LEAD_CONFIG, HOOD_CANCODER_CONFIG, HOOD_MOTION_MAGIC_CONFIG,
-      "Shooter Hood", "degrees");
+      "Shooter Hood", "degrees", Optional.of(SHOOTER_HOOD_DEFAULT));
 
   public static final VelocitySubsystemConfig FLYWHEEL_CONFIG = new VelocitySubsystemConfig(
       FLYWHEEL_MOTOR_CONFIGS, FLYWHEEL_LEAD_CONFIG, FLYWHEEL_MOTION_MAGIC_CONFIG, "Shooter");

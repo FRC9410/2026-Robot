@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
 import java.util.List;
+import java.util.Optional;
 
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
@@ -21,6 +22,7 @@ public class TurretConstants {
 
   public static final double TURRET_MIN = -0.481;
   public static final double TURRET_MAX = 0.46;
+  public static final double TURRET_DEFAULT = 0.0;
 
   public static final double TURRET_SENSOR_TO_MECHANISM_RATIO = -1;
   public static final double TURRET_ROTOR_TO_SENSOR_RATIO = 51;
@@ -45,7 +47,7 @@ public class TurretConstants {
 
   public static final PositionSubsystemConfig TURRET_CONFIG = new PositionSubsystemConfig(
       TURRET_MOTOR_CONFIGS, TURRET_LEAD_CONFIG, TURRET_CANCODER_CONFIG, TURRET_MOTION_MAGIC_CONFIG,
-      "Turret", "degrees");
+      "Turret", "degrees", Optional.of(TURRET_DEFAULT));
 
   public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0;
   public static final int TURRET_RADIUS = 0;

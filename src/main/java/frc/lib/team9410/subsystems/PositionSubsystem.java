@@ -24,6 +24,8 @@ import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
 import frc.lib.team9410.configs.PositionSubsystemConfig;
 
+import java.util.Optional;
+
 public class PositionSubsystem extends PowerSubsystem {
 
   /** Primary position-controlled motor (with fused CANcoder from config constructor). */
@@ -41,7 +43,7 @@ public class PositionSubsystem extends PowerSubsystem {
     super(config.motorConfigs(), config.subsystemName());
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
-      configureMotorWithCancoder(leader, config.leadConfig(), config.cancoderConfig(), config.motionMagicConfig());
+      configureMotorWithCancoder(leader, config.leadConfig(), config.cancoderConfig(), config.motionMagicConfig(), config.defaultPosition());
       this.positionMotor = leader;
     }
     this.subsystemName = config.subsystemName();
@@ -62,7 +64,8 @@ public class PositionSubsystem extends PowerSubsystem {
       TalonFX motor,
       LeadMotorConfig leadConfig,
       CancoderConfig cancoderConfig,
-      MotionMagicConfig motionMagicConfig) {
+      MotionMagicConfig motionMagicConfig,
+      Optional<Double> defaultPos) {
     @SuppressWarnings("resource") // CANcoder is fused to motor, lifecycle tied to subsystem
     CANcoder cancoder =
         new CANcoder(cancoderConfig.encoderId(), Constants.CanBus.CANIVORE_BUS);
@@ -95,9 +98,9 @@ public class PositionSubsystem extends PowerSubsystem {
     BaseStatusSignal.setUpdateFrequencyForAll(100, cancoder.getPosition(), cancoder.getVelocity());
     motor.setNeutralMode(NeutralModeValue.Brake);
 
-    double currentPos = motor.getPosition().getValueAsDouble();
+    double targetPos = defaultPos.isEmpty() ?  motor.getPosition().getValueAsDouble() : defaultPos.get();
 
-    motor.setControl(new MotionMagicVoltage(0).withPosition(currentPos).withSlot(0));
+    motor.setControl(new MotionMagicVoltage(0).withPosition(targetPos).withSlot(0));
   }
 
   /**
