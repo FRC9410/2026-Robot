@@ -164,6 +164,11 @@ public class StateMachine extends SubsystemBase {
     wantedState = state;
   }
 
+  private void aimer() {
+    TurretHelpers.calculateHoodAngle(0);
+    TurretHelpers.calculateShooterVelocity(0);
+  }
+
   public RobotState getCurrentState() {
     return currentState;
   }
@@ -192,6 +197,7 @@ public class StateMachine extends SubsystemBase {
       return GameZone.RED_ALLIANCE;
     }
   }
+
 
   public enum GameZone {
     RED_ALLIANCE, // max, max
