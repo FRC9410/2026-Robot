@@ -10,6 +10,7 @@ import frc.lib.team9410.configs.LeadMotorConfig;
 import frc.lib.team9410.configs.MotionMagicConfig;
 import frc.lib.team9410.configs.MotorConfig;
 import frc.lib.team9410.configs.PositionSubsystemConfig;
+import frc.lib.team9410.math.LinearInterpolator;
 
 public class TurretConstants {
   public static final int MOTOR_ID = 60;
@@ -48,6 +49,11 @@ public class TurretConstants {
   public static final PositionSubsystemConfig TURRET_CONFIG = new PositionSubsystemConfig(
       TURRET_MOTOR_CONFIGS, TURRET_LEAD_CONFIG, TURRET_CANCODER_CONFIG, TURRET_MOTION_MAGIC_CONFIG,
       "Turret", "degrees", Optional.of(TURRET_DEFAULT));
+
+  public static final LinearInterpolator shooterVelocityInterpolator = new LinearInterpolator(ShooterConstants.shooterSpeeds);
+  public static final LinearInterpolator hoodAngleInterpolator = new LinearInterpolator(ShooterConstants.hoodAngles);
+
+  
 
   public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0;
   public static final int TURRET_RADIUS = 0;

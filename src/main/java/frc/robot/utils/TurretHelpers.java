@@ -6,6 +6,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
+import frc.robot.constants.TurretConstants;
 
 public class TurretHelpers {
     /**
@@ -29,6 +30,16 @@ public class TurretHelpers {
         return 0.0;
     }
 
+    public static double calculateHoodAngle(double distance) {
+        double hoodAngleSetpoint = TurretConstants.hoodAngleInterpolator.getInterpolatedValue(distance);
+        return hoodAngleSetpoint;
+    }
+
+    public static double calculateShooterVelocity(double distance) {
+        double shooterVelocitySetpoint = TurretConstants.shooterVelocityInterpolator.getInterpolatedValue(distance);
+        return shooterVelocitySetpoint;
+    }
+
     /// DOES NOT PREDICT FOR VELO
     public static double getElevationToTarget () {
         return 0.0;
@@ -38,9 +49,14 @@ public class TurretHelpers {
     public static void setTarget (Translation3d pos) {
         PowerRobotContainer.setData("turretTarget", pos);
     }
+    
 
     /// does nothing as of now
     public static double predictRotationToTarget () {
         return 0.0;
+    }
+
+    public static void aimTurret() {
+        
     }
 }
