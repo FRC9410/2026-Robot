@@ -122,7 +122,7 @@ public class SwerveDriveCommand extends Command {
   @Override
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
-    Pose2d targetPose = null;
+    Pose2d targetPose = new Pose2d();
 
     // if (currentPose != null && requestedPose == null) {
     //   targetPose =

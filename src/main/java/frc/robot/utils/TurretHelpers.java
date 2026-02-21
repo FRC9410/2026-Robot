@@ -3,7 +3,10 @@ package frc.robot.utils;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 import frc.robot.constants.TurretConstants;
@@ -58,5 +61,18 @@ public class TurretHelpers {
 
     public static void aimTurret() {
         
+    }
+
+    public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {
+        Translation2d difference = hopperPosition.minus(RobotPosition.getTranslation());
+        double distance = Math.sqrt(difference.getX()*difference.getX()+difference.getY()*difference.getY()); //it is written like this because it makes Caden mad :)
+        return distance;
+    }
+
+    public static double getTangentalSpeed() {
+        ChassisSpeeds speeds = kinematics.toChassisSpeeds(moduleStates);
+        double vx = speeds.vxMetersPerSecond;
+        double vy = speeds.vyMetersPerSecond;
+
     }
 }
