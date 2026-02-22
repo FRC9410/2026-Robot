@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.Kinematics;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 import frc.robot.constants.TurretConstants;
@@ -69,10 +70,9 @@ public class TurretHelpers {
         return distance;
     }
 
-    public static double getTangentalSpeed() {
-        ChassisSpeeds speeds = kinematics.toChassisSpeeds(moduleStates);
+    public static double getTangentalSpeed(ChassisSpeeds speeds) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;
-
+        return 5.0;
     }
 }

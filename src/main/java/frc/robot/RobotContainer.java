@@ -17,6 +17,9 @@ import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Swerve;
 import frc.robot.subsystems.StateMachine.RobotState;
 import frc.robot.utils.CommandBuilder;
+import frc.robot.utils.SweepHelpers;
+import frc.robot.utils.SweepHelpers.ControllerButton;
+import frc.robot.utils.SweepHelpers.SweepDirection;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
 
@@ -50,6 +53,7 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   private void configureBindings() {
+    // intake in and out
     driverController.rightTrigger(0.5)
     .or(driverController.leftTrigger(0.5))
       .onTrue(new InstantCommand(
@@ -65,6 +69,7 @@ public class RobotContainer implements PowerRobotContainer {
         }
       ));
 
+    // state changers
     driverController.leftBumper().onTrue(new InstantCommand(
       ()-> {
         stateMachine.setWantedState(RobotState.PASSING);
@@ -76,7 +81,32 @@ public class RobotContainer implements PowerRobotContainer {
       }
     ));
 
-    
+    // sweeping commands
+    driverController.a().onTrue(new InstantCommand(
+      () -> {
+        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.A, stateMachine.isBlueAlliance());
+        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
+
+      }
+    ));
+    driverController.b().onTrue(new InstantCommand(
+      () -> {
+        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.B, stateMachine.isBlueAlliance());
+        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
+      }
+    ));
+    driverController.x().onTrue(new InstantCommand(
+      () -> {
+        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.X, stateMachine.isBlueAlliance());
+        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
+      }
+    ));
+    driverController.y().onTrue(new InstantCommand(
+      () -> {
+        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.Y, stateMachine.isBlueAlliance());
+        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
+      }
+    ));
   }
 
 

@@ -96,6 +96,15 @@ public class StateMachine extends SubsystemBase {
   private void executeReady() {
   }
 
+  public GameZone getZoneFromPRC () {
+    Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
+    if (PowerRobotContainer.getData("robotPose") == null) {
+      return GameZone.INTERCHANGE; // pose hasnt been updated yet
+    }
+
+    return getZone(pose);
+  }
+
   private void executeShooting() {
     Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
     if (PowerRobotContainer.getData("robotPose") == null) {

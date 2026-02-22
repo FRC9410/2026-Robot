@@ -1,6 +1,7 @@
 package frc.robot.constants;
 
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.geometry.Translation2d;
 
 public class FieldConstants {
   public static final double X_MIN = 0.0;
@@ -24,4 +25,10 @@ public class FieldConstants {
   
   public static final Translation3d RED_TOP_CORNER = new Translation3d(16, 7.5, 0.0);
   public static final Translation3d RED_BOTTOM_CORNER = new Translation3d(16, 0.5, 0.0);
+
+  public static final Translation2d NEU_TOP_LEFT = new Translation2d(5.872, 7.443);
+  public static final Translation2d NEU_TOP_RIGHT = new Translation2d(10.692, 7.443);
+  public static final Translation2d NEU_BOTTOM_LEFT = new Translation2d(5.872, 0.595);
+  public static final Translation2d NEU_BOTTOM_RIGHT = new Translation2d(10.692, 0.595);
+
 }
