@@ -58,6 +58,7 @@ public class StateMachine extends SubsystemBase {
     handleStateTransitions();
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
+    PowerRobotContainer.setData("currentZone", getZoneFromPRC());
   }
 
   private void handleStateTransitions() {

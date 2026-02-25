@@ -11,6 +11,7 @@ import edu.wpi.first.math.kinematics.Kinematics;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 import frc.robot.constants.TurretConstants;
+import frc.robot.subsystems.StateMachine;
 
 public class TurretHelpers {
     /**
@@ -60,16 +61,19 @@ public class TurretHelpers {
         return 0.0;
     }
 
-    public static void aimTurret() {
+    public static void aimTurret(StateMachine stateMachine, double position) {
+        var turret = stateMachine.turret;
         
+
     }
 
     public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {
         Translation2d difference = hopperPosition.minus(RobotPosition.getTranslation());
-        double distance = Math.sqrt(difference.getX()*difference.getX()+difference.getY()*difference.getY()); //it is written like this because it makes Caden mad :)
+        double distance = Math.sqrt(difference.getX() * difference.getX() + difference.getY() * difference.getY()); //it is written like this because it makes Caden mad :)
         return distance;
     }
 
+    // TODO: this
     public static double getTangentalSpeed(ChassisSpeeds speeds) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;

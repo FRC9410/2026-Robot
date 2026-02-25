@@ -24,4 +24,5 @@ public final class Constants {
   public static final class LED extends frc.robot.constants.LEDConstants {}
   public static final class Turret extends frc.robot.constants.TurretConstants {}
   public static final class Field extends frc.robot.constants.FieldConstants {}
+  public static final class Sweep extends frc.robot.constants.SweepConstants {}
 }

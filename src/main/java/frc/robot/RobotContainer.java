@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
+import frc.lib.team9410.configs.SweepConfig;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -35,15 +36,19 @@ public class RobotContainer implements PowerRobotContainer {
   private boolean shooterHoodOn = false;
   private boolean turretOn = false;
 
-  /** Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via {@link #startGameTimer()}. */
+  /**
+   * Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via
+   * {@link #startGameTimer()}.
+   */
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
 
   // Controller
   private final CommandXboxController driverController = new CommandXboxController(0);
   private final CommandXboxController testController = new CommandXboxController(5);
+  private final SweepConfig sweepConfig = new SweepConfig(stateMachine.drivetrain, driverController, stateMachine);
 
-  private final SendableChooser<SequentialCommandGroup> autoChooser = 
-    new AutoBuilder(stateMachine.drivetrain, testController, stateMachine).build();
+  private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
+      testController, stateMachine).build();
 
   public RobotContainer() {
     configureBindings();
@@ -55,131 +60,110 @@ public class RobotContainer implements PowerRobotContainer {
   private void configureBindings() {
     // intake in and out
     driverController.rightTrigger(0.5)
-    .or(driverController.leftTrigger(0.5))
-      .onTrue(new InstantCommand(
-        () -> {
-          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-          stateMachine.intakeRoller.setVelocity(125);
-        }
-      ))
-      .onFalse(new InstantCommand(
-        () -> {
-          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
-          stateMachine.intakeRoller.brake();
-        }
-      ));
+        .or(driverController.leftTrigger(0.5))
+        .onTrue(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+              stateMachine.intakeRoller.setVelocity(125);
+            }))
+        .onFalse(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+              stateMachine.intakeRoller.brake();
+            }));
 
     // state changers
     driverController.leftBumper().onTrue(new InstantCommand(
-      ()-> {
-        stateMachine.setWantedState(RobotState.PASSING);
-      }
-    ));
+        () -> {
+          stateMachine.setWantedState(RobotState.PASSING);
+        }));
     driverController.rightBumper().onTrue(new InstantCommand(
-      ()-> {
-        stateMachine.setWantedState(RobotState.SCORING);
-      }
-    ));
+        () -> {
+          stateMachine.setWantedState(RobotState.SCORING);
+        }));
 
     // sweeping commands
     driverController.a().onTrue(new InstantCommand(
-      () -> {
-        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.A, stateMachine.isBlueAlliance());
-        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
+        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.A, stateMachine.isBlueAlliance()),
+            stateMachine.getZoneFromPRC(), sweepConfig)));
 
-      }
-    ));
     driverController.b().onTrue(new InstantCommand(
-      () -> {
-        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.B, stateMachine.isBlueAlliance());
-        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
-      }
-    ));
-    driverController.x().onTrue(new InstantCommand(
-      () -> {
-        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.X, stateMachine.isBlueAlliance());
-        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
-      }
-    ));
-    driverController.y().onTrue(new InstantCommand(
-      () -> {
-        var dir = SweepHelpers.convertButtonToSweep(ControllerButton.Y, stateMachine.isBlueAlliance());
-        SweepHelpers.sweep(dir, stateMachine.getZoneFromPRC());
-      }
-    ));
-  }
+        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.B, stateMachine.isBlueAlliance()),
+            stateMachine.getZoneFromPRC(), sweepConfig)));
 
+    driverController.x().onTrue(new InstantCommand(
+        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.X, stateMachine.isBlueAlliance()),
+            stateMachine.getZoneFromPRC(), sweepConfig)));
+
+    driverController.y().onTrue(new InstantCommand(
+        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.Y, stateMachine.isBlueAlliance()),
+            stateMachine.getZoneFromPRC(), sweepConfig)));
+  }
 
   private void configureTestBindings() {
     testController.a().onTrue(new InstantCommand(
-      () -> {
-        if (spindexerOn) {
-          stateMachine.spindexer.stopVelocity();
-        } else {
-          stateMachine.spindexer.setVelocity(175);
-        }
+        () -> {
+          if (spindexerOn) {
+            stateMachine.spindexer.stopVelocity();
+          } else {
+            stateMachine.spindexer.setVelocity(175);
+          }
 
-        spindexerOn = !spindexerOn;
-      }
-    ));
-     testController.b().onTrue(new InstantCommand(
-      () -> {
-        if (feederOn) {
-          stateMachine.feeder.stopVelocity();
-        } else {
-          stateMachine.feeder.setVelocity(200);
-        }
+          spindexerOn = !spindexerOn;
+        }));
+    testController.b().onTrue(new InstantCommand(
+        () -> {
+          if (feederOn) {
+            stateMachine.feeder.stopVelocity();
+          } else {
+            stateMachine.feeder.setVelocity(200);
+          }
 
-        feederOn = !feederOn;
-      }
-    ));
-      testController.leftBumper().onTrue(new InstantCommand(
-      () -> {
-        if (turretOn) {
-          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MIN);
-        } else {
-          stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-        }
+          feederOn = !feederOn;
+        }));
+    testController.leftBumper().onTrue(new InstantCommand(
+        () -> {
+          if (turretOn) {
+            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MIN);
+          } else {
+            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+          }
 
-        turretOn = !turretOn;
-      }
-    ));
+          turretOn = !turretOn;
+        }));
 
-     testController.y().onTrue(new InstantCommand(
-      () -> {
-        if (shooterOn) {
-          stateMachine.shooter.stopVelocity();
-        } else {
-          stateMachine.shooter.setVelocity(-100);
-        }
+    testController.y().onTrue(new InstantCommand(
+        () -> {
+          if (shooterOn) {
+            stateMachine.shooter.stopVelocity();
+          } else {
+            stateMachine.shooter.setVelocity(-100);
+          }
 
-        shooterOn = !shooterOn;
-      }
-    ));
+          shooterOn = !shooterOn;
+        }));
     testController.x().onTrue(new InstantCommand(
-      () -> {
-        if (intakeOn) {
-          stateMachine.intakeRoller.stopVelocity();
-        } else {
-          stateMachine.intakeRoller.setVelocity(100); // 200 works if needed or wanted
-        }
+        () -> {
+          if (intakeOn) {
+            stateMachine.intakeRoller.stopVelocity();
+          } else {
+            stateMachine.intakeRoller.setVelocity(100); // 200 works if needed or wanted
+          }
 
-        intakeOn = !intakeOn;
-      }
-    ));
+          intakeOn = !intakeOn;
+        }));
     testController.rightBumper().onTrue(new InstantCommand(
-      () -> {
-        if (shooterHoodOn) {
-          stateMachine.shooterHood.setPositionRotations(0.05);
-        } else {
-          stateMachine.shooterHood.setPositionRotations(Constants.Shooter.SHOOTER_HOOD_MIN);
-        }
+        () -> {
+          if (shooterHoodOn) {
+            stateMachine.shooterHood.setPositionRotations(0.05);
+          } else {
+            stateMachine.shooterHood.setPositionRotations(Constants.Shooter.SHOOTER_HOOD_MIN);
+          }
 
-        shooterHoodOn = !shooterHoodOn;
-      }
-    ));
+          shooterHoodOn = !shooterHoodOn;
+        }));
   }
-  
+
   public Command getAutonomousCommand() {
     return autoChooser.getSelected();
   }
