@@ -31,4 +31,6 @@ public class FieldConstants {
   public static final Translation2d NEU_BOTTOM_LEFT = new Translation2d(5.872, 0.595);
   public static final Translation2d NEU_BOTTOM_RIGHT = new Translation2d(10.692, 0.595);
 
+  public static final Translation2d HOPPER = new Translation2d(0,0);
+  
 }

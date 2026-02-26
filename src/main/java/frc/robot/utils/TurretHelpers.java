@@ -74,9 +74,46 @@ public class TurretHelpers {
     }
 
     // TODO: this
-    public static double getTangentalSpeed(ChassisSpeeds speeds) {
+    public static double getTangentalSpeed(ChassisSpeeds speeds, Pose2d robotPos) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;
-        return 5.0;
+        double relativeX = Constants.Field.HOPPER.getX() - robotPos.getX();
+        double relativeY = Constants.Field.HOPPER.getY() - robotPos.getY();
+
+        double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
+        double magVelocity = Math.sqrt(vx * vx + vy * vy);
+        double normalizedX = relativeX / relativeMagPos;
+        double normalizedY = relativeY / relativeMagPos;
+
+        return Math.sqrt(magVelocity * magVelocity - Math.pow(vx * normalizedX + vy * normalizedY, 2));
+    }
+
+    public static double getRadialSpeed(ChassisSpeeds speeds, Pose2d robotPos) {
+        double vx = speeds.vxMetersPerSecond;
+        double vy = speeds.vyMetersPerSecond;
+        double relativeX = Constants.Field.HOPPER.getX() - robotPos.getX();
+        double relativeY = Constants.Field.HOPPER.getY() - robotPos.getY();
+
+        double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
+        double normalizedX = relativeX / relativeMagPos;
+        double normalizedY = relativeY / relativeMagPos;
+
+        return vx * normalizedX + vy * normalizedY;
+    }
+
+    public static double dot(Translation2d a, Translation2d b) {
+        return a.getX() * b.getX() + a.getY() * b.getY();
+    }
+
+    public static Translation2d project(Translation2d a, Translation2d onto) {
+        return onto.times(dot(a, onto) / dot(onto, onto));
+    }
+
+    public static Translation2d reject(Translation2d a, Translation2d onto) {
+        return a.minus(project(a, onto));
+    }
+
+    public static Translation2d elementMult(Translation2d a, Translation2d b) {
+        return new Translation2d(a.getX() * b.getX(), a.getY() * b.getY());
     }
 }

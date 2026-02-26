@@ -40,6 +40,7 @@ public class RobotContainer implements PowerRobotContainer {
    * Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via
    * {@link #startGameTimer()}.
    */
+  
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
 
   // Controller
@@ -58,7 +59,7 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   private void configureBindings() {
-    // intake in and out
+    // Intake in and out
     driverController.rightTrigger(0.5)
         .or(driverController.leftTrigger(0.5))
         .onTrue(new InstantCommand(
@@ -72,7 +73,7 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeRoller.brake();
             }));
 
-    // state changers
+    // State changers
     driverController.leftBumper().onTrue(new InstantCommand(
         () -> {
           stateMachine.setWantedState(RobotState.PASSING);
@@ -82,7 +83,7 @@ public class RobotContainer implements PowerRobotContainer {
           stateMachine.setWantedState(RobotState.SCORING);
         }));
 
-    // sweeping commands
+    // Sweeping commands
     driverController.a().onTrue(new InstantCommand(
         () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.A, stateMachine.isBlueAlliance()),
             stateMachine.getZoneFromPRC(), sweepConfig)));
@@ -99,7 +100,7 @@ public class RobotContainer implements PowerRobotContainer {
         () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.Y, stateMachine.isBlueAlliance()),
             stateMachine.getZoneFromPRC(), sweepConfig)));
   }
-
+  // Test bindings
   private void configureTestBindings() {
     testController.a().onTrue(new InstantCommand(
         () -> {
