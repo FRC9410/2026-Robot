@@ -6,10 +6,8 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.*;
 
-import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -137,7 +135,7 @@ public class SwerveDriveCommand extends Command {
       drivetrain.drive(
           -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
     } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
-      final ChassisSpeeds speeds = calculateSpeedsBasedOnJoystickInputs();
+      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       drivetrain.drive(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
@@ -145,7 +143,7 @@ public class SwerveDriveCommand extends Command {
           targetPose.getRotation().getDegrees(),
           Swerve.DriveMode.ROTATION_LOCK);
     } else {
-      final ChassisSpeeds speeds = calculateSpeedsBasedOnJoystickInputs();
+      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       drivetrain.drive(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
@@ -291,40 +289,4 @@ public class SwerveDriveCommand extends Command {
     return linearDistance < Units.inchesToMeters(tolerance) && currentVelocity < 0.01; // meters
   }
 
-  private ChassisSpeeds calculateSpeedsBasedOnJoystickInputs() {
-    boolean isBlueAlliance = true;
-    final Pose2d currentPose = drivetrain.getState().Pose;
-
-    if (DriverStation.getAlliance().isEmpty()) {
-      return new ChassisSpeeds(0, 0, 0);
-    }
-
-    if (DriverStation.getAlliance().isPresent()) {
-      if (DriverStation.getAlliance().get() == Alliance.Red) {
-        isBlueAlliance = false;
-      }
-    }
-
-    double xMagnitude = MathUtil.applyDeadband(controller.getLeftY(), 0.1);
-    double yMagnitude = MathUtil.applyDeadband(controller.getLeftX(), 0.1);
-    double angularMagnitude = MathUtil.applyDeadband(controller.getRightX(), 0.1);
-
-    xMagnitude = Math.copySign(xMagnitude * xMagnitude, xMagnitude);
-    yMagnitude = Math.copySign(yMagnitude * yMagnitude, yMagnitude);
-
-    angularMagnitude = Math.copySign(angularMagnitude * angularMagnitude, angularMagnitude);
-
-    double xVelocity = (isBlueAlliance ? -xMagnitude * DriveUtil.MAX_SPEED : xMagnitude * DriveUtil.MAX_SPEED) * 0.95;
-    double yVelocity = (isBlueAlliance ? -yMagnitude * DriveUtil.MAX_SPEED : yMagnitude * DriveUtil.MAX_SPEED) * 0.95;
-    double angularVelocity = angularMagnitude * MAX_ANGULAR_RATE * 0.95;
-
-    Rotation2d skewCompensationFactor =
-        Rotation2d.fromRadians(
-            drivetrain.getState().Speeds.omegaRadiansPerSecond * SKEW_COMPENSATION);
-
-    return ChassisSpeeds.fromRobotRelativeSpeeds(
-        ChassisSpeeds.fromFieldRelativeSpeeds(
-            new ChassisSpeeds(xVelocity, yVelocity, -angularVelocity), currentPose.getRotation()),
-        currentPose.getRotation().plus(skewCompensationFactor));
-  }
 }

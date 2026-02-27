@@ -10,6 +10,7 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -58,11 +59,14 @@ public class StrafeCommand extends Command {
   public void execute() {
     StrafeAxis axis = getStrafeAxis(side);
 
+    final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, 0.0);
+
     drivetrain.drive(
-        getXInput(axis, side),
-        getYInput(axis, side),
-        45.0,
-        Swerve.DriveMode.ROTATION_LOCK);
+      axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : getXInput(axis, side),
+      axis == StrafeAxis.X ? speeds.vyMetersPerSecond : getYInput(axis, side),
+      getRotation(axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, side),
+      Swerve.DriveMode.ROTATION_LOCK
+    );
   }
 
   // Called once the command ends or is interrupted.
@@ -76,11 +80,87 @@ public class StrafeCommand extends Command {
     return false;
   }
 
-  private double getXInput(StrafeAxis axis, StrafeSide side) {
-    if (axis == StrafeAxis.Y) {
-      return controller.getLeftX();
-    }
+  private double getRotation (double speed, StrafeSide side, Pose2d pose) {
+    Alliance alliance = DriverStation.getAlliance().get();
 
+    if (alliance == Alliance.Blue) {
+      switch (side) {
+        case FRONT:
+          if (Math.abs(speed) < 0.1) {
+            return pose.getY() > 4? 45: -45;
+          } else if (speed > 0) {
+            return -45;
+          } else {
+            return 45;
+          }
+        case LEFT:
+          if (Math.abs(speed) < 0.1) {
+            return pose.getX() > 2? 135: 45;
+          } else if (speed > 0) {
+            return 45;
+          } else {
+            return 135;
+          }
+        case RIGHT:
+          if (Math.abs(speed) < 0.1) {
+            return pose.getX() > 2? -135: -45;
+          } else if (speed > 0) {
+            return -45;
+          } else {
+            return -135;
+          }
+        case BACK:
+          if (Math.abs(speed) < 0.1) {
+            return pose.getY() > 4? -135: 135;
+          } else if (speed > 0) {
+            return -135;
+          } else {
+            return 135;
+          }
+        default:
+          return 0;
+      }
+    } else {
+      switch (side) {
+      case BACK:
+        if (Math.abs(speed) < 0.1) {
+          return 0; //default direction to long side
+        } else if (speed > 0) {
+          return -45;
+        } else {
+          return 45;
+        }
+      case RIGHT:
+        if (Math.abs(speed) < 0.1) {
+          return 0;
+        } else if (speed > 0) {
+          return 45;
+        } else {
+          return 135;
+        }
+      case LEFT:
+        if (Math.abs(speed) < 0.1) {
+          return 0;
+        } else if (speed > 0) {
+          return -45;
+        } else {
+          return -135;
+        }
+      case FRONT:
+        if (Math.abs(speed) < 0.1) {
+          return 0;
+        } else if (speed > 0) {
+          return -135;
+        } else {
+          return 135;
+        }
+      default:
+        return 0;
+      }
+    }
+  }
+
+  private double getXInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
     Alliance alliance = DriverStation.getAlliance().get();
@@ -105,10 +185,6 @@ public class StrafeCommand extends Command {
   }
 
   private double getYInput(StrafeAxis axis, StrafeSide side) {
-    if (axis == StrafeAxis.X) {
-      return controller.getLeftY();
-    }
-
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
     Alliance alliance = DriverStation.getAlliance().get();
@@ -159,9 +235,9 @@ public class StrafeCommand extends Command {
 
   private StrafeAxis getStrafeAxis(StrafeSide side) {
     if (side == StrafeSide.LEFT || side == StrafeSide.RIGHT) {
-      return StrafeAxis.Y;
-    } else {
       return StrafeAxis.X;
+    } else {
+      return StrafeAxis.Y;
     }
   }
 
@@ -176,4 +252,5 @@ public class StrafeCommand extends Command {
     FRONT,
     BACK
   }
+
 }

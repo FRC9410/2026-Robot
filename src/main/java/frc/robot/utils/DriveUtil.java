@@ -2,12 +2,18 @@ package frc.robot.utils;
 
 import static edu.wpi.first.units.Units.*;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.constants.TunerConstants;
+import frc.robot.subsystems.Swerve;
 
 public class DriveUtil {
 
@@ -62,5 +68,43 @@ public class DriveUtil {
     final double ySpeed = velocity * directionOfTravel.getSin() * directionMultiplier;
 
     return new Translation2d(xSpeed, ySpeed);
+  }
+
+  public static ChassisSpeeds calculateSpeedsBasedOnJoystickInputs(
+      CommandXboxController controller,
+      Swerve drivetrain,
+      double maxAngularRate,
+      double skewCompensation) {
+    boolean isBlueAlliance = true;
+    final Pose2d currentPose = drivetrain.getState().Pose;
+
+    if (DriverStation.getAlliance().isEmpty()) {
+      return new ChassisSpeeds(0, 0, 0);
+    }
+
+    if (DriverStation.getAlliance().get() == Alliance.Red) {
+      isBlueAlliance = false;
+    }
+
+    double xMagnitude = MathUtil.applyDeadband(controller.getLeftY(), 0.1);
+    double yMagnitude = MathUtil.applyDeadband(controller.getLeftX(), 0.1);
+    double angularMagnitude = MathUtil.applyDeadband(controller.getRightX(), 0.1);
+
+    xMagnitude = Math.copySign(xMagnitude * xMagnitude, xMagnitude);
+    yMagnitude = Math.copySign(yMagnitude * yMagnitude, yMagnitude);
+    angularMagnitude = Math.copySign(angularMagnitude * angularMagnitude, angularMagnitude);
+
+    double xVelocity = (isBlueAlliance ? -xMagnitude * MAX_SPEED : xMagnitude * MAX_SPEED) * 0.95;
+    double yVelocity = (isBlueAlliance ? -yMagnitude * MAX_SPEED : yMagnitude * MAX_SPEED) * 0.95;
+    double angularVelocity = angularMagnitude * maxAngularRate * 0.95;
+
+    Rotation2d skewCompensationFactor =
+        Rotation2d.fromRadians(
+            drivetrain.getState().Speeds.omegaRadiansPerSecond * skewCompensation);
+
+    return ChassisSpeeds.fromRobotRelativeSpeeds(
+        ChassisSpeeds.fromFieldRelativeSpeeds(
+            new ChassisSpeeds(xVelocity, yVelocity, -angularVelocity), currentPose.getRotation()),
+        currentPose.getRotation().plus(skewCompensationFactor));
   }
 }

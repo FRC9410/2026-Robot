@@ -13,4 +13,10 @@ public class LocationConstants {
 
     public static final double NEAR_WALL_Y = 0;
     public static final double FAR_WALL_Y = 10;
+
+    public static final double X_MIN = 0.0;
+    public static final double X_MAX = 0.0;
+
+    public static final double Y_MIN = 0.0;
+    public static final double Y_MAX = 0.0;
 }
