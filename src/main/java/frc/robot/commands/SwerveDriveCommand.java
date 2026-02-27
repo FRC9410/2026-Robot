@@ -17,28 +17,18 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.Constants;
-import frc.robot.constants.TunerConstants;
+import frc.robot.utils.DriveUtil;
 import frc.robot.subsystems.StateMachine;
-import frc.robot.subsystems.StateMachine.RobotState;
 import frc.robot.subsystems.Swerve;
-import java.util.Arrays;
-import java.util.List;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class SwerveDriveCommand extends Command {
-  public double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-  public double CLOSE_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) / 4;
   public double MAX_ANGULAR_RATE =
       RotationsPerSecond.of(0.75)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
       RotationsPerSecond.of(0.5)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
-  public double MAX_DRIVE_TO_POINT_SPEED =
-      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.75;
-  public double SLOW_DRIVE_TO_POINT_SPEED =
-      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.75 / 4;
   public double SKEW_COMPENSATION =
       0. - 0.03; // Adjust this value based on your robot's characteristics
 
@@ -46,7 +36,6 @@ public class SwerveDriveCommand extends Command {
   private final CommandXboxController controller;
   private final StateMachine stateMachine;
   private final boolean autoDrive;
-  private final double STATIC_FRICTION_CONSTANT;
   private final PIDController driveToPointController;
   private Pose2d requestedPose;
   private double poseTolerance;
@@ -63,8 +52,6 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = null;
     this.poseTolerance = -1;
-    this.STATIC_FRICTION_CONSTANT =
-        0.085; // Adjust this value based on your robot's characteristics
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
@@ -84,8 +71,6 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = -1.0;
-    this.STATIC_FRICTION_CONSTANT =
-        0.085; // Adjust this value based on your robot's characteristics
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
@@ -106,8 +91,6 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = poseTolerance;
-    this.STATIC_FRICTION_CONSTANT =
-        0.085; // Adjust this value based on your robot's characteristics
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
@@ -148,28 +131,12 @@ public class SwerveDriveCommand extends Command {
       }
       final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-      final Translation2d translationToPoint =
-          currentPose.getTranslation().minus(targetPose.getTranslation());
-      final double linearDistance = translationToPoint.getNorm();
-      double ff = 0;
-      if (linearDistance >= Units.inchesToMeters(0.5)) {
-        ff = STATIC_FRICTION_CONSTANT * MAX_SPEED;
-      }
-
-      double maxSpeed =
-          isClose(currentPose, targetPose) && poseTolerance < 6
-              ? SLOW_DRIVE_TO_POINT_SPEED
-              : MAX_DRIVE_TO_POINT_SPEED;
-
-      final Rotation2d directionOfTravel = translationToPoint.getAngle();
-      final double velocity =
-          Math.min(Math.abs(driveToPointController.calculate(linearDistance, 0)) + ff, maxSpeed);
-      final double xSpeed = velocity * directionOfTravel.getCos() * directionMultiplier;
-      final double ySpeed = velocity * directionOfTravel.getSin() * directionMultiplier;
+      Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+          currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
       drivetrain.drive(
-          -xSpeed, -ySpeed, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
-    } else if (currentPose != null && targetPose != null && isClose(currentPose, targetPose)) {
+          -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+    } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
       final ChassisSpeeds speeds = calculateSpeedsBasedOnJoystickInputs();
       drivetrain.drive(
           speeds.vxMetersPerSecond,
@@ -315,13 +282,6 @@ public class SwerveDriveCommand extends Command {
 //     return targetPose;
 //   }
 
-  private boolean isClose(Pose2d currentPose, Pose2d targetPose) {
-    final Translation2d translationToPoint =
-        currentPose.getTranslation().minus(targetPose.getTranslation());
-    final double linearDistance = translationToPoint.getNorm();
-    return linearDistance < 1; // meters
-  }
-
   private boolean getIsInPosition(Pose2d currentPose, Pose2d targetPose, ChassisSpeeds speeds) {
     final Translation2d translationToPoint =
         currentPose.getTranslation().minus(targetPose.getTranslation());
@@ -354,8 +314,8 @@ public class SwerveDriveCommand extends Command {
 
     angularMagnitude = Math.copySign(angularMagnitude * angularMagnitude, angularMagnitude);
 
-    double xVelocity = (isBlueAlliance ? -xMagnitude * MAX_SPEED : xMagnitude * MAX_SPEED) * 0.95;
-    double yVelocity = (isBlueAlliance ? -yMagnitude * MAX_SPEED : yMagnitude * MAX_SPEED) * 0.95;
+    double xVelocity = (isBlueAlliance ? -xMagnitude * DriveUtil.MAX_SPEED : xMagnitude * DriveUtil.MAX_SPEED) * 0.95;
+    double yVelocity = (isBlueAlliance ? -yMagnitude * DriveUtil.MAX_SPEED : yMagnitude * DriveUtil.MAX_SPEED) * 0.95;
     double angularVelocity = angularMagnitude * MAX_ANGULAR_RATE * 0.95;
 
     Rotation2d skewCompensationFactor =

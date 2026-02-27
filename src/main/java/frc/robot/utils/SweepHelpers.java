@@ -16,7 +16,8 @@ import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.lib.team9410.configs.SweepConfig;
 import frc.robot.Constants;
 import frc.robot.constants.SweepConstants;
-import frc.robot.subsystems.StateMachine.GameZone;
+import frc.robot.utils.FieldUtils.GameZone;
+
 
 public class SweepHelpers {
   

@@ -15,6 +15,8 @@ import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.Constants;
 import frc.robot.constants.TunerConstants;
+import frc.robot.utils.FieldUtils.GameZone;
+import frc.robot.utils.FieldUtils;
 import frc.robot.utils.TurretHelpers;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
@@ -103,7 +105,7 @@ public class StateMachine extends SubsystemBase {
       return GameZone.INTERCHANGE; // pose hasnt been updated yet
     }
 
-    return getZone(pose);
+    return FieldUtils.getZone(pose);
   }
 
   private void executeShooting() {
@@ -112,7 +114,7 @@ public class StateMachine extends SubsystemBase {
       return; // pose hasnt been updated yet
     }
 
-    GameZone zone = getZone(pose);
+    GameZone zone = FieldUtils.getZone(pose);
 
     if (getAllianceZone() == zone) { // we are in our zone
       if (isHubActive()) {
@@ -139,7 +141,7 @@ public class StateMachine extends SubsystemBase {
       return; // pose hasnt been updated yet
     }
 
-    GameZone zone = getZone(pose);
+    GameZone zone = FieldUtils.getZone(pose);
 
     if (getAllianceZone() == zone) { // we are in our zone
       if (shooter.isAllMotorsRunning()) {
@@ -208,31 +210,6 @@ public class StateMachine extends SubsystemBase {
     }
   }
 
-
-  public enum GameZone {
-    RED_ALLIANCE, // max, max
-    NEUTRAL,
-    BLUE_ALLIANCE, // 0,0
-    INTERCHANGE // not in any specific zone, between alliance and neutral aka going over bump
-  }
-
-  public GameZone getZone(Pose2d pose) {
-    double x = pose.getX();
-
-    if (Constants.Field.BLUE_START_X < x && Constants.Field.BLUE_END_X > x) {
-      return GameZone.BLUE_ALLIANCE;
-    }
-
-    if (Constants.Field.CENTER_START_X < x && Constants.Field.CENTER_END_X > x) {
-      return GameZone.NEUTRAL;
-    }
-
-    if (Constants.Field.RED_START_X < x && Constants.Field.RED_END_X > x) {
-      return GameZone.RED_ALLIANCE;
-    }
-
-    return GameZone.INTERCHANGE;
-  }
 
   // thanks wpilib
   // https://docs.wpilib.org/en/stable/docs/yearly-overview/2026-game-data.html

@@ -23,6 +23,9 @@ import frc.robot.utils.SweepHelpers.ControllerButton;
 import frc.robot.utils.SweepHelpers.SweepDirection;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
+import frc.robot.commands.StrafeCommand;
+import frc.robot.commands.StrafeCommand.StrafeSide;
+import frc.robot.commands.SwerveDriveCommand;
 
 public class RobotContainer implements PowerRobotContainer {
 
@@ -84,21 +87,16 @@ public class RobotContainer implements PowerRobotContainer {
         }));
 
     // Sweeping commands
-    driverController.a().onTrue(new InstantCommand(
-        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.A, stateMachine.isBlueAlliance()),
-            stateMachine.getZoneFromPRC(), sweepConfig)));
+    driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.BACK));
+    
+    driverController.b().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.RIGHT));
+    
+    driverController.x().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.LEFT));
+    
+    driverController.y().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.FRONT));
 
-    driverController.b().onTrue(new InstantCommand(
-        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.B, stateMachine.isBlueAlliance()),
-            stateMachine.getZoneFromPRC(), sweepConfig)));
+    stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
 
-    driverController.x().onTrue(new InstantCommand(
-        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.X, stateMachine.isBlueAlliance()),
-            stateMachine.getZoneFromPRC(), sweepConfig)));
-
-    driverController.y().onTrue(new InstantCommand(
-        () -> SweepHelpers.sweep(SweepHelpers.convertButtonToSweep(ControllerButton.Y, stateMachine.isBlueAlliance()),
-            stateMachine.getZoneFromPRC(), sweepConfig)));
   }
   // Test bindings
   private void configureTestBindings() {
