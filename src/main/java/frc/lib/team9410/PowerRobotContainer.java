@@ -39,6 +39,10 @@ public interface PowerRobotContainer {
     return SUBSYSTEM_DATA.get(key);
   }
 
+    static Map<String, Object> getAllData() {
+      return SUBSYSTEM_DATA;
+  }
+
   /**
    * Retrieves a value from the shared data container, or a default if the key is missing.
    *

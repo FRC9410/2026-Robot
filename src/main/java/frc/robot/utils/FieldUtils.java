@@ -28,4 +28,5 @@ public class FieldUtils {
 
     return GameZone.INTERCHANGE;
   }
+
 }

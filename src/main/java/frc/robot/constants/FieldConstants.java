@@ -11,7 +11,7 @@ public class FieldConstants {
   public static final double TOL = 2.0;
 
   public static final double BLUE_START_X = 0.0;
-  public static final double BLUE_END_X = 3.52;
+  public static final double BLUE_END_X = 3.5;
   public static final double CENTER_START_X = 5.7;
   public static final double CENTER_END_X = 10.8;
   public static final double RED_START_X = 13.05;
@@ -31,6 +31,8 @@ public class FieldConstants {
   public static final Translation2d NEU_BOTTOM_LEFT = new Translation2d(5.872, 0.595);
   public static final Translation2d NEU_BOTTOM_RIGHT = new Translation2d(10.692, 0.595);
 
-  public static final Translation2d HOPPER = new Translation2d(0,0);
+  public static final Translation2d HOPPER_RED = new Translation2d(11.5,4); 
+  public static final Translation2d HOPPER_BLUE = new Translation2d(4.62,4);
   
+  public static final double MAX_DISTANCE_TO_HOPPER =  5.406;
 }

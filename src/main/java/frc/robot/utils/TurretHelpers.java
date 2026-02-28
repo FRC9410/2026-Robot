@@ -77,8 +77,8 @@ public class TurretHelpers {
     public static double getTangentalSpeed(ChassisSpeeds speeds, Pose2d robotPos) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;
-        double relativeX = Constants.Field.HOPPER.getX() - robotPos.getX();
-        double relativeY = Constants.Field.HOPPER.getY() - robotPos.getY();
+        double relativeX = Constants.Field.HOPPER_BLUE.getX() - robotPos.getX();
+        double relativeY = Constants.Field.HOPPER_BLUE.getY() - robotPos.getY();
 
         double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
         double magVelocity = Math.sqrt(vx * vx + vy * vy);
@@ -91,8 +91,8 @@ public class TurretHelpers {
     public static double getRadialSpeed(ChassisSpeeds speeds, Pose2d robotPos) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;
-        double relativeX = Constants.Field.HOPPER.getX() - robotPos.getX();
-        double relativeY = Constants.Field.HOPPER.getY() - robotPos.getY();
+        double relativeX = Constants.Field.HOPPER_BLUE.getX() - robotPos.getX();
+        double relativeY = Constants.Field.HOPPER_BLUE.getY() - robotPos.getY();
 
         double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
         double normalizedX = relativeX / relativeMagPos;

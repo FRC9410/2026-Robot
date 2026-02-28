@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import javax.sql.StatementEvent;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -12,7 +14,9 @@ import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.configs.SweepConfig;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Swerve;
@@ -64,7 +68,7 @@ public class RobotContainer implements PowerRobotContainer {
   private void configureBindings() {
     // Intake in and out
     driverController.rightTrigger(0.5)
-        .or(driverController.leftTrigger(0.5))
+     //   .or(driverController.leftTrigger(0.5))
         .onTrue(new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
@@ -75,6 +79,29 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }));
+
+    driverController.leftTrigger(0.5).onTrue(
+      new SequentialCommandGroup(
+          new InstantCommand( 
+            () -> stateMachine.shooter.setVelocity(-100), stateMachine.shooter
+          ),
+          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 100) < 5),
+          new InstantCommand( 
+            () -> stateMachine.feeder.setVelocity(200), stateMachine.feeder
+          ),
+          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 200) < 5),
+          new InstantCommand( 
+            () -> stateMachine.spindexer.setVelocity(175), stateMachine.spindexer
+          )
+      )).onFalse(new InstantCommand(
+      () -> {
+          stateMachine.shooter.stopVelocity();
+          stateMachine.feeder.stopVelocity();
+          stateMachine.spindexer.stopVelocity();
+      }, stateMachine.shooter, stateMachine.feeder, stateMachine.spindexer
+    ));
+
+    
 
     // State changers
     driverController.leftBumper().onTrue(new InstantCommand(

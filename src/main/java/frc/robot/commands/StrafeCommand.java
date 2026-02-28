@@ -15,6 +15,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.lib.team9410.PowerRobotContainer;
+import frc.robot.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.LocationConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.DriveUtil;
@@ -34,7 +37,7 @@ public class StrafeCommand extends Command {
   private final CommandXboxController controller;
   private final StrafeSide side;
   private final PIDController driveToPointController;
-  private double poseTolerance;
+  private final double poseTolerance;
   
     public StrafeCommand(
         Swerve drivetrain,
@@ -58,15 +61,18 @@ public class StrafeCommand extends Command {
   @Override
   public void execute() {
     StrafeAxis axis = getStrafeAxis(side);
+    Pose2d pose = drivetrain.getState().Pose;
+    GameZone zone = FieldUtils.getZone(pose);
+    if (zone != GameZone.INTERCHANGE) {
+      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, 0.0);
 
-    final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, 0.0);
-
-    drivetrain.drive(
-      axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : getXInput(axis, side),
-      axis == StrafeAxis.X ? speeds.vyMetersPerSecond : getYInput(axis, side),
-      getRotation(axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, side),
-      Swerve.DriveMode.ROTATION_LOCK
-    );
+      drivetrain.drive(
+        axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : getXInput(axis, side),
+        axis == StrafeAxis.X ? speeds.vyMetersPerSecond : getYInput(axis, side),
+        getRotation(axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, side, zone, pose),
+        Swerve.DriveMode.ROTATION_LOCK
+      );
+    }
   }
 
   // Called once the command ends or is interrupted.
@@ -80,85 +86,77 @@ public class StrafeCommand extends Command {
     return false;
   }
 
-  private double getRotation (double speed, StrafeSide side, Pose2d pose) {
+  private double getRotation (double speed, StrafeSide side, GameZone zone, Pose2d pose) {
     Alliance alliance = DriverStation.getAlliance().get();
+    double centerLine = getCenterLine(zone);
 
-    if (alliance == Alliance.Blue) {
-      switch (side) {
-        case FRONT:
-          if (Math.abs(speed) < 0.1) {
-            return pose.getY() > 4? 45: -45;
-          } else if (speed > 0) {
-            return -45;
-          } else {
-            return 45;
-          }
-        case LEFT:
-          if (Math.abs(speed) < 0.1) {
-            return pose.getX() > 2? 135: 45;
-          } else if (speed > 0) {
-            return 45;
-          } else {
-            return 135;
-          }
-        case RIGHT:
-          if (Math.abs(speed) < 0.1) {
-            return pose.getX() > 2? -135: -45;
-          } else if (speed > 0) {
-            return -45;
-          } else {
-            return -135;
-          }
-        case BACK:
-          if (Math.abs(speed) < 0.1) {
-            return pose.getY() > 4? -135: 135;
-          } else if (speed > 0) {
-            return -135;
-          } else {
-            return 135;
-          }
-        default:
-          return 0;
-      }
-    } else {
-      switch (side) {
-      case BACK:
+    switch (side) {
+      case FRONT:
         if (Math.abs(speed) < 0.1) {
-          return 0; //default direction to long side
+          if ((alliance == Alliance.Blue && pose.getY() > centerLine) || (alliance == Alliance.Red && pose.getY() < centerLine)) {
+            return 45.0;
+          } else {
+            return -45.0;
+          }
         } else if (speed > 0) {
-          return -45;
+          return -45.0;
         } else {
-          return 45;
-        }
-      case RIGHT:
-        if (Math.abs(speed) < 0.1) {
-          return 0;
-        } else if (speed > 0) {
-          return 45;
-        } else {
-          return 135;
+          return 45.0;
         }
       case LEFT:
         if (Math.abs(speed) < 0.1) {
-          return 0;
+          if ((alliance == Alliance.Blue && pose.getX() > 2 || (alliance == Alliance.Red && pose.getX() < 2))) {
+            return 135.0;
+          } else {
+            return 45.0;
+          }
         } else if (speed > 0) {
-          return -45;
+          return 45.0;
         } else {
-          return -135;
+          return 135.0;
         }
-      case FRONT:
+      case RIGHT:
         if (Math.abs(speed) < 0.1) {
-          return 0;
-        } else if (speed > 0) {
-          return -135;
+          if ((alliance == Alliance.Blue && pose.getX() > 2) || (alliance == Alliance.Red && pose.getX() < 2)) {
+            return -135.0;
+          } else {
+            return -45.0;
+          }
+        } else if (speed > 0.0) {
+          return -45.0;
         } else {
-          return 135;
+          return -135.0;
+        }
+      case BACK:
+        if (Math.abs(speed) < 0.1) {
+          if ((alliance == Alliance.Blue && pose.getY() > centerLine) || (alliance == Alliance.Red && pose.getY() < centerLine)) {
+            return -135.0;
+          } else {
+            return 135.0;
+          }
+        } else if (speed > 0) {
+          return -135.0;
+        } else {
+          return 135.0;
         }
       default:
-        return 0;
-      }
+        return 0.0;
     }
   }
+  
+  private double getCenterLine(GameZone zone) {
+    switch (zone) {
+      case BLUE_ALLIANCE:
+        return LocationConstants.BLUE_ZONE_X_MID;
+      case RED_ALLIANCE:
+        return LocationConstants.RED_ZONE_X_MID;
+      case NEUTRAL:
+        return LocationConstants.NO_MANS_LAND_X_MID;
+      default:
+        return -1;
+    }
+  }
+
 
   private double getXInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;

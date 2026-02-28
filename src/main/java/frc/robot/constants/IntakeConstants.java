@@ -26,7 +26,7 @@ public class IntakeConstants {
   public static final double INTAKE_MIN = -0.09; // INTAKE UP
   public static final double INTAKE_MAX = -0.44; // INTAKE DOWN
   public static final double INTAKE_DEFAULT = INTAKE_MIN;
-  public static final double INTAKE_IDLE = -0.3;
+  public static final double INTAKE_IDLE = -0.35;
 
   // Roller velocity PID
   public static final double ROLLER_KP = 0.4;

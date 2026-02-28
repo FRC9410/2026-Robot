@@ -4,11 +4,16 @@
 
 package frc.robot.subsystems;
 
+import java.util.Map;
 import java.util.Optional;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
@@ -61,6 +66,19 @@ public class StateMachine extends SubsystemBase {
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
+    
+    Translation2d translationToPoint = PowerRobotContainer.getData("robotPose", new Pose2d (0, 0, new Rotation2d(0))).getTranslation().minus(Constants.Field.HOPPER_RED);
+    double linearDistance = translationToPoint.getNorm();
+    PowerRobotContainer.setData("distanceToHopper", linearDistance);
+
+    SmartDashboard.putNumber("distanceToHopper", linearDistance);
+
+    // Map<String, Object> robotData = PowerRobotContainer.getAllData();
+    // SmartDashboard.putData("robotData", builder -> {
+    // builder.setSmartDashboardType("robotData");
+    // for (String key : robotData.keySet()) {
+    //     builder.addDoubleProperty(key, () -> robotData.get(key), v -> robotData.put(key, v));}});
+
   }
 
   private void handleStateTransitions() {
