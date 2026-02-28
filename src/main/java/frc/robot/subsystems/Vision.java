@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTable;
@@ -143,4 +144,20 @@ public class Vision extends SubsystemBase {
 
     return bestLimelight;
   }
+
+  
+    // Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(bestLimelight);
+    // LimelightHelpers.PoseEstimate bestMeasurement =
+    //     LimelightHelpers.getBotPoseEstimate_wpiBlue(bestLimelight);
+
+    // if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
+    //   Pose2d newPose = pose.toPose2d();
+    //   drive.resetRotation(newPose.getRotation());
+    //   LimelightHelpers.SetRobotOrientation(
+    //       "limelight-left", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+    //   LimelightHelpers.SetRobotOrientation(
+    //       "limelight-right", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+    // } else {
+    //   return;
+    // }
 }
