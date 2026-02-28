@@ -7,6 +7,9 @@ package frc.robot.subsystems;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ctre.phoenix6.Utils;
+
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -22,6 +25,7 @@ import frc.robot.Constants;
 import frc.robot.constants.TunerConstants;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.utils.FieldUtils;
+import frc.robot.utils.LimelightHelpers;
 import frc.robot.utils.TurretHelpers;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
@@ -66,12 +70,25 @@ public class StateMachine extends SubsystemBase {
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
-    
-    Translation2d translationToPoint = PowerRobotContainer.getData("robotPose", new Pose2d (0, 0, new Rotation2d(0))).getTranslation().minus(Constants.Field.HOPPER_RED);
-    double linearDistance = translationToPoint.getNorm();
-    PowerRobotContainer.setData("distanceToHopper", linearDistance);
 
-    SmartDashboard.putNumber("distanceToHopper", linearDistance);
+    vision.setRobotPose();
+
+
+    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-turret");
+    if (mt2 != null && mt2.tagCount > 0) {
+      drivetrain.resetPose(mt2.pose);
+      drivetrain.resetRotation(mt2.pose.getRotation());
+      drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+      drivetrain.addVisionMeasurement(mt2.pose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
+
+      Translation2d translationToPoint = mt2.pose.getTranslation().minus(Constants.Field.HOPPER_RED);
+      double linearDistance = translationToPoint.getNorm();
+      PowerRobotContainer.setData("distanceToHopper", linearDistance);
+
+      SmartDashboard.putNumber("distanceToHopper", linearDistance);
+    }
+    
+
 
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
     // SmartDashboard.putData("robotData", builder -> {

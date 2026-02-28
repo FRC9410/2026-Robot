@@ -20,7 +20,18 @@ public class ShooterConstants {
 
     public static final double SHOOTER_HOOD_MIN = 0.005;
     public static final double SHOOTER_HOOD_MAX = 0.14;
-    public static final double SHOOTER_HOOD_DEFAULT = SHOOTER_HOOD_MIN;
+    // 4.35 distance 0.12
+    // 4.3 distance 0.11
+    // 4.1 distance 0.10
+    // 3.75 distance 0.09
+    // 3.45 distance 0.08
+    // 3.13 distance 0.07
+    // 2.8 distance 0.065
+    // 2.55 distance 0.06
+    // 2.22 distance 0.055
+    // 1.95 distance 0.055
+    // 1.67 distance 0.05
+    public static final double SHOOTER_HOOD_DEFAULT = 0.09; // default should be min
 
     // Flywheel velocity PID
     public static final double FLYWHEEL_KP = 0.4;
@@ -49,7 +60,7 @@ public class ShooterConstants {
     public static final double HOOD_MM_CRUISE_VELOCITY = 15;
     public static final double HOOD_MM_ACCELERATION = 30;
     public static final double HOOD_MAGNET_OFFSET_ROTATIONS = -0.851;
-    public static final double HOOD_DISCONTINUITY_POINT_ROTATIONS = 1.0;
+    public static final double HOOD_DISCONTINUITY_POINT_ROTATIONS = 0.5;
 
     public static final List<MotorConfig> HOOD_MOTOR_CONFIGS = List.of(
         MotorConfig.leader(HOOD_CAN_ID, NeutralModeValue.Brake, true));

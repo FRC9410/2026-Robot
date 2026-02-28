@@ -120,36 +120,36 @@ public class SwerveDriveCommand extends Command {
     //   stateMachine.setIsInPosition(
     //       getIsInPosition(currentPose, targetPose, drivetrain.getState().Speeds));
 
-    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
-      boolean isBlueAlliance = true;
-      if (DriverStation.getAlliance().isPresent()) {
-        if (DriverStation.getAlliance().get() == Alliance.Red) {
-          isBlueAlliance = false;
-        }
-      }
-      final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
+    // if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+    //   boolean isBlueAlliance = true;
+    //   if (DriverStation.getAlliance().isPresent()) {
+    //     if (DriverStation.getAlliance().get() == Alliance.Red) {
+    //       isBlueAlliance = false;
+    //     }
+    //   }
+    //   final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-      Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
-          currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+    //   Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+    //       currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
-      drivetrain.drive(
-          -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
-    } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
-      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
-      drivetrain.drive(
-          speeds.vxMetersPerSecond,
-          speeds.vyMetersPerSecond,
-          // currentPose.getRotation().getDegrees(),
-          targetPose.getRotation().getDegrees(),
-          Swerve.DriveMode.ROTATION_LOCK);
-    } else {
+    //   drivetrain.drive(
+    //       -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+    // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
+    //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
+    //   drivetrain.drive(
+    //       speeds.vxMetersPerSecond,
+    //       speeds.vyMetersPerSecond,
+    //       // currentPose.getRotation().getDegrees(),
+    //       targetPose.getRotation().getDegrees(),
+    //       Swerve.DriveMode.ROTATION_LOCK);
+    // } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       drivetrain.drive(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
-    }
+    // }
   }
 
   // Called once the command ends or is interrupted.

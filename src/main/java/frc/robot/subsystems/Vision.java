@@ -91,6 +91,18 @@ public class Vision extends SubsystemBase {
     // }
     return new Pose2d(10.0, 10.0, new Rotation2d(10.0));
   }
+  
+  public void setRobotPose() {
+    Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue("limelight-turret");
+    LimelightHelpers.PoseEstimate bestMeasurement =
+        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-turret");
+
+    if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
+      Pose2d newPose = pose.toPose2d();
+      LimelightHelpers.SetRobotOrientation(
+          "limelight-turret", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+    }
+  }
 
   /** Set pipeline index (0-based). */
   public void setPipeline(int index) {
@@ -144,8 +156,6 @@ public class Vision extends SubsystemBase {
 
     return bestLimelight;
   }
-
-  
     // Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(bestLimelight);
     // LimelightHelpers.PoseEstimate bestMeasurement =
     //     LimelightHelpers.getBotPoseEstimate_wpiBlue(bestLimelight);

@@ -14,7 +14,7 @@ public class SpindexerConstants {
   public static final int LASER_1_CAN_ID = 31;
   public static final int LASER_2_CAN_ID = 32;
 
-  public static final double SPINDEXER_KP = 0.1;
+  public static final double SPINDEXER_KP = 0.2;
   public static final double SPINDEXER_KI = 0;
   public static final double SPINDEXER_KD = 0;
   public static final double SPINDEXER_KG = 0;

@@ -81,15 +81,49 @@ public class RobotContainer implements PowerRobotContainer {
             }));
 
     driverController.leftTrigger(0.5).onTrue(
+      // shooter 120
+      // 4.35 distance
+
+      // shooter 105
+      // 4.3 distance
+
+      // shooter 100
+      // 4.1 distance
+
+      // shooter 100
+      // 3.75 distance
+
+      // shooter 95
+      // 3.45 distance
+      
+      // shooter 95
+      // 3.13 distance
+
+      // shooter 95
+      // 2.8 distance
+
+      // shooter 93
+      // 2.55 distance
+
+      // shooter 87
+      // 2.22 distance
+      
+      // shooter 83 
+      // 1.95 distance
+      
+      // shooter 80
+      // 1.67 distance
       new SequentialCommandGroup(
+        new ParallelRaceGroup(
           new InstantCommand( 
             () -> stateMachine.shooter.setVelocity(-100), stateMachine.shooter
           ),
-          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 100) < 5),
+          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 80) < 5)),
+        new ParallelRaceGroup(
           new InstantCommand( 
-            () -> stateMachine.feeder.setVelocity(-200), stateMachine.feeder
+            () -> stateMachine.feeder.setVelocity(-105), stateMachine.feeder
           ),
-          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 200) < 5),
+          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 100) < 5)),
           new InstantCommand( 
             () -> stateMachine.spindexer.setVelocity(175), stateMachine.spindexer
           )
@@ -122,7 +156,7 @@ public class RobotContainer implements PowerRobotContainer {
     
     // driverController.y().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.FRONT));
 
-    // stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
+    stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
 
   }
   // Test bindings

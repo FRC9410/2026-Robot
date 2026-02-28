@@ -82,8 +82,8 @@ public class DriveUtil {
       return new ChassisSpeeds(0, 0, 0);
     }
 
-    if (DriverStation.getAlliance().get() == Alliance.Red) {
-      isBlueAlliance = false;
+    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+      isBlueAlliance = true;
     }
 
     double xMagnitude = MathUtil.applyDeadband(controller.getLeftY(), 0.1);

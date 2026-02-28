@@ -73,7 +73,7 @@ public class VelocitySubsystem extends PowerSubsystem {
   public void setVelocity(double velocityRotationsPerSecond) {
     if (velocityMotor != null) {
       velocityMotor.setControl(
-          new MotionMagicVelocityVoltage(0).withVelocity(velocityRotationsPerSecond).withSlot(0));
+          new MotionMagicVelocityVoltage(0).withVelocity(velocityRotationsPerSecond).withEnableFOC(true).withSlot(0));
     }
   }
 
