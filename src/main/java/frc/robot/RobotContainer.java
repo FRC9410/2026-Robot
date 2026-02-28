@@ -87,7 +87,7 @@ public class RobotContainer implements PowerRobotContainer {
           ),
           new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 100) < 5),
           new InstantCommand( 
-            () -> stateMachine.feeder.setVelocity(200), stateMachine.feeder
+            () -> stateMachine.feeder.setVelocity(-200), stateMachine.feeder
           ),
           new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 200) < 5),
           new InstantCommand( 
@@ -95,9 +95,9 @@ public class RobotContainer implements PowerRobotContainer {
           )
       )).onFalse(new InstantCommand(
       () -> {
-          stateMachine.shooter.stopVelocity();
-          stateMachine.feeder.stopVelocity();
-          stateMachine.spindexer.stopVelocity();
+          stateMachine.shooter.brake();
+          stateMachine.feeder.brake();
+          stateMachine.spindexer.brake();
       }, stateMachine.shooter, stateMachine.feeder, stateMachine.spindexer
     ));
 
@@ -113,16 +113,16 @@ public class RobotContainer implements PowerRobotContainer {
           stateMachine.setWantedState(RobotState.SCORING);
         }));
 
-    // Sweeping commands
-    driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.BACK));
+    // // Sweeping commands
+    // driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.BACK));
     
-    driverController.b().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.RIGHT));
+    // driverController.b().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.RIGHT));
     
-    driverController.x().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.LEFT));
+    // driverController.x().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.LEFT));
     
-    driverController.y().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.FRONT));
+    // driverController.y().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController, StrafeSide.FRONT));
 
-    stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
+    // stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
 
   }
   // Test bindings
@@ -130,7 +130,7 @@ public class RobotContainer implements PowerRobotContainer {
     testController.a().onTrue(new InstantCommand(
         () -> {
           if (spindexerOn) {
-            stateMachine.spindexer.stopVelocity();
+            stateMachine.spindexer.brake();
           } else {
             stateMachine.spindexer.setVelocity(175);
           }
@@ -140,28 +140,28 @@ public class RobotContainer implements PowerRobotContainer {
     testController.b().onTrue(new InstantCommand(
         () -> {
           if (feederOn) {
-            stateMachine.feeder.stopVelocity();
+            stateMachine.feeder.brake();
           } else {
-            stateMachine.feeder.setVelocity(200);
+            stateMachine.feeder.setVelocity(-200);
           }
 
           feederOn = !feederOn;
         }));
-    testController.leftBumper().onTrue(new InstantCommand(
-        () -> {
-          if (turretOn) {
-            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MIN);
-          } else {
-            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-          }
+    // testController.leftBumper().onTrue(new InstantCommand(
+    //     () -> {
+    //       if (turretOn) {
+    //         stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+    //       } else {
+    //         stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+    //       }
 
-          turretOn = !turretOn;
-        }));
+    //       turretOn = !turretOn;
+    //     }));
 
     testController.y().onTrue(new InstantCommand(
         () -> {
           if (shooterOn) {
-            stateMachine.shooter.stopVelocity();
+            stateMachine.shooter.brake();
           } else {
             stateMachine.shooter.setVelocity(-100);
           }
@@ -171,9 +171,11 @@ public class RobotContainer implements PowerRobotContainer {
     testController.x().onTrue(new InstantCommand(
         () -> {
           if (intakeOn) {
-            stateMachine.intakeRoller.stopVelocity();
+            stateMachine.intakeRoller.brake();
+            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
           } else {
             stateMachine.intakeRoller.setVelocity(100); // 200 works if needed or wanted
+            stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
           }
 
           intakeOn = !intakeOn;

@@ -24,7 +24,7 @@ public class IntakeConstants {
   public static final double ROLLER_TARGET_RPS = 10;
 
   public static final double INTAKE_MIN = -0.09; // INTAKE UP
-  public static final double INTAKE_MAX = -0.44; // INTAKE DOWN
+  public static final double INTAKE_MAX = -0.445; // INTAKE DOWN 0.44
   public static final double INTAKE_DEFAULT = INTAKE_MIN;
   public static final double INTAKE_IDLE = -0.35;
 
@@ -51,7 +51,7 @@ public class IntakeConstants {
   public static final double WRIST_KG = 0;
   public static final double WRIST_SENSOR_TO_MECHANISM_RATIO = -1;
   public static final double WRIST_ROTOR_TO_SENSOR_RATIO = 44.444;
-  public static final double WRIST_MM_CRUISE_VELOCITY = 5;
+  public static final double WRIST_MM_CRUISE_VELOCITY = 1;
   public static final double WRIST_MM_ACCELERATION = 20;
   public static final double WRIST_MAGNET_OFFSET_ROTATIONS = 0.285;
   public static final double WRIST_DISCONTINUITY_POINT_ROTATIONS = 1.0;

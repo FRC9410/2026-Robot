@@ -30,7 +30,7 @@ public class TurretConstants {
 
   public static final double TURRET_MM_CRUISE_VELOCITY = 5;
   public static final double TURRET_MM_ACCELERATION = 60;
-  public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.701;
+  public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.65;
   public static final double TURRET_DISCONTINUITY_POINT_ROTATIONS = 1.0;
 
   public static final List<MotorConfig> TURRET_MOTOR_CONFIGS = List.of(

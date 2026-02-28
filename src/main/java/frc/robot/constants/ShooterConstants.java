@@ -48,7 +48,7 @@ public class ShooterConstants {
     public static final double HOOD_ROTOR_TO_SENSOR_RATIO = 60;
     public static final double HOOD_MM_CRUISE_VELOCITY = 15;
     public static final double HOOD_MM_ACCELERATION = 30;
-    public static final double HOOD_MAGNET_OFFSET_ROTATIONS = 0.148;
+    public static final double HOOD_MAGNET_OFFSET_ROTATIONS = -0.851;
     public static final double HOOD_DISCONTINUITY_POINT_ROTATIONS = 1.0;
 
     public static final List<MotorConfig> HOOD_MOTOR_CONFIGS = List.of(
