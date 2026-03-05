@@ -155,7 +155,9 @@ public class StateMachine extends SubsystemBase {
         // remember to check for balls
 
 
-        Translation2d offset = pose.getTranslation().minus(Constants.Field.HOPPER_RED);
+        // for red testing: you face 9 and 10 from driver
+
+        Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
         double distance = offset.getNorm();
 
         double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
