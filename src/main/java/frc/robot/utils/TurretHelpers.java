@@ -41,7 +41,7 @@ public class TurretHelpers {
     }
 
     public static double calculateShooterVelocity(double distance) {
-        double shooterVelocitySetpoint = TurretConstants.shooterVelocityInterpolator.getInterpolatedValue(distance);
+        double shooterVelocitySetpoint = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
         return shooterVelocitySetpoint;
     }
 
@@ -115,5 +115,13 @@ public class TurretHelpers {
 
     public static Translation2d elementMult(Translation2d a, Translation2d b) {
         return new Translation2d(a.getX() * b.getX(), a.getY() * b.getY());
+    }
+
+    public static double getTurretAngle (double turretPosRotation) {
+        if (turretPosRotation >= 0) {
+            return (turretPosRotation * 360) - 180; // if encoder and cam rot are backwards, mult by -1
+        } else {
+            return (turretPosRotation * 360) + 180;
+        }
     }
 }

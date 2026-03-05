@@ -71,31 +71,34 @@ public class StateMachine extends SubsystemBase {
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
 
-    vision.setRobotPose();
-
-
-    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-turret");
-    if (mt2 != null && mt2.tagCount > 0) {
-      drivetrain.resetPose(mt2.pose);
-      drivetrain.resetRotation(mt2.pose.getRotation());
-      drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
-      drivetrain.addVisionMeasurement(mt2.pose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
-
-      Translation2d translationToPoint = mt2.pose.getTranslation().minus(Constants.Field.HOPPER_RED);
-      double linearDistance = translationToPoint.getNorm();
-      PowerRobotContainer.setData("distanceToHopper", linearDistance);
-
-      SmartDashboard.putNumber("distanceToHopper", linearDistance);
-    }
-    
-
-
+    setRobotPose();
+  
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
     // SmartDashboard.putData("robotData", builder -> {
     // builder.setSmartDashboardType("robotData");
     // for (String key : robotData.keySet()) {
     //     builder.addDoubleProperty(key, () -> robotData.get(key), v -> robotData.put(key, v));}});
 
+  }
+
+  private void setRobotPose () {
+    String bestLimelight = vision.getBestLimelight();
+
+    vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations()));
+
+    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
+    if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
+      drivetrain.resetPose(mt2.pose);
+      // drivetrain.resetRotation(mt2.pose.getRotation());
+      drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+      drivetrain.addVisionMeasurement(mt2.pose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
+
+      Translation2d translationToPoint = mt2.pose.getTranslation().minus(Constants.Field.HOPPER_RED);
+      double linearDistance = translationToPoint.getNorm();
+
+      PowerRobotContainer.setData("distanceToHopper", linearDistance);
+      SmartDashboard.putNumber("distanceToHopper", linearDistance);
+    }
   }
 
   private void handleStateTransitions() {

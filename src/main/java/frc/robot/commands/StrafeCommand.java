@@ -163,7 +163,7 @@ public class StrafeCommand extends Command {
     GameZone zone = FieldUtils.getZone(pose);
     Alliance alliance = DriverStation.getAlliance().get();
     double strafeLine;
-
+ 
     if ((alliance == Alliance.Blue && side == StrafeSide.LEFT)
         ||
         (alliance == Alliance.Red && side == StrafeSide.RIGHT)) {
@@ -196,7 +196,7 @@ public class StrafeCommand extends Command {
           strafeLine = LocationConstants.BLUE_HUB_WALL_X;
         } else {
           strafeLine = LocationConstants.BLUE_ALLIANCE_WALL_X;
-        }
+        } 
 
         break;
       case RED_ALLIANCE:
@@ -231,7 +231,6 @@ public class StrafeCommand extends Command {
     return velocity.getY();
   }
 
-  
   private StrafeAxis getStrafeAxis(StrafeSide side) {
     if (side == StrafeSide.LEFT || side == StrafeSide.RIGHT) {
       return StrafeAxis.X;
@@ -251,5 +250,4 @@ public class StrafeCommand extends Command {
     FRONT,
     BACK
   }
-
 }

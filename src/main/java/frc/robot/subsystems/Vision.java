@@ -13,12 +13,15 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.utils.LimelightHelpers;
+import frc.robot.utils.TurretHelpers;
 
 /** Subsystem for vision (Limelight) – targets and robot pose. */
 public class Vision extends SubsystemBase {
@@ -51,34 +54,7 @@ public class Vision extends SubsystemBase {
   }
 
   @Override
-  public void periodic() {  
-    PowerRobotContainer.setData("robotPose", getRobotPose(getBestLimelight()));
-  }
-
-  /** Whether the camera has at least one valid target. */
-  public boolean hasTarget() {
-    return getTV() > 0.5;
-  }
-
-  /** Horizontal offset from crosshair to target (degrees). */
-  public double getTX() {
-    return getBestLimelight().getEntry("tx").getDouble(0);
-  }
-
-  /** Vertical offset from crosshair to target (degrees). */
-  public double getTY() {
-    return getBestLimelight().getEntry("ty").getDouble(0);
-  }
-
-  /** Target area (0–100%). */
-  public double getTA() {
-    return getBestLimelight().getEntry("ta").getDouble(0);
-  }
-
-  /** Valid target (1 = valid). */
-  public double getTV() {
-    return getBestLimelight().getEntry("tv").getDouble(0);
-  }
+  public void periodic() {}
 
   // TODO: fix this because the robot moves lol
   /** Robot pose from Limelight (when using 2D or 3D pose). */
@@ -92,66 +68,67 @@ public class Vision extends SubsystemBase {
     return new Pose2d(10.0, 10.0, new Rotation2d(10.0));
   }
   
-  public void setRobotPose() {
-    Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue("limelight-turret");
+  public void setRobotPose(String limelight, double yaw) {
+    Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(limelight);
     LimelightHelpers.PoseEstimate bestMeasurement =
-        LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-turret");
+        LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
 
     if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
       Pose2d newPose = pose.toPose2d();
+
+      if (limelight == "limelight-turret") {
+        Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
+
+        double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
+        double right = relativePosition.getX();
+        double up = 0.7112;
+        double pitch = 10.476;
+
+        turretLimelight.putValue("yaw", NetworkTableValue.makeDouble(yaw));
+        turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
+        turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
+
+        LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, 0, pitch, yaw);
+      }
+
       LimelightHelpers.SetRobotOrientation(
-          "limelight-turret", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+          limelight, newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
     }
-  }
-
-  /** Set pipeline index (0-based). */
-  public void setPipeline(int index) {
-    getBestLimelight().getEntry("pipeline").setNumber(index);
-  }
-
-  /** Set LED mode: 0=current pipeline, 1=force off, 2=force blink, 3=force on. */
-  public void setLEDMode(int mode) {
-    getBestLimelight().getEntry("ledMode").setNumber(mode);
   }
 
   public int getTagId(NetworkTable table) {
     return (int) table.getEntry("tid").getInteger(0);
   }
 
-  public NetworkTable getBestLimelight() {
-    final NetworkTable leftLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.Vision.LEFT_TABLE);
-    final NetworkTable rightLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.Vision.RIGHT_TABLE);
-    final NetworkTable turretLimelight =
-        NetworkTableInstance.getDefault().getTable(Constants.Vision.TURRET_TABLE);
+  public String getBestLimelight() {
+    
 
-    LimelightHelpers.PoseEstimate leftPerimeterMeasurement =
+    LimelightHelpers.PoseEstimate leftMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-left");
-    LimelightHelpers.PoseEstimate rightPerimeterMeasurement =
+    LimelightHelpers.PoseEstimate rightMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-right");
-    LimelightHelpers.PoseEstimate turretPerimeterMeasurement =
+    LimelightHelpers.PoseEstimate turretMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-turret");
 
-    NetworkTable bestLimelight = leftLimelight;
+    String bestLimelight = "";
     double bestArea = 0;
 
-    if (turretPerimeterMeasurement != null && tagIds.contains(getTagId(turretLimelight))
-        && turretPerimeterMeasurement.avgTagArea > bestArea) {
-      bestLimelight = turretLimelight;
-      bestArea = turretPerimeterMeasurement.avgTagArea;
+    if (turretMeasurement != null && tagIds.contains(getTagId(turretLimelight))
+        && turretMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-turret";
+      bestArea = turretMeasurement.avgTagArea;
     }
 
-    if (leftPerimeterMeasurement != null && tagIds.contains(getTagId(leftLimelight))
-        && leftPerimeterMeasurement.avgTagArea > bestArea) {
-      bestLimelight = leftLimelight;
-      bestArea = leftPerimeterMeasurement.avgTagArea;
+    if (leftMeasurement != null && tagIds.contains(getTagId(leftLimelight))
+        && leftMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-left";
+      bestArea = leftMeasurement.avgTagArea;
     }
 
-    if (rightPerimeterMeasurement != null && tagIds.contains(getTagId(rightLimelight))
-        && rightPerimeterMeasurement.avgTagArea > bestArea) {
-      bestLimelight = rightLimelight;
-      bestArea = rightPerimeterMeasurement.avgTagArea;
+    if (rightMeasurement != null && tagIds.contains(getTagId(rightLimelight))
+        && rightMeasurement.avgTagArea > bestArea) {
+      bestLimelight = "limelight-right";
+      bestArea = rightMeasurement.avgTagArea;
     }
 
     return bestLimelight;
