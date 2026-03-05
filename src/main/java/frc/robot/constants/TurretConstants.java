@@ -81,7 +81,7 @@ public class TurretConstants {
     public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0;
     public static final int TURRET_RADIUS = 0;
 
-    public static final LinearInterpolator hoodAngleInterpolator = new LinearInterpolator(HOOD_ANGLES);
+    public static final LinearInterpolator HOOD_ANGLE_INTERPOLATOR = new LinearInterpolator(HOOD_ANGLES);
     public static final LinearInterpolator SHOOTER_VELOCITY_INTERPOLATOR = new LinearInterpolator(SHOOTER_SPEEDS);
 
     public static final double TURRET_CAMERA_Y_OFFSET = 0.0;

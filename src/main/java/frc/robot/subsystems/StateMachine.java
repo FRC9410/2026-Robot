@@ -22,7 +22,9 @@ import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 import frc.robot.Constants;
+import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TunerConstants;
+import frc.robot.constants.TurretConstants;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.LimelightHelpers;
@@ -138,38 +140,34 @@ public class StateMachine extends SubsystemBase {
   }
 
   public GameZone getZoneFromPRC () {
-    Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
-    if (PowerRobotContainer.getData("robotPose") == null) {
-      return GameZone.INTERCHANGE; // pose hasnt been updated yet
-    }
+    Pose2d pose = drivetrain.getState().Pose;
 
     return FieldUtils.getZone(pose);
   }
 
   private void executeShooting() {
-    Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
-    if (PowerRobotContainer.getData("robotPose") == null) {
-      return; // pose hasnt been updated yet
-    }
+    Pose2d pose = drivetrain.getState().Pose;
 
     GameZone zone = FieldUtils.getZone(pose);
 
     if (getAllianceZone() == zone) { // we are in our zone
       if (isHubActive()) {
         // remember to check for balls
+
+
+        Translation2d offset = pose.getTranslation().minus(Constants.Field.HOPPER_RED);
+        double distance = offset.getNorm();
+
+        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+        double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
         
-        if (!shooter.isAllMotorsRunning()) {
-          shooter.setVelocity(1); //placeholder
-        }
+        shooter.setVelocity(shooterVelo);
+        shooterHood.setPositionRotations(hoodPos);
       } else {
-        if (shooter.isAllMotorsRunning()) {
-          shooter.stopAll();
-        }
+        shooter.brake();
       }
     } else { // we are not in our zone
-      if (shooter.isAllMotorsRunning()) {
-        shooter.stopAll(); // stop shooter flywheels
-      }
+      shooter.brake();
     }
   }
 

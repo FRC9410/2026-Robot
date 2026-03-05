@@ -36,7 +36,7 @@ public class TurretHelpers {
     }
 
     public static double calculateHoodAngle(double distance) {
-        double hoodAngleSetpoint = TurretConstants.hoodAngleInterpolator.getInterpolatedValue(distance);
+        double hoodAngleSetpoint = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
         return hoodAngleSetpoint;
     }
 
