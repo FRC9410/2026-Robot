@@ -165,6 +165,9 @@ public class StateMachine extends SubsystemBase {
         
         shooter.setVelocity(shooterVelo);
         shooterHood.setPositionRotations(hoodPos);
+
+        // TODO: check everything else before enabling this so it doesnt try to snap its neck again
+        // turret.setPositionRotations(TurretHelpers.getTurretRotationsWithoutLead(this));
       } else {
         shooter.brake();
       }

@@ -1,5 +1,7 @@
 package frc.robot.utils;
 
+import static edu.wpi.first.units.Units.Rotation;
+
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -8,10 +10,13 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.Kinematics;
+import edu.wpi.first.units.AngleUnit;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.constants.TurretConstants;
 import frc.robot.subsystems.StateMachine;
+import frc.robot.utils.FieldUtils.GameZone;
 
 public class TurretHelpers {
     /**
@@ -61,10 +66,12 @@ public class TurretHelpers {
         return 0.0;
     }
 
-    public static void aimTurret(StateMachine stateMachine, double position) {
-        var turret = stateMachine.turret;
-        
+    public static double getTurretRotationsWithoutLead(StateMachine stateMachine) {
+        Translation2d hub = FieldUtils.getZone(stateMachine.drivetrain.getState().Pose) == GameZone.BLUE_ALLIANCE ? FieldConstants.HOPPER_BLUE : FieldConstants.HOPPER_RED;
 
+        Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation().minus(hub);
+
+        return Math.atan2(relative.getX(), relative.getY());
     }
 
     public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {
