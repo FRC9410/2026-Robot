@@ -11,6 +11,7 @@ import frc.lib.team9410.configs.MotionMagicConfig;
 import frc.lib.team9410.configs.MotorConfig;
 import frc.lib.team9410.configs.PositionSubsystemConfig;
 import frc.lib.team9410.configs.VelocitySubsystemConfig;
+import frc.lib.team9410.math.LinearInterpolator;
 
 public class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;
@@ -20,17 +21,6 @@ public class ShooterConstants {
 
     public static final double SHOOTER_HOOD_MIN = 0.005;
     public static final double SHOOTER_HOOD_MAX = 0.14;
-    // 4.35 distance 0.12
-    // 4.3 distance 0.11
-    // 4.1 distance 0.10
-    // 3.75 distance 0.09
-    // 3.45 distance 0.08
-    // 3.13 distance 0.07
-    // 2.8 distance 0.065
-    // 2.55 distance 0.06
-    // 2.22 distance 0.055
-    // 1.95 distance 0.055
-    // 1.67 distance 0.05
     public static final double SHOOTER_HOOD_DEFAULT = 0.09; // default should be min
 
     // Flywheel velocity PID
@@ -41,14 +31,14 @@ public class ShooterConstants {
     public static final double FLYWHEEL_MM_ACCELERATION = 200;
 
     public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
-        MotorConfig.leader(PRIMARY_FLYWHEELS_CAN_ID, NeutralModeValue.Coast, true),
-        MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID, true));
+            MotorConfig.leader(PRIMARY_FLYWHEELS_CAN_ID, NeutralModeValue.Coast, true),
+            MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID, true));
 
     public static final LeadMotorConfig FLYWHEEL_LEAD_CONFIG = new LeadMotorConfig(
-        FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, 1.0, 1.0);
+            FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, 1.0, 1.0);
 
-    public static final MotionMagicConfig FLYWHEEL_MOTION_MAGIC_CONFIG =
-        MotionMagicConfig.forVelocity(FLYWHEEL_MM_ACCELERATION);
+    public static final MotionMagicConfig FLYWHEEL_MOTION_MAGIC_CONFIG = MotionMagicConfig
+            .forVelocity(FLYWHEEL_MM_ACCELERATION);
 
     // Hood PID
     public static final double HOOD_KP = 8;
@@ -63,50 +53,23 @@ public class ShooterConstants {
     public static final double HOOD_DISCONTINUITY_POINT_ROTATIONS = 0.5;
 
     public static final List<MotorConfig> HOOD_MOTOR_CONFIGS = List.of(
-        MotorConfig.leader(HOOD_CAN_ID, NeutralModeValue.Brake, true));
+            MotorConfig.leader(HOOD_CAN_ID, NeutralModeValue.Brake, true));
 
     public static final LeadMotorConfig HOOD_LEAD_CONFIG = new LeadMotorConfig(
-        HOOD_KP, HOOD_KI, HOOD_KD, HOOD_KG,
-        HOOD_SENSOR_TO_MECHANISM_RATIO, HOOD_ROTOR_TO_SENSOR_RATIO);
+            HOOD_KP, HOOD_KI, HOOD_KD, HOOD_KG,
+            HOOD_SENSOR_TO_MECHANISM_RATIO, HOOD_ROTOR_TO_SENSOR_RATIO);
 
     public static final CancoderConfig HOOD_CANCODER_CONFIG = new CancoderConfig(
-        HOOD_ENCODER_CAN_ID, HOOD_MAGNET_OFFSET_ROTATIONS, HOOD_DISCONTINUITY_POINT_ROTATIONS);
+            HOOD_ENCODER_CAN_ID, HOOD_MAGNET_OFFSET_ROTATIONS, HOOD_DISCONTINUITY_POINT_ROTATIONS);
 
     public static final MotionMagicConfig HOOD_MOTION_MAGIC_CONFIG = new MotionMagicConfig(
-        HOOD_MM_CRUISE_VELOCITY, HOOD_MM_ACCELERATION);
+            HOOD_MM_CRUISE_VELOCITY, HOOD_MM_ACCELERATION);
 
     public static final PositionSubsystemConfig HOOD_CONFIG = new PositionSubsystemConfig(
-        HOOD_MOTOR_CONFIGS, HOOD_LEAD_CONFIG, HOOD_CANCODER_CONFIG, HOOD_MOTION_MAGIC_CONFIG,
-        "Shooter Hood", "degrees", Optional.of(SHOOTER_HOOD_DEFAULT));
+            HOOD_MOTOR_CONFIGS, HOOD_LEAD_CONFIG, HOOD_CANCODER_CONFIG, HOOD_MOTION_MAGIC_CONFIG,
+            "Shooter Hood", "degrees", Optional.of(SHOOTER_HOOD_DEFAULT));
 
     public static final VelocitySubsystemConfig FLYWHEEL_CONFIG = new VelocitySubsystemConfig(
-        FLYWHEEL_MOTOR_CONFIGS, FLYWHEEL_LEAD_CONFIG, FLYWHEEL_MOTION_MAGIC_CONFIG, "Shooter");
+            FLYWHEEL_MOTOR_CONFIGS, FLYWHEEL_LEAD_CONFIG, FLYWHEEL_MOTION_MAGIC_CONFIG, "Shooter");
 
-    public static final double[][] hoodAngles = {
-        {-3.5, .11},
-        {-2.5, .11},
-        {-0.89, .11},
-        {0.91, .11},
-        {1.77, .11},
-        {4.62, .1125},
-        {7.12, .115},
-        {9.38, .12},
-        {12.9, .12},
-        {16.38, .12},
-        {20.7, .12}
-    };
-
-    public static final double[][] shooterSpeeds = {
-      {-3.5, 100},
-      {-2.5, 95},
-      {-0.89, 95},
-      {0.91, 90},
-      {1.77, 80},
-      {4.62, 85},
-      {7.12, 80},
-      {9.38, 80},
-      {12.9, 80},
-      {16.38, 80},
-      {20.7, 80}
-    };
 }

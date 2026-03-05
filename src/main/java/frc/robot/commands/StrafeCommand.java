@@ -39,7 +39,7 @@ public class StrafeCommand extends Command {
   private final PIDController driveToPointController;
   private final double poseTolerance;
   
-    public StrafeCommand(
+  public StrafeCommand(
         Swerve drivetrain,
         CommandXboxController controller,
         StrafeSide side) {
@@ -151,7 +151,7 @@ public class StrafeCommand extends Command {
       case RED_ALLIANCE:
         return LocationConstants.RED_ZONE_X_MID;
       case NEUTRAL:
-        return LocationConstants.NO_MANS_LAND_X_MID;
+        return LocationConstants.NEUTRAL_X_MID;
       default:
         return -1;
     }
@@ -231,6 +231,7 @@ public class StrafeCommand extends Command {
     return velocity.getY();
   }
 
+  
   private StrafeAxis getStrafeAxis(StrafeSide side) {
     if (side == StrafeSide.LEFT || side == StrafeSide.RIGHT) {
       return StrafeAxis.X;

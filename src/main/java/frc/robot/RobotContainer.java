@@ -81,38 +81,6 @@ public class RobotContainer implements PowerRobotContainer {
             }));
 
     driverController.leftTrigger(0.5).onTrue(
-      // shooter 120
-      // 4.35 distance
-
-      // shooter 105
-      // 4.3 distance
-
-      // shooter 100
-      // 4.1 distance
-
-      // shooter 100
-      // 3.75 distance
-
-      // shooter 95
-      // 3.45 distance
-      
-      // shooter 95
-      // 3.13 distance
-
-      // shooter 95
-      // 2.8 distance
-
-      // shooter 93
-      // 2.55 distance
-
-      // shooter 87
-      // 2.22 distance
-      
-      // shooter 83 
-      // 1.95 distance
-      
-      // shooter 80
-      // 1.67 distance
       new SequentialCommandGroup(
         new ParallelRaceGroup(
           new InstantCommand( 
@@ -134,8 +102,6 @@ public class RobotContainer implements PowerRobotContainer {
           stateMachine.spindexer.brake();
       }, stateMachine.shooter, stateMachine.feeder, stateMachine.spindexer
     ));
-
-    
 
     // State changers
     driverController.leftBumper().onTrue(new InstantCommand(

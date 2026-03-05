@@ -22,5 +22,5 @@ public class LocationConstants {
 
     public static final double BLUE_ZONE_X_MID = 2.0;
     public static final double RED_ZONE_X_MID = 14.54;
-    public static final double NO_MANS_LAND_X_MID = 8.27;
+    public static final double NEUTRAL_X_MID = 8.27;
 }
