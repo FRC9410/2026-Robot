@@ -169,12 +169,12 @@ public class StateMachine extends SubsystemBase {
         Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
         double distance = offset.getNorm();
 
-        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) -3;
+        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) -2;
         double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
         
         shooter.setVelocity(-shooterVelo);
         shooterHood.setPositionRotations(hoodPos);
-        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < shooterVelo - 5) {
+        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < TurretConstants.MIN_VELO_INTERPOLATOR.getInterpolatedValue(distance) - 5) {
           feeder.setVelocity(-95);
           spindexer.setVelocity(150);
         } else {
