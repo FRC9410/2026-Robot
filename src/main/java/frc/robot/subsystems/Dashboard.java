@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
+import frc.robot.Constants;
 import frc.robot.RobotContainer;
 
 public class Dashboard extends SubsystemBase {
@@ -28,9 +29,11 @@ public class Dashboard extends SubsystemBase {
     testingTable = inst.getTable("Robot Testing");
     
     // velos
-    testingTable.getEntry("spindexerVelocity").setInteger(PowerRobotContainer.getData("spindexerVelocity", 24));
-    testingTable.getEntry("feederVelocity").setInteger(PowerRobotContainer.getData("feederVelocity", 24));
-    testingTable.getEntry("shooterVelocity").setInteger(PowerRobotContainer.getData("shooterVelocity", 24));
+    testingTable.getEntry("spindexerVelocity").setInteger(PowerRobotContainer.getData("spindexerVelocity", 150));
+    testingTable.getEntry("feederVelocity").setInteger(PowerRobotContainer.getData("feederVelocity", 95));
+    testingTable.getEntry("shooterVelocity").setInteger(PowerRobotContainer.getData("shooterVelocity", 100));
+    // hood target (rotations); user can edit on dashboard
+    testingTable.getEntry("shooterHoodTarget").setDouble(Constants.Shooter.SHOOTER_HOOD_DEFAULT);
   }
 
   @Override
@@ -56,11 +59,22 @@ public class Dashboard extends SubsystemBase {
     testingTable.getEntry("turretEncoder").setDouble(PowerRobotContainer.getData("TurretPosition", -1.0));
     testingTable.getEntry("shooterHoodEncoder").setDouble(PowerRobotContainer.getData("Shooter HoodPosition", -1.0));
     testingTable.getEntry("intakeWristEncoder").setDouble(PowerRobotContainer.getData("Intake WristPosition", -1.0));
+    // hood target: read from dashboard and put in data map for left trigger / others
+    double hoodTarget = testingTable.getEntry("shooterHoodTarget").getDouble(Constants.Shooter.SHOOTER_HOOD_DEFAULT);
+    PowerRobotContainer.setData("Shooter HoodTarget", hoodTarget);
 
-    // velo
-    testingTable.getEntry("shooterVelocity").setDouble(PowerRobotContainer.getData("ShooterVelocity", -1.0));
-    testingTable.getEntry("intakeRollerVelocity").setDouble(PowerRobotContainer.getData("Intake RollerVelocity", -1.0));
-    testingTable.getEntry("spindexerVelocity").setDouble(PowerRobotContainer.getData("SpindexerVelocity", -1.0));
-    testingTable.getEntry("feederVelocity").setDouble(PowerRobotContainer.getData("FeederVelocity", -1.0));
+    // velo: display from data map and push same values into data map for RobotContainer/others
+    double shooterVel = PowerRobotContainer.getData("ShooterVelocity", 0.0);
+    double intakeRollerVel = PowerRobotContainer.getData("Intake RollerVelocity", 0.0);
+    double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 0.0);
+    double feederVel = PowerRobotContainer.getData("FeederVelocity", 0.0);
+    testingTable.getEntry("shooterVelocity").setDouble(shooterVel);
+    testingTable.getEntry("intakeRollerVelocity").setDouble(intakeRollerVel);
+    testingTable.getEntry("spindexerVelocity").setDouble(spindexerVel);
+    testingTable.getEntry("feederVelocity").setDouble(feederVel);
+    PowerRobotContainer.setData("ShooterVelocity", shooterVel);
+    PowerRobotContainer.setData("Intake RollerVelocity", intakeRollerVel);
+    PowerRobotContainer.setData("SpindexerVelocity", spindexerVel);
+    PowerRobotContainer.setData("FeederVelocity", feederVel);
   }
 }

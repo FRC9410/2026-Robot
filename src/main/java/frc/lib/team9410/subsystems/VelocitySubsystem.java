@@ -82,6 +82,16 @@ public class VelocitySubsystem extends PowerSubsystem {
     setVelocity(0);
   }
 
+  /**
+   * Applies the given voltage to the velocity motor (leader only; followers follow).
+   * Use for SysId characterization. Voltage is in volts.
+   */
+  public void setVoltage(double volts) {
+    if (velocityMotor != null) {
+      velocityMotor.setVoltage(volts);
+    }
+  }
+
   /** Returns the primary velocity motor (if initialized). */
   public TalonFX getVelocityMotor() {
     return velocityMotor;

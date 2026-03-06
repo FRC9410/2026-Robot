@@ -4,9 +4,8 @@
 
 package frc.robot;
 
-import javax.sql.StatementEvent;
-
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -27,6 +26,7 @@ import frc.robot.utils.SweepHelpers.ControllerButton;
 import frc.robot.utils.SweepHelpers.SweepDirection;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
+import frc.robot.commands.ShooterSysId;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.StrafeCommand.StrafeSide;
 import frc.robot.commands.SwerveDriveCommand;
@@ -58,11 +58,21 @@ public class RobotContainer implements PowerRobotContainer {
   private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
       testController, stateMachine).build();
 
+  private final ShooterSysId shooterSysId = new ShooterSysId(stateMachine.shooter);
+
   public RobotContainer() {
     configureBindings();
     configureTestBindings();
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    // Shooter SysId: start log, run 4 tests (quasistatic/dynamic, fwd/rev), then stop log
+    SmartDashboard.putData("Shooter SysId/Start Log", ShooterSysId.startLog());
+    SmartDashboard.putData("Shooter SysId/Stop Log", ShooterSysId.stopLog());
+    SmartDashboard.putData("Shooter SysId/Quasistatic Forward", shooterSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("Shooter SysId/Quasistatic Reverse", shooterSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("Shooter SysId/Dynamic Forward", shooterSysId.dynamic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("Shooter SysId/Dynamic Reverse", shooterSysId.dynamic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureBindings() {
@@ -83,18 +93,47 @@ public class RobotContainer implements PowerRobotContainer {
     driverController.leftTrigger(0.5).onTrue(
       new SequentialCommandGroup(
         new ParallelRaceGroup(
-          new InstantCommand( 
-            () -> stateMachine.shooter.setVelocity(-100), stateMachine.shooter
-          ),
-          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 80) < 5)),
+          new InstantCommand(
+              () -> {
+                double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
+                stateMachine.shooterHood.setPositionRotations(hoodTarget);
+              },
+              stateMachine.shooterHood),
+          new WaitUntilCommand(() -> {
+            double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
+            double actual = stateMachine.shooterHood.getPositionRotations();
+            return Math.abs(actual - hoodTarget) < 0.005;
+          })),
         new ParallelRaceGroup(
-          new InstantCommand( 
-            () -> stateMachine.feeder.setVelocity(-105), stateMachine.feeder
-          ),
-          new WaitUntilCommand(() -> Math.abs(Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble()) - 100) < 5)),
-          new InstantCommand( 
-            () -> stateMachine.spindexer.setVelocity(175), stateMachine.spindexer
-          )
+          new InstantCommand(
+              () -> {
+                double shooterVel = PowerRobotContainer.getData("ShooterVelocity", 100.0);
+                stateMachine.shooter.setVelocity(-shooterVel);
+              },
+              stateMachine.shooter),
+          new WaitUntilCommand(() -> {
+            double shooterTarget = PowerRobotContainer.getData("ShooterVelocity", 100.0);
+            double actual = Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble());
+            return Math.abs(actual - shooterTarget) < 5;
+          })),
+        new ParallelRaceGroup(
+          new InstantCommand(
+              () -> {
+                double feederVel = PowerRobotContainer.getData("FeederVelocity", 95.0);
+                stateMachine.feeder.setVelocity(-feederVel);
+              },
+              stateMachine.feeder),
+          new WaitUntilCommand(() -> {
+            double feederTarget = PowerRobotContainer.getData("FeederVelocity", 95.0);
+            double actual = Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble());
+            return Math.abs(actual - feederTarget) < 5;
+          })),
+        new InstantCommand(
+            () -> {
+              double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 150.0);
+              stateMachine.spindexer.setVelocity(spindexerVel);
+            },
+            stateMachine.spindexer)
       )).onFalse(new InstantCommand(
       () -> {
           stateMachine.shooter.brake();
