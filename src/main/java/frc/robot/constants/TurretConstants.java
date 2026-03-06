@@ -30,7 +30,7 @@ public class TurretConstants {
 
     public static final double TURRET_MM_CRUISE_VELOCITY = 5;
     public static final double TURRET_MM_ACCELERATION = 60;
-    public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.125;
+    public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.1315;
     public static final double TURRET_DISCONTINUITY_POINT_ROTATIONS = 0.5;
 
     public static final List<MotorConfig> TURRET_MOTOR_CONFIGS = List.of(
@@ -78,11 +78,23 @@ public class TurretConstants {
             { 1.67, 80 }
     };
 
-    public static final int TURRET_DIST_FROM_ROBOT_CENTER = 0;
-    public static final int TURRET_RADIUS = 0;
+    public static final double[][] MIN_VELO_TABLE = {
+        {4.5, -88},
+        {4.0, -75},
+        {3.6, 75},
+        {3.25, 72},
+        {2.8, 72}, 
+        {2.5, 70},
+        {2.25, 65},
+        {2.0, 63}
+    };
+
+    public static final double TURRET_DIST_FROM_ROBOT_CENTER = -0.1778;
+    public static final double TURRET_RADIUS = 0.10795; //.127
 
     public static final LinearInterpolator HOOD_ANGLE_INTERPOLATOR = new LinearInterpolator(HOOD_ANGLES);
     public static final LinearInterpolator SHOOTER_VELOCITY_INTERPOLATOR = new LinearInterpolator(SHOOTER_SPEEDS);
+    public static final LinearInterpolator MIN_VELO_INTERPOLATOR = new LinearInterpolator(MIN_VELO_TABLE);
 
     public static final double TURRET_CAMERA_Y_OFFSET = 0.0;
 }

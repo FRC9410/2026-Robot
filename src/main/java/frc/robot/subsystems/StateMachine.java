@@ -72,8 +72,9 @@ public class StateMachine extends SubsystemBase {
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
-
     setRobotPose();
+
+    
   
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
     // SmartDashboard.putData("robotData", builder -> {
@@ -83,10 +84,10 @@ public class StateMachine extends SubsystemBase {
 
   }
 
-  private void setRobotPose () {
+  public void setRobotPose () {
     String bestLimelight = vision.getBestLimelight();
 
-    vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations()));
+    vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
     LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
     if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
@@ -100,6 +101,14 @@ public class StateMachine extends SubsystemBase {
 
       PowerRobotContainer.setData("distanceToHopper", linearDistance);
       SmartDashboard.putNumber("distanceToHopper", linearDistance);
+      SmartDashboard.putNumber("currentPoseX", drivetrain.getState().Pose.getX());
+      SmartDashboard.putNumber("currentPoseY", drivetrain.getState().Pose.getY());
+      SmartDashboard.putNumber("currentPoseYaw", drivetrain.getState().Pose.getRotation().getDegrees());
+      SmartDashboard.putNumber("turretLimelightAngle", TurretHelpers.getTurretAngle(turret.getPositionRotations()));
+
+      
+      SmartDashboard.putNumber("turretOffsetX", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getX());
+      SmartDashboard.putNumber("turretOffsetY", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getY());
     }
   }
 
@@ -160,53 +169,68 @@ public class StateMachine extends SubsystemBase {
         Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
         double distance = offset.getNorm();
 
-        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) -3;
         double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
         
-        shooter.setVelocity(shooterVelo);
+        shooter.setVelocity(-shooterVelo);
         shooterHood.setPositionRotations(hoodPos);
+        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < shooterVelo - 5) {
+          feeder.setVelocity(-95);
+          spindexer.setVelocity(150);
+        } else {
+          feeder.brake();
+          spindexer.brake();
+        }
+
 
         // TODO: check everything else before enabling this so it doesnt try to snap its neck again
         // turret.setPositionRotations(TurretHelpers.getTurretRotationsWithoutLead(this));
       } else {
         shooter.brake();
+        feeder.brake();
+        spindexer.brake();
       }
     } else { // we are not in our zone
       shooter.brake();
+        feeder.brake();
+        spindexer.brake();
     }
   }
 
   private void executePassing() {
-    Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
-    if (PowerRobotContainer.getData("robotPose") == null) {
-      return; // pose hasnt been updated yet
-    }
+    // Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
+    // if (PowerRobotContainer.getData("robotPose") == null) {
+    //   return; // pose hasnt been updated yet
+    // }
 
-    GameZone zone = FieldUtils.getZone(pose);
+    // GameZone zone = FieldUtils.getZone(pose);
+    shooter.brake();
+        feeder.brake();
+        spindexer.brake();
 
-    if (getAllianceZone() == zone) { // we are in our zone
-      if (shooter.isAllMotorsRunning()) {
-        shooter.stopAll();
-      }
-    } else { // we are not in our zone
-      if (!shooter.isAllMotorsRunning()) {
-        shooter.setVelocity(1); // placeholder i think
-      }
+    // if (getAllianceZone() == zone) { // we are in our zone
+    //   if (shooter.isAllMotorsRunning()) {
+    //     shooter.brake();
+    //   }
+    // } else { // we are not in our zone
+    //   if (!shooter.isAllMotorsRunning()) {
+    //     shooter.setVelocity(1); // placeholder i think
+    //   }
 
-      if (pose.getY() > 4.0) { // we are on top half of field
-        if (isBlueAlliance()) {
-          TurretHelpers.setTarget(Constants.Field.BLUE_TOP_CORNER);
-        } else {
-          TurretHelpers.setTarget(Constants.Field.BLUE_BOTTOM_CORNER);
-        }
-      } else { // bottom half of the field
-        if (isBlueAlliance()) {
-          TurretHelpers.setTarget(Constants.Field.RED_TOP_CORNER);
-        } else {
-          TurretHelpers.setTarget(Constants.Field.RED_BOTTOM_CORNER);
-        }
-      }
-    }
+    //   if (pose.getY() > 4.0) { // we are on top half of field
+    //     if (isBlueAlliance()) {
+    //       TurretHelpers.setTarget(Constants.Field.BLUE_TOP_CORNER);
+    //     } else {
+    //       TurretHelpers.setTarget(Constants.Field.BLUE_BOTTOM_CORNER);
+    //     }
+    //   } else { // bottom half of the field
+    //     if (isBlueAlliance()) {
+    //       TurretHelpers.setTarget(Constants.Field.RED_TOP_CORNER);
+    //     } else {
+    //       TurretHelpers.setTarget(Constants.Field.RED_BOTTOM_CORNER);
+    //     }
+    //   }
+    // }
   }
 
   private void executeClimbing() {

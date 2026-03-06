@@ -73,23 +73,23 @@ public class Vision extends SubsystemBase {
     LimelightHelpers.PoseEstimate bestMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
 
+    if (limelight == "limelight-turret") {
+      Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
+
+      double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
+      double right = relativePosition.getX();
+      double up = 0.71755;
+      double pitch = 10;
+
+      turretLimelight.putValue("yaw", NetworkTableValue.makeDouble(yaw));
+      turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
+      turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
+
+      LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, 0, pitch, yaw);
+    }
+
     if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
       Pose2d newPose = pose.toPose2d();
-
-      if (limelight == "limelight-turret") {
-        Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
-
-        double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
-        double right = relativePosition.getX();
-        double up = 0.7112;
-        double pitch = 10.476;
-
-        turretLimelight.putValue("yaw", NetworkTableValue.makeDouble(yaw));
-        turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
-        turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
-
-        LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, 0, pitch, yaw);
-      }
 
       LimelightHelpers.SetRobotOrientation(
           limelight, newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);

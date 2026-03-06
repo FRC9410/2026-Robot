@@ -29,8 +29,8 @@ public class TurretHelpers {
         double turretRadians = Math.toRadians(turretDegrees);
 
         return new Pose2d(
-            Constants.Turret.TURRET_DIST_FROM_ROBOT_CENTER + Math.cos(turretRadians) * Constants.Turret.TURRET_RADIUS,
             Math.sin(turretRadians) * Constants.Turret.TURRET_RADIUS,
+            Constants.Turret.TURRET_DIST_FROM_ROBOT_CENTER - Math.cos(turretRadians) * Constants.Turret.TURRET_RADIUS,
             Rotation2d.fromRadians(turretRadians)
         );
     }
@@ -126,9 +126,9 @@ public class TurretHelpers {
 
     public static double getTurretAngle (double turretPosRotation) {
         if (turretPosRotation >= 0) {
-            return (turretPosRotation * 360) - 180; // if encoder and cam rot are backwards, mult by -1
+            return ((turretPosRotation * 360) - 180); // if encoder and cam rot are backwards, mult by -1
         } else {
-            return (turretPosRotation * 360) + 180;
+            return ((turretPosRotation * 360) + 180);
         }
     }
 }
