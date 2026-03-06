@@ -26,7 +26,7 @@ import frc.robot.utils.SweepHelpers.ControllerButton;
 import frc.robot.utils.SweepHelpers.SweepDirection;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
-import frc.robot.commands.ShooterSysId;
+import frc.robot.commands.VelocitySysId;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.StrafeCommand.StrafeSide;
 import frc.robot.commands.SwerveDriveCommand;
@@ -58,7 +58,9 @@ public class RobotContainer implements PowerRobotContainer {
   private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
       testController, stateMachine).build();
 
-  private final ShooterSysId shooterSysId = new ShooterSysId(stateMachine.shooter);
+  private final VelocitySysId shooterSysId = new VelocitySysId(stateMachine.shooter, "Shooter");
+  private final VelocitySysId feederSysId = new VelocitySysId(stateMachine.feeder, "Feeder");
+  private final VelocitySysId spindexerSysId = new VelocitySysId(stateMachine.spindexer, "Spindexer");
 
   public RobotContainer() {
     configureBindings();
@@ -66,13 +68,21 @@ public class RobotContainer implements PowerRobotContainer {
 
     SmartDashboard.putData("Auto Chooser", autoChooser);
 
-    // Shooter SysId: start log, run 4 tests (quasistatic/dynamic, fwd/rev), then stop log
-    SmartDashboard.putData("Shooter SysId/Start Log", ShooterSysId.startLog());
-    SmartDashboard.putData("Shooter SysId/Stop Log", ShooterSysId.stopLog());
-    SmartDashboard.putData("Shooter SysId/Quasistatic Forward", shooterSysId.quasistatic(SysIdRoutine.Direction.kForward));
-    SmartDashboard.putData("Shooter SysId/Quasistatic Reverse", shooterSysId.quasistatic(SysIdRoutine.Direction.kReverse));
-    SmartDashboard.putData("Shooter SysId/Dynamic Forward", shooterSysId.dynamic(SysIdRoutine.Direction.kForward));
-    SmartDashboard.putData("Shooter SysId/Dynamic Reverse", shooterSysId.dynamic(SysIdRoutine.Direction.kReverse));
+    // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev), then stop log
+    SmartDashboard.putData("SysId/Start Log", VelocitySysId.startLog());
+    SmartDashboard.putData("SysId/Stop Log", VelocitySysId.stopLog());
+    SmartDashboard.putData("SysId/Shooter Quasistatic Forward", shooterSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Shooter Quasistatic Reverse", shooterSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Shooter Dynamic Forward", shooterSysId.dynamic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Shooter Dynamic Reverse", shooterSysId.dynamic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Feeder Quasistatic Forward", feederSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Feeder Quasistatic Reverse", feederSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Feeder Dynamic Forward", feederSysId.dynamic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Feeder Dynamic Reverse", feederSysId.dynamic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Spindexer Quasistatic Forward", spindexerSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Spindexer Quasistatic Reverse", spindexerSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Spindexer Dynamic Forward", spindexerSysId.dynamic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Spindexer Dynamic Reverse", spindexerSysId.dynamic(SysIdRoutine.Direction.kReverse));
   }
 
   private void configureBindings() {

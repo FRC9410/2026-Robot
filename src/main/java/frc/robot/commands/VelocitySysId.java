@@ -15,24 +15,25 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
 
 /**
- * SysId characterization for the shooter flywheel. Run quasistatic and dynamic tests in both
- * directions, then use the generated logs to tune velocity PID/FF in SysId or similar tools.
+ * SysId characterization for a velocity subsystem (e.g. shooter, feeder, spindexer). Run quasistatic
+ * and dynamic tests in both directions, then use the generated logs to tune velocity PID/FF in
+ * SysId or similar tools.
  *
- * <p>Log generation: Run "Start Shooter SysId Log" before the first test, run all four tests
- * (quasistatic forward/reverse, dynamic forward/reverse), then run "Stop Shooter SysId Log".
- * Logs are written to the path configured in Robot (e.g. /media/sda1/ctre-logs/). The shooter
- * velocity and state are logged via CTRE SignalLogger; WPILib datalog also receives the
- * mechanism data when the routine runs.
+ * <p>Log generation: Run "Start Log" before the first test, run all four tests (quasistatic
+ * forward/reverse, dynamic forward/reverse), then run "Stop Log". Logs are written to the path
+ * configured in Robot (e.g. /media/sda1/ctre-logs/).
  */
-public class ShooterSysId {
+public class VelocitySysId {
 
-  private final VelocitySubsystem shooter;
+  private final VelocitySubsystem subsystem;
+  private final String mechanismName;
   private final SysIdRoutine routine;
   /** Commanded voltage for logging (updated by the drive callback). */
   private final double[] lastVoltage = {0};
 
-  public ShooterSysId(VelocitySubsystem shooter) {
-    this.shooter = shooter;
+  public VelocitySysId(VelocitySubsystem subsystem, String mechanismName) {
+    this.subsystem = subsystem;
+    this.mechanismName = mechanismName;
     this.routine =
         new SysIdRoutine(
             new SysIdRoutine.Config(
@@ -40,25 +41,25 @@ public class ShooterSysId {
                 Volts.of(4), // dynamic step voltage
                 null, // default timeout (10 s)
                 state ->
-                    SignalLogger.writeString("SysIdShooter_State", state.toString())),
+                    SignalLogger.writeString("SysId" + mechanismName + "_State", state.toString())),
             new SysIdRoutine.Mechanism(
                 voltage -> {
                   lastVoltage[0] = voltage.in(Volts);
-                  shooter.setVoltage(voltage.in(Volts));
+                  subsystem.setVoltage(voltage.in(Volts));
                 },
                 log -> {
-                  var motor = shooter.getVelocityMotor();
+                  var motor = subsystem.getVelocityMotor();
                   if (motor == null) return;
                   double posRot = motor.getRotorPosition().getValueAsDouble();
                   double velRps = motor.getRotorVelocity().getValueAsDouble();
                   log
-                      .motor("Shooter")
+                      .motor(mechanismName)
                       .voltage(Volts.of(lastVoltage[0]))
                       .angularPosition(Radians.of(posRot * 2 * Math.PI))
                       .angularVelocity(RadiansPerSecond.of(velRps * 2 * Math.PI));
                 },
-                shooter,
-                "Shooter"));
+                subsystem,
+                mechanismName));
   }
 
   /** Quasistatic test in the given direction. */
@@ -71,7 +72,7 @@ public class ShooterSysId {
     return routine.dynamic(direction);
   }
 
-  /** Starts CTRE SignalLogger so shooter SysId data is written to the log file. */
+  /** Starts CTRE SignalLogger so SysId data is written to the log file. */
   public static Command startLog() {
     return Commands.runOnce(() -> SignalLogger.start());
   }
