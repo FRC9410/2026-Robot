@@ -25,7 +25,8 @@ public class IntakeConstants {
 
   public static final double INTAKE_MIN = -0.09; // INTAKE UP
   public static final double INTAKE_MAX = -0.445; // INTAKE DOWN 0.44
-  public static final double INTAKE_IDLE = -0.35;
+  public static final double INTAKE_IDLE = -0.4;
+  public static final double INTAKE_FEED = -0.25;
   public static final double INTAKE_DEFAULT = INTAKE_MIN;
 
   // Roller velocity PID
@@ -39,7 +40,7 @@ public class IntakeConstants {
       MotorConfig.leader(ROLLER_CAN_ID, NeutralModeValue.Coast));
 
   public static final LeadMotorConfig ROLLER_LEAD_CONFIG = new LeadMotorConfig(
-      ROLLER_KP, ROLLER_KI, ROLLER_KD, ROLLER_KG, 1.0, 1.0);
+      ROLLER_KP, ROLLER_KI, ROLLER_KD, ROLLER_KG, Optional.empty(), Optional.empty(), Optional.empty(), 1.0, 1.0);
 
   public static final MotionMagicConfig ROLLER_MOTION_MAGIC_CONFIG =
       MotionMagicConfig.forVelocity(ROLLER_MM_ACCELERATION);
@@ -61,7 +62,7 @@ public class IntakeConstants {
       MotorConfig.follower(SECONDARY_PIVOT_CAN_ID, true));
 
   public static final LeadMotorConfig WRIST_LEAD_CONFIG = new LeadMotorConfig(
-      WRIST_KP, WRIST_KI, WRIST_KD, WRIST_KG,
+      WRIST_KP, WRIST_KI, WRIST_KD, WRIST_KG, Optional.empty(), Optional.empty(), Optional.empty(),
       WRIST_SENSOR_TO_MECHANISM_RATIO, WRIST_ROTOR_TO_SENSOR_RATIO);
 
   public static final CancoderConfig WRIST_CANCODER_CONFIG = new CancoderConfig(

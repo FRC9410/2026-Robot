@@ -90,7 +90,7 @@ public class StateMachine extends SubsystemBase {
     vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
     LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
-    if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
+    if (mt2 != null && mt2.tagCount > 0) {
       drivetrain.resetPose(mt2.pose);
       // drivetrain.resetRotation(mt2.pose.getRotation());
       drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
@@ -169,13 +169,14 @@ public class StateMachine extends SubsystemBase {
         Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
         double distance = offset.getNorm();
 
-        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) -2;
+        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance + 1);
         double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
+        double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
         
         shooter.setVelocity(-shooterVelo);
         shooterHood.setPositionRotations(hoodPos);
-        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < TurretConstants.MIN_VELO_INTERPOLATOR.getInterpolatedValue(distance) - 5) {
-          feeder.setVelocity(-95);
+        feeder.setVelocity(-feederVelo);
+        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1) {
           spindexer.setVelocity(150);
         } else {
           feeder.brake();
@@ -184,7 +185,11 @@ public class StateMachine extends SubsystemBase {
 
 
         // TODO: check everything else before enabling this so it doesnt try to snap its neck again
-        // turret.setPositionRotations(TurretHelpers.getTurretRotationsWithoutLead(this));
+        double dir = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
+        if (Math.toDegrees(Math.abs(dir)) < 90) {
+          turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
+          // System.out.println(dir / Math.PI * (8.5/9));
+        }
       } else {
         shooter.brake();
         feeder.brake();

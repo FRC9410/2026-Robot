@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.StateMachine;
@@ -99,6 +100,17 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }));
+    // Intake in and out
+    driverController.y()
+     //   .or(driverController.leftTrigger(0.5))
+        .onTrue(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
+            }))
+        .onFalse(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+            }));
 
     driverController.leftTrigger(0.5).onTrue(
       new SequentialCommandGroup(
@@ -124,8 +136,9 @@ public class RobotContainer implements PowerRobotContainer {
           new WaitUntilCommand(() -> {
             double shooterTarget = PowerRobotContainer.getData("ShooterVelocity", 100.0);
             double actual = Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble());
-            return Math.abs(actual - shooterTarget) < 5;
+            return Math.abs(actual - shooterTarget) < 1;
           })),
+          new WaitCommand(0.25),
         new ParallelRaceGroup(
           new InstantCommand(
               () -> {
@@ -136,8 +149,9 @@ public class RobotContainer implements PowerRobotContainer {
           new WaitUntilCommand(() -> {
             double feederTarget = PowerRobotContainer.getData("FeederVelocity", 95.0);
             double actual = Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble());
-            return Math.abs(actual - feederTarget) < 5;
+            return Math.abs(actual - feederTarget) < 1;
           })),
+          new WaitCommand(0.25),
         new InstantCommand(
             () -> {
               double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 150.0);

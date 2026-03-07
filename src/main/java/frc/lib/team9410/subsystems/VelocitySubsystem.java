@@ -58,6 +58,11 @@ public class VelocitySubsystem extends PowerSubsystem {
     config.Slot0.kI = leadConfig.kI();
     config.Slot0.kD = leadConfig.kD();
     config.Slot0.kG = leadConfig.kG();
+    if (leadConfig.kS().isPresent()) {
+      config.Slot0.kS = leadConfig.kS().get();
+      config.Slot0.kV = leadConfig.kV().get();
+      config.Slot0.kA = leadConfig.kA().get();
+    }
 
     MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
     motionMagicConfigs.withMotionMagicAcceleration(motionMagicConfig.acceleration());

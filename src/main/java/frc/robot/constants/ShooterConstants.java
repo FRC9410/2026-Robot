@@ -24,10 +24,13 @@ public class ShooterConstants {
     public static final double SHOOTER_HOOD_DEFAULT = 0.09; // default should be min
 
     // Flywheel velocity PID
-    public static final double FLYWHEEL_KP = 0.4;
+    public static final double FLYWHEEL_KP = 0.3;
     public static final double FLYWHEEL_KI = 0;
     public static final double FLYWHEEL_KD = 0;
     public static final double FLYWHEEL_KG = 0;
+    public static final double FLYWHEEL_KS = 0.23295;
+    public static final double FLYWHEEL_KV = 0.12161;
+    public static final double FLYWHEEL_KA = 0.0030738;
     public static final double FLYWHEEL_MM_ACCELERATION = 200;
 
     public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
@@ -35,7 +38,7 @@ public class ShooterConstants {
             MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID, true));
 
     public static final LeadMotorConfig FLYWHEEL_LEAD_CONFIG = new LeadMotorConfig(
-            FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, 1.0, 1.0);
+            FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, Optional.of(FLYWHEEL_KS), Optional.of(FLYWHEEL_KV), Optional.of(FLYWHEEL_KA), 1.0, 1.0);
 
     public static final MotionMagicConfig FLYWHEEL_MOTION_MAGIC_CONFIG = MotionMagicConfig
             .forVelocity(FLYWHEEL_MM_ACCELERATION);
@@ -56,7 +59,7 @@ public class ShooterConstants {
             MotorConfig.leader(HOOD_CAN_ID, NeutralModeValue.Brake, true));
 
     public static final LeadMotorConfig HOOD_LEAD_CONFIG = new LeadMotorConfig(
-            HOOD_KP, HOOD_KI, HOOD_KD, HOOD_KG,
+            HOOD_KP, HOOD_KI, HOOD_KD, HOOD_KG, Optional.empty(), Optional.empty(), Optional.empty(),
             HOOD_SENSOR_TO_MECHANISM_RATIO, HOOD_ROTOR_TO_SENSOR_RATIO);
 
     public static final CancoderConfig HOOD_CANCODER_CONFIG = new CancoderConfig(

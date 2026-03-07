@@ -71,7 +71,10 @@ public class TurretHelpers {
 
         Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation().minus(hub);
 
-        return Math.atan2(relative.getX(), relative.getY());
+        // System.out.println("x: " + relative.getX());
+        // System.out.println("Y: " + relative.getY());
+
+        return Math.atan2(relative.getY(), relative.getX());
     }
 
     public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {
