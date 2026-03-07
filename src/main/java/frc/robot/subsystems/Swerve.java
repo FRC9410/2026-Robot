@@ -227,24 +227,24 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
         break;
       case FIELD_RELATIVE:
         applyRequest(
-            FIELD_RELATIVE.withVelocityX(-x).withVelocityY(-y).withRotationalRate(-rotation));
+            FIELD_RELATIVE.withVelocityX(x).withVelocityY(y).withRotationalRate(-rotation));
         break;
       case ROBOT_RELATIVE:
         applyRequest(
-            ROBOT_RELATIVE.withVelocityX(-x).withVelocityY(-y).withRotationalRate(-rotation));
+            ROBOT_RELATIVE.withVelocityX(x).withVelocityY(y).withRotationalRate(-rotation));
         break;
       case ROTATION_LOCK:
         applyRequest(
             DRIVE_AT_ANGLE
-                .withVelocityX(-x)
-                .withVelocityY(-y)
+                .withVelocityX(x)
+                .withVelocityY(y)
                 .withTargetDirection(Rotation2d.fromDegrees(rotation)));
         break;
       case DRIVE_TO_POINT:
         applyRequest(
             DRIVE_AT_ANGLE
-                .withVelocityX(-x)
-                .withVelocityY(-y)
+                .withVelocityX(x)
+                .withVelocityY(y)
                 .withTargetDirection(Rotation2d.fromDegrees(rotation))
                 .withMaxAbsRotationalRate(MAX_DRIVE_TO_POINT_ANGULAR_RATE));
         break;

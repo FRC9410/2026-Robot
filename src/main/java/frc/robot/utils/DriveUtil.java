@@ -90,8 +90,8 @@ public class DriveUtil {
     double yMagnitude = MathUtil.applyDeadband(controller.getLeftX(), 0.1);
     double angularMagnitude = MathUtil.applyDeadband(controller.getRightX(), 0.1);
 
-    xMagnitude = Math.copySign(xMagnitude * xMagnitude, xMagnitude);
-    yMagnitude = Math.copySign(yMagnitude * yMagnitude, yMagnitude);
+    xMagnitude = Math.copySign(xMagnitude * xMagnitude * xMagnitude, xMagnitude);
+    yMagnitude = Math.copySign(yMagnitude * yMagnitude * yMagnitude, yMagnitude);
     angularMagnitude = Math.copySign(angularMagnitude * angularMagnitude, angularMagnitude);
 
     double xVelocity = (isBlueAlliance ? -xMagnitude * MAX_SPEED : xMagnitude * MAX_SPEED) * 0.95;

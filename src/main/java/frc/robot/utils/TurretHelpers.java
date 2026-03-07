@@ -25,18 +25,18 @@ public class TurretHelpers {
      * @param turret_dir In degrees
      * @return
      */
-    public static Pose2d turretCamPosRelative (double turretDegrees) {
+    public static Pose2d turretCamPosRelative(double turretDegrees) {
         double turretRadians = Math.toRadians(turretDegrees);
 
         return new Pose2d(
-            Math.sin(turretRadians) * Constants.Turret.TURRET_RADIUS,
-            Constants.Turret.TURRET_DIST_FROM_ROBOT_CENTER - Math.cos(turretRadians) * Constants.Turret.TURRET_RADIUS,
-            Rotation2d.fromRadians(turretRadians)
-        );
+                Math.sin(turretRadians) * Constants.Turret.TURRET_RADIUS,
+                Constants.Turret.TURRET_DIST_FROM_ROBOT_CENTER
+                        - Math.cos(turretRadians) * Constants.Turret.TURRET_RADIUS,
+                Rotation2d.fromRadians(turretRadians));
     }
 
     /// DOES NOT PREDICT FOR VELO
-    public static double getRotationToTargetDirect () {
+    public static double getRotationToTargetDirect() {
         return 0.0;
     }
 
@@ -51,25 +51,38 @@ public class TurretHelpers {
     }
 
     /// DOES NOT PREDICT FOR VELO
-    public static double getElevationToTarget () {
+    public static double getElevationToTarget() {
         return 0.0;
     }
 
     /// sets prc.data("turretTarget") as Translation3d
-    public static void setTarget (Translation3d pos) {
+    public static void setTarget(Translation3d pos) {
         PowerRobotContainer.setData("turretTarget", pos);
     }
-    
 
     /// does nothing as of now
-    public static double predictRotationToTarget () {
+    public static double predictRotationToTarget() {
         return 0.0;
     }
 
-    public static double getTurretRotationsWithoutLead(StateMachine stateMachine) {
-        Translation2d hub = FieldUtils.getZone(stateMachine.drivetrain.getState().Pose) == GameZone.BLUE_ALLIANCE ? FieldConstants.HOPPER_BLUE : FieldConstants.HOPPER_RED;
+    public static Translation2d rotatePoint(Translation2d point, double radians) {
+        double xn = point.getX() + TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER * Math.cos(radians);
+        double yn = point.getY() + TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER * Math.sin(radians);
 
-        Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation().minus(hub);
+        // double xn = x * Math.cos(radians) - y * Math.sin(radians);
+        // double yn = x * Math.sin(radians) + y * Math.cos(radians);
+
+        return new Translation2d(xn, yn);
+    }
+
+    public static double getTurretRotationsWithoutLead(StateMachine stateMachine) {
+        Translation2d hub = FieldUtils.getZone(stateMachine.drivetrain.getState().Pose) == GameZone.BLUE_ALLIANCE
+                ? FieldConstants.HOPPER_BLUE
+                : FieldConstants.HOPPER_RED;
+
+        Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation()
+                .minus(hub)
+                .plus(new Translation2d(0, TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER).rotateBy(stateMachine.drivetrain.getState().Pose.getRotation()));
 
         // System.out.println("x: " + relative.getX());
         // System.out.println("Y: " + relative.getY());
@@ -79,7 +92,17 @@ public class TurretHelpers {
 
     public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {
         Translation2d difference = hopperPosition.minus(RobotPosition.getTranslation());
-        double distance = Math.sqrt(difference.getX() * difference.getX() + difference.getY() * difference.getY()); //it is written like this because it makes Caden mad :)
+        double distance = Math.sqrt(difference.getX() * difference.getX() + difference.getY() * difference.getY()); // it
+                                                                                                                    // is
+                                                                                                                    // written
+                                                                                                                    // like
+                                                                                                                    // this
+                                                                                                                    // because
+                                                                                                                    // it
+                                                                                                                    // makes
+                                                                                                                    // Caden
+                                                                                                                    // mad
+                                                                                                                    // :)
         return distance;
     }
 
@@ -90,7 +113,7 @@ public class TurretHelpers {
         double relativeX = Constants.Field.HOPPER_BLUE.getX() - robotPos.getX();
         double relativeY = Constants.Field.HOPPER_BLUE.getY() - robotPos.getY();
 
-        double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
+        double relativeMagPos = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
         double magVelocity = Math.sqrt(vx * vx + vy * vy);
         double normalizedX = relativeX / relativeMagPos;
         double normalizedY = relativeY / relativeMagPos;
@@ -104,7 +127,7 @@ public class TurretHelpers {
         double relativeX = Constants.Field.HOPPER_BLUE.getX() - robotPos.getX();
         double relativeY = Constants.Field.HOPPER_BLUE.getY() - robotPos.getY();
 
-        double relativeMagPos = Math.sqrt(relativeX*relativeX + relativeY*relativeY);
+        double relativeMagPos = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
         double normalizedX = relativeX / relativeMagPos;
         double normalizedY = relativeY / relativeMagPos;
 
@@ -127,7 +150,7 @@ public class TurretHelpers {
         return new Translation2d(a.getX() * b.getX(), a.getY() * b.getY());
     }
 
-    public static double getTurretAngle (double turretPosRotation) {
+    public static double getTurretAngle(double turretPosRotation) {
         if (turretPosRotation >= 0) {
             return ((turretPosRotation * 360) - 180); // if encoder and cam rot are backwards, mult by -1
         } else {

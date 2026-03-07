@@ -88,7 +88,7 @@ public class Vision extends SubsystemBase {
       LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, 0, pitch, yaw);
     }
 
-    if (bestMeasurement != null) {
+    if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
       Pose2d newPose = pose.toPose2d();
 
       LimelightHelpers.SetRobotOrientation(

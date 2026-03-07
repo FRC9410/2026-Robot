@@ -63,11 +63,13 @@ public class StateMachine extends SubsystemBase {
   public final Swerve drivetrain = TunerConstants.createDrivetrain();
 
   private boolean winAuto = true;
+  private boolean gyroReset = false;
 
   public StateMachine() {}
 
   @Override
   public void periodic() {
+    pointTurret();
     handleStateTransitions();
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
@@ -87,16 +89,25 @@ public class StateMachine extends SubsystemBase {
   public void setRobotPose () {
     String bestLimelight = vision.getBestLimelight();
 
+    // System.out.println(bestLimelight);
+
     vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
     LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
-    if (mt2 != null && mt2.tagCount > 0) {
-      drivetrain.resetPose(mt2.pose);
+    if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
+      Pose2d newPose = mt2.pose;
+      if (gyroReset) {
+        newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
+      } else {
+        gyroReset = true;
+      }
+      drivetrain.resetPose(newPose);
       // drivetrain.resetRotation(mt2.pose.getRotation());
       drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
-      drivetrain.addVisionMeasurement(mt2.pose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
+      drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
 
-      Translation2d translationToPoint = mt2.pose.getTranslation().minus(Constants.Field.HOPPER_RED);
+    }
+      Translation2d translationToPoint = drivetrain.getState().Pose.getTranslation().minus(Constants.Field.HOPPER_RED);
       double linearDistance = translationToPoint.getNorm();
 
       PowerRobotContainer.setData("distanceToHopper", linearDistance);
@@ -109,7 +120,6 @@ public class StateMachine extends SubsystemBase {
       
       SmartDashboard.putNumber("turretOffsetX", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getX());
       SmartDashboard.putNumber("turretOffsetY", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getY());
-    }
   }
 
   private void handleStateTransitions() {
@@ -146,6 +156,9 @@ public class StateMachine extends SubsystemBase {
   }
 
   private void executeReady() {
+    shooter.brake();
+    spindexer.brake();
+    feeder.brake();
   }
 
   public GameZone getZoneFromPRC () {
@@ -165,11 +178,15 @@ public class StateMachine extends SubsystemBase {
 
 
         // for red testing: you face 9 and 10 from driver
-
+        
         Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
-        double distance = offset.getNorm();
+        double normalizedDistance = offset.getNorm();
+        double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
+        double rotationConstant = 0.0; // .38
 
-        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance + 1);
+        double distance = normalizedDistance + Math.abs(turretRotation * rotationConstant);
+
+        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
         double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
         double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
         
@@ -177,18 +194,10 @@ public class StateMachine extends SubsystemBase {
         shooterHood.setPositionRotations(hoodPos);
         feeder.setVelocity(-feederVelo);
         if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1) {
-          spindexer.setVelocity(150);
+          spindexer.setVelocity(65);
         } else {
           feeder.brake();
           spindexer.brake();
-        }
-
-
-        // TODO: check everything else before enabling this so it doesnt try to snap its neck again
-        double dir = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
-        if (Math.toDegrees(Math.abs(dir)) < 90) {
-          turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
-          // System.out.println(dir / Math.PI * (8.5/9));
         }
       } else {
         shooter.brake();
@@ -200,6 +209,17 @@ public class StateMachine extends SubsystemBase {
         feeder.brake();
         spindexer.brake();
     }
+  }
+
+  private void pointTurret() {
+    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
+    double rotationConstant = 0.09;
+
+    double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
+        if (Math.toDegrees(Math.abs(dir)) < 90) {
+          turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
+          // System.out.println(dir / Math.PI * (8.5/9));
+        }
   }
 
   private void executePassing() {

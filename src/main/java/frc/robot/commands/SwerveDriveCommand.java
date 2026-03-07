@@ -22,7 +22,7 @@ import frc.robot.subsystems.Swerve;
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class SwerveDriveCommand extends Command {
   public double MAX_ANGULAR_RATE =
-      RotationsPerSecond.of(0.75)
+      RotationsPerSecond.of(1.5)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
       RotationsPerSecond.of(0.5)

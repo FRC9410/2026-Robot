@@ -88,7 +88,7 @@ public class RobotContainer implements PowerRobotContainer {
 
   private void configureBindings() {
     // Intake in and out
-    driverController.rightTrigger(0.5)
+    driverController.leftTrigger(0.5)
      //   .or(driverController.leftTrigger(0.5))
         .onTrue(new InstantCommand(
             () -> {
@@ -112,68 +112,76 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
             }));
 
-    driverController.leftTrigger(0.5).onTrue(
-      new SequentialCommandGroup(
-        new ParallelRaceGroup(
-          new InstantCommand(
-              () -> {
-                double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
-                stateMachine.shooterHood.setPositionRotations(hoodTarget);
-              },
-              stateMachine.shooterHood),
-          new WaitUntilCommand(() -> {
-            double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
-            double actual = stateMachine.shooterHood.getPositionRotations();
-            return Math.abs(actual - hoodTarget) < 0.005;
-          })),
-        new ParallelRaceGroup(
-          new InstantCommand(
-              () -> {
-                double shooterVel = PowerRobotContainer.getData("ShooterVelocity", 100.0);
-                stateMachine.shooter.setVelocity(-shooterVel);
-              },
-              stateMachine.shooter),
-          new WaitUntilCommand(() -> {
-            double shooterTarget = PowerRobotContainer.getData("ShooterVelocity", 100.0);
-            double actual = Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble());
-            return Math.abs(actual - shooterTarget) < 1;
-          })),
-          new WaitCommand(0.25),
-        new ParallelRaceGroup(
-          new InstantCommand(
-              () -> {
-                double feederVel = PowerRobotContainer.getData("FeederVelocity", 95.0);
-                stateMachine.feeder.setVelocity(-feederVel);
-              },
-              stateMachine.feeder),
-          new WaitUntilCommand(() -> {
-            double feederTarget = PowerRobotContainer.getData("FeederVelocity", 95.0);
-            double actual = Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble());
-            return Math.abs(actual - feederTarget) < 1;
-          })),
-          new WaitCommand(0.25),
-        new InstantCommand(
-            () -> {
-              double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 150.0);
-              stateMachine.spindexer.setVelocity(spindexerVel);
-            },
-            stateMachine.spindexer)
-      )).onFalse(new InstantCommand(
-      () -> {
-          stateMachine.shooter.brake();
-          stateMachine.feeder.brake();
-          stateMachine.spindexer.brake();
-      }, stateMachine.shooter, stateMachine.feeder, stateMachine.spindexer
-    ));
+    // driverController.leftTrigger(0.5).onTrue(
+    //   new SequentialCommandGroup(
+    //     new ParallelRaceGroup(
+    //       new InstantCommand(
+    //           () -> {
+    //             double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
+    //             stateMachine.shooterHood.setPositionRotations(hoodTarget);
+    //           },
+    //           stateMachine.shooterHood),
+    //       new WaitUntilCommand(() -> {
+    //         double hoodTarget = PowerRobotContainer.getData("Shooter HoodTarget", Constants.Shooter.SHOOTER_HOOD_DEFAULT);
+    //         double actual = stateMachine.shooterHood.getPositionRotations();
+    //         return Math.abs(actual - hoodTarget) < 0.005;
+    //       })),
+    //     new ParallelRaceGroup(
+    //       new InstantCommand(
+    //           () -> {
+    //             double shooterVel = PowerRobotContainer.getData("ShooterVelocity", 100.0);
+    //             stateMachine.shooter.setVelocity(-shooterVel);
+    //           },
+    //           stateMachine.shooter),
+    //       new WaitUntilCommand(() -> {
+    //         double shooterTarget = PowerRobotContainer.getData("ShooterVelocity", 100.0);
+    //         double actual = Math.abs(stateMachine.shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble());
+    //         return Math.abs(actual - shooterTarget) < 1;
+    //       })),
+    //       new WaitCommand(0.25),
+    //     new ParallelRaceGroup(
+    //       new InstantCommand(
+    //           () -> {
+    //             double feederVel = PowerRobotContainer.getData("FeederVelocity", 95.0);
+    //             stateMachine.feeder.setVelocity(-feederVel);
+    //           },
+    //           stateMachine.feeder),
+    //       new WaitUntilCommand(() -> {
+    //         double feederTarget = PowerRobotContainer.getData("FeederVelocity", 95.0);
+    //         double actual = Math.abs(stateMachine.feeder.getVelocityMotor().getRotorVelocity().getValueAsDouble());
+    //         return Math.abs(actual - feederTarget) < 1;
+    //       })),
+    //       new WaitCommand(0.25),
+    //     new InstantCommand(
+    //         () -> {
+    //           double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 150.0);
+    //           stateMachine.spindexer.setVelocity(spindexerVel);
+    //         },
+    //         stateMachine.spindexer)
+    //   )).onFalse(new InstantCommand(
+    //   () -> {
+    //       stateMachine.shooter.brake();
+    //       stateMachine.feeder.brake();
+    //       stateMachine.spindexer.brake();
+    //   }, stateMachine.shooter, stateMachine.feeder, stateMachine.spindexer
+    // ));
 
     // State changers
-    driverController.leftBumper().onTrue(new InstantCommand(
-        () -> {
-          stateMachine.setWantedState(RobotState.PASSING);
-        }));
-    driverController.rightBumper().onTrue(new InstantCommand(
+    // driverController.leftBumper().onTrue(new InstantCommand(
+    //     () -> {
+    //       stateMachine.setWantedState(RobotState.PASSING);
+    //     }));
+    // driverController.rightBumper().onTrue(new InstantCommand(
+    //     () -> {
+    //       stateMachine.setWantedState(RobotState.SCORING);
+    //     }));
+    
+    driverController.rightTrigger(0.5).onTrue(new InstantCommand(
         () -> {
           stateMachine.setWantedState(RobotState.SCORING);
+        })).onFalse(new InstantCommand(
+        () -> {
+          stateMachine.setWantedState(RobotState.READY);
         }));
 
     // // Sweeping commands
