@@ -35,9 +35,7 @@ public class StateMachine extends SubsystemBase {
 
   public enum RobotState {
     READY,
-    SCORING,
-    PASSING,
-    CLIMBING
+    SHOOTING
   }
 
   private RobotState wantedState = RobotState.READY;
@@ -55,8 +53,6 @@ public class StateMachine extends SubsystemBase {
   public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.Spindexer.SPINDEXER_CONFIG);
   public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.Feeder.FEEDER_CONFIG);
 
-  // other
-  private final LED led = new LED();
   private final Vision vision = new Vision();
   private final Dashboard dashboard = new Dashboard();
 
@@ -64,6 +60,8 @@ public class StateMachine extends SubsystemBase {
 
   private boolean winAuto = true;
   private boolean gyroReset = false;
+
+  private int intakeTimer = 0;
 
   public StateMachine() {}
 
@@ -88,8 +86,6 @@ public class StateMachine extends SubsystemBase {
 
   public void setRobotPose () {
     String bestLimelight = vision.getBestLimelight();
-
-    // System.out.println(bestLimelight);
 
     vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
@@ -141,14 +137,8 @@ public class StateMachine extends SubsystemBase {
       case READY:
         executeReady();
         break;
-      case SCORING:
+      case SHOOTING:
         executeShooting();
-        break;
-      case PASSING:
-        executePassing();
-        break;
-      case CLIMBING:
-        executeClimbing();
         break;
       default:
         break;
@@ -159,6 +149,7 @@ public class StateMachine extends SubsystemBase {
     shooter.brake();
     spindexer.brake();
     feeder.brake();
+    intakeTimer = 0;
   }
 
   public GameZone getZoneFromPRC () {
@@ -168,46 +159,72 @@ public class StateMachine extends SubsystemBase {
   }
 
   private void executeShooting() {
+    intakeTimer++;
     Pose2d pose = drivetrain.getState().Pose;
-
     GameZone zone = FieldUtils.getZone(pose);
+    boolean inOurZone = getAllianceZone() == zone;
 
-    if (getAllianceZone() == zone) { // we are in our zone
-      if (isHubActive()) {
-        // remember to check for balls
-
-
-        // for red testing: you face 9 and 10 from driver
-        
-        Translation2d offset = pose.getTranslation().minus(zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
-        double normalizedDistance = offset.getNorm();
-        double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
-        double rotationConstant = 0.0; // .38
-
-        double distance = normalizedDistance + Math.abs(turretRotation * rotationConstant);
-
-        double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
-        double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
-        double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
-        
-        shooter.setVelocity(-shooterVelo);
-        shooterHood.setPositionRotations(hoodPos);
-        feeder.setVelocity(-feederVelo);
-        if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1) {
-          spindexer.setVelocity(65);
-        } else {
-          feeder.brake();
-          spindexer.brake();
-        }
-      } else {
-        shooter.brake();
-        feeder.brake();
-        spindexer.brake();
-      }
-    } else { // we are not in our zone
+    if (inOurZone && !isHubActive()) {
       shooter.brake();
-        feeder.brake();
-        spindexer.brake();
+      feeder.brake();
+      spindexer.brake();
+      return;
+    }
+
+    Translation2d target = inOurZone
+        ? (zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED)
+        : getTargetCornerLocation();
+    runShootingToTarget(target);
+    if (intakeWrist.getSetpointRotations() < Constants.Intake.INTAKE_IDLE) {
+      if (intakeTimer % 50 == 0) {
+        intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
+      } else if (intakeTimer % 25 == 0) {
+        intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+      }
+    }
+  }
+
+  /** Runs shooter, hood, feeder, and spindexer toward the given target (hopper or corner). */
+  private void runShootingToTarget(Translation2d target) {
+    Pose2d pose = drivetrain.getState().Pose;
+    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - pose.getRotation().getRadians();
+    if (Math.abs(turretRotation) > Math.PI / 2) {
+      shooter.brake();
+      feeder.brake();
+      spindexer.brake();
+      return;
+    }
+
+    // Require turret to be within 2° of the angle to target before shooting
+    double targetTurretAngle = Math.atan2(
+        target.getY() - pose.getY(),
+        target.getX() - pose.getX()) - pose.getRotation().getRadians();
+    double currentTurretAngle = turret.getPositionRotations() * 2 * Math.PI * (9.0 / 8.5);
+    if (Math.abs(targetTurretAngle - currentTurretAngle) > Math.toRadians(TurretConstants.TURRET_SHOOT_ANGLE_TOLERANCE_DEG)) {
+      shooter.brake();
+      feeder.brake();
+      spindexer.brake();
+      return;
+    }
+
+    double normalizedDistance = pose.getTranslation().minus(target).getNorm();
+    double rotationConstant = 0.0;
+    double distance = normalizedDistance + Math.abs(turretRotation * rotationConstant);
+
+    double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+    double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
+    double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+
+    shooter.setVelocity(-shooterVelo);
+    shooterHood.setPositionRotations(hoodPos);
+    feeder.setVelocity(-feederVelo);
+
+    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1;
+    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold) {
+      spindexer.setVelocity(65);
+    } else {
+      feeder.brake();
+      spindexer.brake();
     }
   }
 
@@ -222,53 +239,8 @@ public class StateMachine extends SubsystemBase {
         }
   }
 
-  private void executePassing() {
-    // Pose2d pose = PowerRobotContainer.getData("robotPose", new Pose2d());
-    // if (PowerRobotContainer.getData("robotPose") == null) {
-    //   return; // pose hasnt been updated yet
-    // }
-
-    // GameZone zone = FieldUtils.getZone(pose);
-    shooter.brake();
-        feeder.brake();
-        spindexer.brake();
-
-    // if (getAllianceZone() == zone) { // we are in our zone
-    //   if (shooter.isAllMotorsRunning()) {
-    //     shooter.brake();
-    //   }
-    // } else { // we are not in our zone
-    //   if (!shooter.isAllMotorsRunning()) {
-    //     shooter.setVelocity(1); // placeholder i think
-    //   }
-
-    //   if (pose.getY() > 4.0) { // we are on top half of field
-    //     if (isBlueAlliance()) {
-    //       TurretHelpers.setTarget(Constants.Field.BLUE_TOP_CORNER);
-    //     } else {
-    //       TurretHelpers.setTarget(Constants.Field.BLUE_BOTTOM_CORNER);
-    //     }
-    //   } else { // bottom half of the field
-    //     if (isBlueAlliance()) {
-    //       TurretHelpers.setTarget(Constants.Field.RED_TOP_CORNER);
-    //     } else {
-    //       TurretHelpers.setTarget(Constants.Field.RED_BOTTOM_CORNER);
-    //     }
-    //   }
-    // }
-  }
-
-  private void executeClimbing() {
-
-  } // we arent doing this im pretty sure
-
   public void setWantedState(RobotState state) {
     wantedState = state;
-  }
-
-  private void aimer() {
-    TurretHelpers.calculateHoodAngle(0);
-    TurretHelpers.calculateShooterVelocity(0);
   }
 
   public RobotState getCurrentState() {
@@ -287,9 +259,37 @@ public class StateMachine extends SubsystemBase {
   public boolean isBlueAlliance() {
     if (DriverStation.getAlliance().isEmpty())
       return true;
-    return DriverStation.getAlliance().get
+    return DriverStation.getAlliance().get() == Alliance.Blue;
+  }
 
-    () == Alliance.Blue;
+  /** Distance (m) inward from each side when targeting a corner (field: blue right = 0,0, red left = max, max). */
+  private static final double CORNER_TARGET_OFFSET_M = 1.0;
+
+  /**
+   * Returns a target position 1 m inward from each side that forms the corner (end wall and side wall).
+   * Blue right = (0,0), red left = (max, max). Picks the nearest of our alliance's two corners.
+   */
+  public Translation2d getTargetCornerLocation() {
+    Translation2d robotPos = drivetrain.getState().Pose.getTranslation();
+    if (isBlueAlliance()) {
+      // Blue corners: 1m from blue wall (low X) and 1m from bottom (low Y) or top (high Y)
+      Translation2d fromBottom = new Translation2d(
+          Constants.Field.BLUE_BOTTOM_CORNER.getX() + CORNER_TARGET_OFFSET_M,
+          Constants.Field.BLUE_BOTTOM_CORNER.getY() + CORNER_TARGET_OFFSET_M);
+      Translation2d fromTop = new Translation2d(
+          Constants.Field.BLUE_TOP_CORNER.getX() + CORNER_TARGET_OFFSET_M,
+          Constants.Field.BLUE_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
+      return robotPos.getDistance(fromBottom) <= robotPos.getDistance(fromTop) ? fromBottom : fromTop;
+    } else {
+      // Red corners: 1m from red wall (high X) and 1m from bottom (low Y) or top (high Y)
+      Translation2d fromBottom = new Translation2d(
+          Constants.Field.RED_BOTTOM_CORNER.getX() - CORNER_TARGET_OFFSET_M,
+          Constants.Field.RED_BOTTOM_CORNER.getY() + CORNER_TARGET_OFFSET_M);
+      Translation2d fromTop = new Translation2d(
+          Constants.Field.RED_TOP_CORNER.getX() - CORNER_TARGET_OFFSET_M,
+          Constants.Field.RED_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
+      return robotPos.getDistance(fromBottom) <= robotPos.getDistance(fromTop) ? fromBottom : fromTop;
+    }
   }
 
   public GameZone getAllianceZone() {

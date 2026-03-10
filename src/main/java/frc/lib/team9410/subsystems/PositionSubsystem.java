@@ -33,6 +33,9 @@ public class PositionSubsystem extends PowerSubsystem {
   private String subsystemName;
   private String units;
 
+  /** Last commanded position setpoint in rotations. */
+  private double setpointRotations;
+
   /**
    * Constructor that uses the leader motor from the config and configures it with lead, CANcoder,
    * and motion magic settings from the same config.
@@ -48,6 +51,7 @@ public class PositionSubsystem extends PowerSubsystem {
     }
     this.subsystemName = config.subsystemName();
     this.units = config.units();
+    this.setpointRotations = config.defaultPosition().orElseGet(() -> leader != null ? leader.getPosition().getValueAsDouble() : 0.0);
   }
 
   @Override
@@ -108,9 +112,15 @@ public class PositionSubsystem extends PowerSubsystem {
    * #positionMotor} is set.
    */
   public void setPositionRotations(double rotations) {
+    setpointRotations = rotations;
     if (positionMotor != null) {
       positionMotor.setControl(new MotionMagicVoltage(0).withPosition(rotations).withSlot(0));
     }
+  }
+
+  /** Returns the current position setpoint in rotations. */
+  public double getSetpointRotations() {
+    return setpointRotations;
   }
 
   /**

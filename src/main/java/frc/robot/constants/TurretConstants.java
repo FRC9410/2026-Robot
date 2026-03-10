@@ -92,6 +92,9 @@ public class TurretConstants {
     public static final double TURRET_DIST_FROM_ROBOT_CENTER = -0.1778;
     public static final double TURRET_RADIUS = 0.10795; //.127
 
+    /** Max turret angle error (degrees) from target before allowing shoot (must be within this to fire). */
+    public static final double TURRET_SHOOT_ANGLE_TOLERANCE_DEG = 2.0;
+
     public static final LinearInterpolator HOOD_ANGLE_INTERPOLATOR = new LinearInterpolator(HOOD_ANGLES);
     public static final LinearInterpolator SHOOTER_VELOCITY_INTERPOLATOR = new LinearInterpolator(SHOOTER_SPEEDS);
     public static final LinearInterpolator FEEDER_VELOCITY_INTERPOLATOR = new LinearInterpolator(FEEDER_SPEEDS);
