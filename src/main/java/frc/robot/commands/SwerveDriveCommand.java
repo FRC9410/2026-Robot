@@ -104,36 +104,22 @@ public class SwerveDriveCommand extends Command {
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
     Pose2d targetPose = new Pose2d();
+    targetPose = requestedPose;
 
-    // if (currentPose != null && requestedPose == null) {
-    //   targetPose =
-    //       getTargetPose(
-    //           currentPose,
-    //           stateMachine.getCurrentState(),
-    //           stateMachine.getCurrentCoralPosition());
-    // } else if (currentPose != null && requestedPose != null) {
-    //   targetPose = requestedPose;
-    // }
+    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+      boolean isBlueAlliance = true;
+      if (DriverStation.getAlliance().isPresent()) {
+        if (DriverStation.getAlliance().get() == Alliance.Red) {
+          isBlueAlliance = false;
+        }
+      }
+      final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-    // if (currentPose == null || targetPose == null) stateMachine.setIsInPosition(false);
-    // else
-    //   stateMachine.setIsInPosition(
-    //       getIsInPosition(currentPose, targetPose, drivetrain.getState().Speeds));
+      Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+          currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
-    // if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
-    //   boolean isBlueAlliance = true;
-    //   if (DriverStation.getAlliance().isPresent()) {
-    //     if (DriverStation.getAlliance().get() == Alliance.Red) {
-    //       isBlueAlliance = false;
-    //     }
-    //   }
-    //   final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
-
-    //   Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
-    //       currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
-
-    //   drivetrain.drive(
-    //       -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+      drivetrain.drive(
+          -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
     // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
     //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
     //   drivetrain.drive(
@@ -142,14 +128,14 @@ public class SwerveDriveCommand extends Command {
     //       // currentPose.getRotation().getDegrees(),
     //       targetPose.getRotation().getDegrees(),
     //       Swerve.DriveMode.ROTATION_LOCK);
-    // } else {
+    } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       drivetrain.drive(
           speeds.vxMetersPerSecond,
           speeds.vyMetersPerSecond,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
-    // }
+    }
   }
 
   // Called once the command ends or is interrupted.
@@ -166,119 +152,6 @@ public class SwerveDriveCommand extends Command {
     return false;
   }
 
-//   private Pose2d getTargetPose(
-//       Pose2d currentPose, RobotState robotState, CoralPositions coralPosition) {
-
-//     boolean isBlueAlliance = true;
-//     if (DriverStation.getAlliance().isPresent()) {
-//       if (DriverStation.getAlliance().get() == Alliance.Red) {
-//         isBlueAlliance = false;
-//       }
-//     }
-
-//     Pose2d targetPose = null;
-
-//     List<Pose2d> redLeftScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_FRONT_LEFT,
-//             Constants.ScoringConstants.RED_FRONT_LEFT_LEFT,
-//             Constants.ScoringConstants.RED_BACK_LEFT_LEFT,
-//             Constants.ScoringConstants.RED_BACK_LEFT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT_LEFT,
-//             Constants.ScoringConstants.RED_FRONT_RIGHT_LEFT);
-
-//     List<Pose2d> redRightScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_FRONT_RIGHT,
-//             Constants.ScoringConstants.RED_FRONT_LEFT_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_LEFT_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT_RIGHT,
-//             Constants.ScoringConstants.RED_FRONT_RIGHT_RIGHT);
-
-//     List<Pose2d> blueLeftScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT,
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT_LEFT,
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT_LEFT);
-
-//     List<Pose2d> blueRightScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT,
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT_RIGHT,
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT_RIGHT);
-
-//     List<Pose2d> blueIntakingPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_HP_LEFT, Constants.ScoringConstants.BLUE_HP_RIGHT);
-
-//     List<Pose2d> redIntakingPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_HP_LEFT, Constants.ScoringConstants.RED_HP_RIGHT);
-
-//     List<Pose2d> targetLocations = null; // change to target locations
-//     // if state scoral
-//     if (stateMachine.getCurrentRobotState() == RobotState.SCORAL) {
-//       if (isBlueAlliance) {
-//         switch (coralPosition) {
-//           case LEFT_L1, LEFT_L2, LEFT_L3, LEFT_L4:
-//             targetLocations = blueLeftScoringPoints;
-//             break;
-//           case RIGHT_L1, RIGHT_L2, RIGHT_L3, RIGHT_L4:
-//             targetLocations = blueRightScoringPoints;
-//             break;
-//           default:
-//             return null;
-//         }
-//       } else {
-//         switch (coralPosition) {
-//           case LEFT_L1, LEFT_L2, LEFT_L3, LEFT_L4:
-//             targetLocations = redLeftScoringPoints;
-//             break;
-//           case RIGHT_L1, RIGHT_L2, RIGHT_L3, RIGHT_L4:
-//             targetLocations = redRightScoringPoints;
-//             break;
-//           default:
-//             return null;
-//         }
-//       }
-//     } else if (stateMachine.getCurrentRobotState() == RobotState.INTAKE_CORAL) {
-//       if (isBlueAlliance) {
-//         targetLocations = blueIntakingPoints;
-//       } else {
-//         targetLocations = redIntakingPoints;
-//       }
-//     } else {
-//     }
-
-//     // if state intaking
-//     // ...
-
-//     double leastDistance = 0;
-//     double indexOfClosestPoint;
-//     if (targetLocations != null) {
-//       for (int i = 0; i < targetLocations.size(); i++) {
-//         Pose2d testPoint = targetLocations.get(i);
-//         Translation2d distanceTranslation =
-//             currentPose.getTranslation().minus(testPoint.getTranslation());
-//         double distance = Math.abs(distanceTranslation.getNorm());
-
-//         if (i == 0 || distance < leastDistance) {
-//           leastDistance = distance;
-//           indexOfClosestPoint = i;
-//           targetPose = testPoint;
-//         }
-//       }
-//     }
-
-//     return targetPose;
-//   }
 
   private boolean getIsInPosition(Pose2d currentPose, Pose2d targetPose, ChassisSpeeds speeds) {
     final Translation2d translationToPoint =

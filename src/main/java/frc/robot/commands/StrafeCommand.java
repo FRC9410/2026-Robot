@@ -15,9 +15,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.lib.team9410.PowerRobotContainer;
-import frc.robot.Constants;
-import frc.robot.constants.FieldConstants;
 import frc.robot.constants.LocationConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.DriveUtil;
@@ -35,10 +32,11 @@ public class StrafeCommand extends Command {
 
   private final Swerve drivetrain;
   private final CommandXboxController controller;
-  private final StrafeSide side;
+  /** Set in constructor or in initialize() when using the no-side constructor. */
+  private StrafeSide side;
   private final PIDController driveToPointController;
   private final double poseTolerance;
-  
+
   public StrafeCommand(
         Swerve drivetrain,
         CommandXboxController controller,
@@ -48,13 +46,20 @@ public class StrafeCommand extends Command {
       this.side = side;
       this.driveToPointController = new PIDController(3.2, 0, 0.2);
       this.poseTolerance = -1;
-
     addRequirements(drivetrain);
+  }
+
+  /** Constructs with no side; the closest side to the robot is chosen when the command starts. */
+  public StrafeCommand(Swerve drivetrain, CommandXboxController controller) {
+    this(drivetrain, controller, null);
   }
 
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
+    if (side == null) {
+      side = getClosestSide(drivetrain);
+    }
   }
 
   // Called every time the scheduler runs while the command is scheduled.
@@ -229,6 +234,47 @@ public class StrafeCommand extends Command {
         pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
     return velocity.getY();
+  }
+
+  /**
+   * Returns the strafe side (wall) closest to the robot's current pose.
+   * Uses alliance and zone to pick the correct wall X/Y constants.
+   */
+  private static StrafeSide getClosestSide(Swerve drivetrain) {
+    Pose2d pose = drivetrain.getState().Pose;
+    GameZone zone = FieldUtils.getZone(pose);
+    Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+    double frontWallX;
+    double backWallX;
+    switch (zone) {
+      case BLUE_ALLIANCE:
+        frontWallX = LocationConstants.BLUE_HUB_WALL_X;
+        backWallX = LocationConstants.BLUE_ALLIANCE_WALL_X;
+        break;
+      case RED_ALLIANCE:
+        frontWallX = LocationConstants.RED_HUB_WALL_X;
+        backWallX = LocationConstants.RED_ALLIANCE_WALL_X;
+        break;
+      case NEUTRAL:
+        frontWallX = alliance == Alliance.Blue ? LocationConstants.RED_CENTER_WALL_X : LocationConstants.BLUE_CENTER_WALL_X;
+        backWallX = alliance == Alliance.Blue ? LocationConstants.BLUE_CENTER_WALL_X : LocationConstants.RED_CENTER_WALL_X;
+        break;
+      default:
+        return StrafeSide.FRONT;
+    }
+
+    // Far/near wall Y are fixed field positions; LEFT/RIGHT map by alliance (see getXInput).
+    double distFront = Math.abs(pose.getX() - frontWallX);
+    double distBack = Math.abs(pose.getX() - backWallX);
+    double distToFarWall = Math.abs(pose.getY() - LocationConstants.FAR_WALL_Y);
+    double distToNearWall = Math.abs(pose.getY() - LocationConstants.NEAR_WALL_Y);
+
+    double min = Math.min(Math.min(distFront, distBack), Math.min(distToFarWall, distToNearWall));
+    if (min == distFront) return StrafeSide.FRONT;
+    if (min == distBack) return StrafeSide.BACK;
+    if (min == distToFarWall) return alliance == Alliance.Blue ? StrafeSide.LEFT : StrafeSide.RIGHT;
+    return alliance == Alliance.Blue ? StrafeSide.RIGHT : StrafeSide.LEFT;
   }
 
   private StrafeAxis getStrafeAxis(StrafeSide side) {
