@@ -11,10 +11,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
 // todo:
-// check on point to point driving
 // stop having to reset robot code because of limelights
-// turn down max speed
-// slow down over bump
+// auto pathing
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;

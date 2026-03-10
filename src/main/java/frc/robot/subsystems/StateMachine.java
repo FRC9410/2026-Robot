@@ -186,7 +186,17 @@ public class StateMachine extends SubsystemBase {
 
   /** Runs shooter, hood, feeder, and spindexer toward the given target (hopper or corner). */
   private void runShootingToTarget(Translation2d target) {
-    Pose2d pose = drivetrain.getState().Pose;
+    var state = drivetrain.getState();
+    Pose2d pose = state.Pose;
+    var speeds = state.Speeds;
+    double linearSpeedMps = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    if (linearSpeedMps > TurretConstants.SHOOT_MAX_DRIVETRAIN_SPEED_MPS) {
+      shooter.brake();
+      feeder.brake();
+      spindexer.brake();
+      return;
+    }
+
     double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - pose.getRotation().getRadians();
     if (Math.abs(turretRotation) > Math.PI / 2) {
       shooter.brake();

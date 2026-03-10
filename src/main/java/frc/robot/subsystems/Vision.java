@@ -55,18 +55,6 @@ public class Vision extends SubsystemBase {
 
   @Override
   public void periodic() {}
-
-  // TODO: fix this because the robot moves lol
-  /** Robot pose from Limelight (when using 2D or 3D pose). */
-  public Pose2d getRobotPose(NetworkTable table) {
-    // double[] arr = table.getEntry("botpose").getDoubleArray(new double[6]);
-    // if (arr.length >= 6) {
-    //   return new Pose2d(
-    //       new Translation2d(arr[0], arr[1]),
-    //       Rotation2d.fromDegrees(arr[5]));
-    // }
-    return new Pose2d(10.0, 10.0, new Rotation2d(10.0));
-  }
   
   public void setRobotPose(String limelight, double yaw) {
     Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(limelight);

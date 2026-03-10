@@ -16,7 +16,9 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.DriveUtil;
-import frc.robot.subsystems.StateMachine;
+import frc.robot.utils.FieldUtils;
+import frc.robot.utils.FieldUtils.GameZone;
+import frc.robot.constants.OIConstants;
 import frc.robot.subsystems.Swerve;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -32,7 +34,6 @@ public class SwerveDriveCommand extends Command {
 
   private final Swerve drivetrain;
   private final CommandXboxController controller;
-  private final StateMachine stateMachine;
   private final boolean autoDrive;
   private final PIDController driveToPointController;
   private Pose2d requestedPose;
@@ -42,11 +43,9 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = null;
     this.poseTolerance = -1;
@@ -60,12 +59,10 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive,
       Pose2d requestedPose) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = -1.0;
@@ -79,13 +76,11 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive,
       Pose2d requestedPose,
       double poseTolerance) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = poseTolerance;
@@ -103,6 +98,7 @@ public class SwerveDriveCommand extends Command {
   @Override
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
+    final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT : 1.0;
     Pose2d targetPose = new Pose2d();
     targetPose = requestedPose;
 
@@ -119,7 +115,7 @@ public class SwerveDriveCommand extends Command {
           currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
       drivetrain.drive(
-          -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+          -velocity.getX() * speedCoefficient, -velocity.getY() * speedCoefficient, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
     // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
     //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
     //   drivetrain.drive(
@@ -130,9 +126,10 @@ public class SwerveDriveCommand extends Command {
     //       Swerve.DriveMode.ROTATION_LOCK);
     } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
+      final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
       drivetrain.drive(
-          speeds.vxMetersPerSecond,
-          speeds.vyMetersPerSecond,
+          speeds.vxMetersPerSecond * coeff,
+          speeds.vyMetersPerSecond * coeff,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
     }

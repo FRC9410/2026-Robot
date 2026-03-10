@@ -2,7 +2,6 @@ package frc.robot.constants;
 
 
 public class LocationConstants {
-    // TODO: fill in
     public static final double PLEASE_DONT_HIT_THE_WALL_OFFSET = 0.5;
     public static final double BLUE_ALLIANCE_WALL_X = 0.785 + PLEASE_DONT_HIT_THE_WALL_OFFSET;
     public static final double BLUE_HUB_WALL_X = 3.15 - PLEASE_DONT_HIT_THE_WALL_OFFSET;

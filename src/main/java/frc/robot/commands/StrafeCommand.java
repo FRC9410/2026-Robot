@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.constants.LocationConstants;
+import frc.robot.constants.OIConstants;
 import frc.robot.subsystems.Swerve;
 import frc.robot.utils.DriveUtil;
 import frc.robot.utils.FieldUtils;
@@ -70,10 +71,11 @@ public class StrafeCommand extends Command {
     GameZone zone = FieldUtils.getZone(pose);
     if (zone != GameZone.INTERCHANGE) {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, 0.0);
+      final double coeff = OIConstants.MAX_SPEED_COEFFICIENT;
 
       drivetrain.drive(
-        axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : getXInput(axis, side),
-        axis == StrafeAxis.X ? speeds.vyMetersPerSecond : getYInput(axis, side),
+        axis == StrafeAxis.Y ? speeds.vxMetersPerSecond * coeff : getXInput(axis, side),
+        axis == StrafeAxis.X ? speeds.vyMetersPerSecond * coeff : getYInput(axis, side),
         getRotation(axis == StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, side, zone, pose),
         Swerve.DriveMode.ROTATION_LOCK
       );

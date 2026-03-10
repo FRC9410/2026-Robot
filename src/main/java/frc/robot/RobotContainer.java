@@ -35,7 +35,7 @@ public class RobotContainer implements PowerRobotContainer {
   private final SweepConfig sweepConfig = new SweepConfig(stateMachine.drivetrain, driverController, stateMachine);
 
   private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
-    driverController, stateMachine).build();
+    driverController).build();
 
   private final VelocitySysId shooterSysId = new VelocitySysId(stateMachine.shooter, "Shooter");
   private final VelocitySysId feederSysId = new VelocitySysId(stateMachine.feeder, "Feeder");
@@ -97,7 +97,7 @@ public class RobotContainer implements PowerRobotContainer {
           stateMachine.setWantedState(RobotState.READY);
         }));
 
-    stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, stateMachine, false));
+    stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
   }
 
