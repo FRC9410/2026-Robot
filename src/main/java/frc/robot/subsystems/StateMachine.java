@@ -87,21 +87,32 @@ public class StateMachine extends SubsystemBase {
   public void setRobotPose () {
     String bestLimelight = vision.getBestLimelight();
 
-    vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
+    // Don't use vision when no Limelight has valid data (avoids bad/default pose from empty/wrong table on boot).
+    if (bestLimelight == null || bestLimelight.isEmpty()) {
+      // Skip vision pose update; dashboard/PRC still use current drivetrain pose below.
+    } else {
+      vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
-    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
-    if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
-      Pose2d newPose = mt2.pose;
-      if (gyroReset) {
-        newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
-      } else {
-        gyroReset = true;
+      LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
+      if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
+        Pose2d newPose = mt2.pose;
+        // Reject poses outside field bounds (e.g. 0,0 or garbage from cold Limelight).
+        double x = newPose.getX();
+        double y = newPose.getY();
+        if (x < Constants.Field.X_MIN - Constants.Field.TOL || x > Constants.Field.X_MAX + Constants.Field.TOL
+            || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
+          // Bad pose; do not reset or add to estimator.
+        } else {
+          if (gyroReset) {
+            newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
+          } else {
+            gyroReset = true;
+          }
+          drivetrain.resetPose(newPose);
+          drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
+          drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
+        }
       }
-      drivetrain.resetPose(newPose);
-      // drivetrain.resetRotation(mt2.pose.getRotation());
-      drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
-      drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
-
     }
       Translation2d translationToPoint = drivetrain.getState().Pose.getTranslation().minus(Constants.Field.HOPPER_RED);
       double linearDistance = translationToPoint.getNorm();

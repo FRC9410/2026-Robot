@@ -57,11 +57,14 @@ public class Vision extends SubsystemBase {
   public void periodic() {}
   
   public void setRobotPose(String limelight, double yaw) {
+    if (limelight == null || limelight.isEmpty()) {
+      return;
+    }
     Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(limelight);
     LimelightHelpers.PoseEstimate bestMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
 
-    if (limelight == "limelight-turret") {
+    if ("limelight-turret".equals(limelight)) {
       Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
 
       double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
