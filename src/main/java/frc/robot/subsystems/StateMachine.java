@@ -170,6 +170,7 @@ public class StateMachine extends SubsystemBase {
     shooter.brake();
     spindexer.brake();
     feeder.brake();
+    intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
     intakeTimer = 0;
   }
 
@@ -219,7 +220,7 @@ public class StateMachine extends SubsystemBase {
       return;
     }
 
-    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - pose.getRotation().getRadians();
+    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, target) - pose.getRotation().getRadians();
     // if (Math.abs(turretRotation) > Math.PI / 2) {
     //   shooter.brake();
     //   feeder.brake();
@@ -228,10 +229,10 @@ public class StateMachine extends SubsystemBase {
     // }
 
     // Require turret to be within 2° of the angle to target before shooting
-    double targetTurretAngle = Math.atan2(
-        target.getY() - pose.getY(),
-        target.getX() - pose.getX());
-    double currentTurretAngle = turret.getPositionRotations() * 2 * Math.PI * (9.0 / 8.5);
+    // double targetTurretAngle = Math.atan2(
+    //     target.getY() - pose.getY(),
+    //     target.getX() - pose.getX());
+    // double currentTurretAngle = turret.getPositionRotations() * 2 * Math.PI * (9.0 / 8.5);
     // if (Math.abs(targetTurretAngle - currentTurretAngle) > Math.toRadians(TurretConstants.TURRET_SHOOT_ANGLE_TOLERANCE_DEG)) {
     //   shooter.brake();
     //   feeder.brake();
@@ -250,7 +251,7 @@ public class StateMachine extends SubsystemBase {
     shooter.setVelocity(-shooterVelo);
     shooterHood.setPositionRotations(hoodPos);
     feeder.setVelocity(-feederVelo);
-    pointTurret(targetTurretAngle);
+    pointTurret(target);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1;
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold) {
@@ -276,8 +277,8 @@ public class StateMachine extends SubsystemBase {
         }
   }
 
-  private void pointTurret(double radians) {
-    double turretRotation = radians - drivetrain.getState().Pose.getRotation().getRadians();
+  private void pointTurret(Translation2d point) {
+    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, point) - drivetrain.getState().Pose.getRotation().getRadians();
     double rotationConstant = 0.09;
 
     double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
