@@ -16,7 +16,9 @@ import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.StateMachine.RobotState;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
+import frc.robot.utils.FieldUtils;
 import frc.robot.commands.VelocitySysId;
+import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.SwerveDriveCommand;
 
 public class RobotContainer implements PowerRobotContainer {
@@ -32,7 +34,6 @@ public class RobotContainer implements PowerRobotContainer {
 
   // Controller
   private final CommandXboxController driverController = new CommandXboxController(0);
-  private final SweepConfig sweepConfig = new SweepConfig(stateMachine.drivetrain, driverController, stateMachine);
 
   private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
     driverController).build();
@@ -96,6 +97,14 @@ public class RobotContainer implements PowerRobotContainer {
         () -> {
           stateMachine.setWantedState(RobotState.READY);
         }));
+
+    driverController.back().onTrue(new InstantCommand(
+      () -> {
+        stateMachine.resetGyro();
+      }
+    ));
+
+    driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController));
 
     stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
