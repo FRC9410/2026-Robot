@@ -2,6 +2,7 @@ package frc.robot.utils;
 
 import static edu.wpi.first.units.Units.Rotation;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -92,16 +93,93 @@ public class TurretHelpers {
     }
 
     public static double getTurretRotationsWithoutLead(StateMachine stateMachine, Translation2d point) {
-        Translation2d hub = point;
+        // Translation2d hub = point;
 
-        Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation()
-                .minus(hub)
-                .plus(new Translation2d(0, TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER).rotateBy(stateMachine.drivetrain.getState().Pose.getRotation()));
+        // Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation()
+        //         .minus(hub)
+        //         .plus(new Translation2d(0, TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER).rotateBy(stateMachine.drivetrain.getState().Pose.getRotation()));
 
-        // System.out.println("x: " + relative.getX());
-        // System.out.println("Y: " + relative.getY());
+        // // System.out.println("x: " + relative.getX());
+        // // System.out.println("Y: " + relative.getY());
 
-        return Math.atan2(relative.getY(), relative.getX());
+        // return Math.atan2(relative.getY(), relative.getX());
+
+        // return getTurretAngleRadiansFromBack(stateMachine.drivetrain.getState().Pose, point);
+        return getOffsetTurretAngleRadiansFromBack(stateMachine.drivetrain.getState().Pose, point);
+    }
+
+    public static double getTurretAngleRadiansFromBack(
+    Pose2d robotPose,
+    Translation2d targetPoint
+    ) {
+        // Get the robot's current position on the field
+        Translation2d robotPosition = robotPose.getTranslation();
+
+        // Find the vector from the robot to the target
+        double deltaX = targetPoint.getX() - robotPosition.getX();
+        double deltaY = targetPoint.getY() - robotPosition.getY();
+
+        // Find the angle from the robot to the target in field coordinates
+        double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
+
+        // Get the robot's heading
+        double robotHeadingRadians = robotPose.getRotation().getRadians();
+
+        // Convert the field-relative target angle into a robot-relative angle
+        // In this convention:
+        // 0 = front, +pi/2 = left, -pi/2 = right, pi = back
+        double targetAngleRobotRelative = targetAngleFieldRelative - robotHeadingRadians;
+        targetAngleRobotRelative = MathUtil.angleModulus(targetAngleRobotRelative);
+
+        // Shift the angle so that "back" becomes zero
+        double turretAngleFromBack = targetAngleRobotRelative - Math.PI;
+
+        // Normalize again so the result stays in [-pi, pi]
+        turretAngleFromBack = MathUtil.angleModulus(turretAngleFromBack);
+
+        return turretAngleFromBack;
+    }
+
+    public static double getOffsetTurretAngleRadiansFromBack(
+        Pose2d robotPose,
+        Translation2d targetPoint
+    ) {
+        // Robot center on the field
+        Translation2d robotCenter = robotPose.getTranslation();
+
+        // Turret pivot offset in robot coordinates.
+        // Positive Y means "toward the back" in your current convention.
+        Translation2d turretOffsetFromRobotCenter =
+            new Translation2d(0.0, TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER);
+
+        // Rotate that offset by the robot heading so it becomes field-relative
+        Translation2d turretOffsetFieldRelative =
+            turretOffsetFromRobotCenter.rotateBy(robotPose.getRotation());
+
+        // Actual turret pivot position on the field
+        Translation2d turretPivotPosition =
+            robotCenter.plus(turretOffsetFieldRelative);
+
+        // Vector from turret pivot to target
+        Translation2d turretToTarget =
+            targetPoint.minus(turretPivotPosition);
+
+        // Field-relative angle from turret pivot to target
+        double targetAngleFieldRelative =
+            Math.atan2(turretToTarget.getY(), turretToTarget.getX());
+
+        // Robot heading on the field
+        double robotHeadingRadians = robotPose.getRotation().getRadians();
+
+        // Convert to robot-relative angle
+        double targetAngleRobotRelative =
+            MathUtil.angleModulus(targetAngleFieldRelative - robotHeadingRadians);
+
+        // Shift so "back of robot" becomes zero
+        double turretAngleFromBack =
+            MathUtil.angleModulus(targetAngleRobotRelative - Math.PI);
+
+        return turretAngleFromBack;
     }
 
     public static double getDistance(Pose2d RobotPosition, Translation2d hopperPosition) {

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import com.ctre.phoenix6.Utils;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -283,13 +284,26 @@ public class StateMachine extends SubsystemBase {
   private void pointTurret(Translation2d point) {
     double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, point) - drivetrain.getState().Pose.getRotation().getRadians();
     // System.out.println(turretRotation);
-    double rotationConstant = 0.09;
+    // double rotationConstant = 0.09;
 
-    double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
-        if (Math.toDegrees(Math.abs(dir)) < 90) {
-          turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
-          // System.out.println(dir / Math.PI * (8.5/9));
-        }
+    // double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
+    //     if (Math.toDegrees(Math.abs(dir)) < 90) {
+    //       turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
+    //       // System.out.println(dir / Math.PI * (8.5/9));
+    //     }
+
+    double desiredTurretRotations = TurretHelpers.getTurretRotationsWithoutLead(this, point);
+
+    // radians to turret setpoint
+    double turretRotations = desiredTurretRotations / (2.0 * Math.PI);
+
+    // restricting setpoint
+    double clampedTurretRotations = MathUtil.clamp(turretRotations, -0.25, 0.25);
+
+    // translating setpoint to gear ration
+    double sensorRotations = clampedTurretRotations * (8.5 / 9.0);
+
+    turret.setPositionRotations(sensorRotations);
 
     // delta 2pi and turret rotation
     // multiply delta * 8.5/9
