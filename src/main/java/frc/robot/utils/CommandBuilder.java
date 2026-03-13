@@ -51,6 +51,12 @@ public class CommandBuilder {
         return this;
     }
 
+    public CommandBuilder drive (Pose2d pose, double tolerance) {
+        this.commands.add(new SwerveDriveCommand(this.drive, this.controller, true, pose, tolerance));
+
+        return this;
+    }
+
     public CommandBuilder command (Command command) {
         this.commands.add(command);
 
