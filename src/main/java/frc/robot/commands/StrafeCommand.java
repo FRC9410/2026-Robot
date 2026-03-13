@@ -81,14 +81,13 @@ public class StrafeCommand extends Command {
           MAX_ANGULAR_RATE, 0.0);
       final double coeff = OIConstants.MAX_SPEED_COEFFICIENT;
 
+      System.out.println(axis.name());
 
-      double speedX = axis == StrafeAxis.X ? speeds.vxMetersPerSecond * coeff : getYInput(axis, thatSide);
-      double speedY = axis == StrafeAxis.Y ? speeds.vyMetersPerSecond * coeff : getXInput(axis, thatSide);
+      double speedX = axis == StrafeAxis.X ? speeds.vxMetersPerSecond * coeff : getXInput(axis, thatSide);
+      double speedY = axis == StrafeAxis.Y ? speeds.vyMetersPerSecond * coeff : getYInput(axis, thatSide);
 
-      
       System.out.println("vx:" + speedX);
       System.out.println("vy:" + speedY);
-
 
       drivetrain.drive(
           speedX,
@@ -183,7 +182,7 @@ public class StrafeCommand extends Command {
     }
   }
 
-  private double getXInput(StrafeAxis axis, StrafeSide side) {
+  private double getYInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
     Alliance alliance = DriverStation.getAlliance().get();
@@ -202,11 +201,13 @@ public class StrafeCommand extends Command {
 
     Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
         pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+        
+    System.out.println("getx: " + velocity.getY());
 
-    return velocity.getX();
+    return velocity.getY();
   }
 
-  private double getYInput(StrafeAxis axis, StrafeSide side) {
+  private double getXInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
     Alliance alliance = DriverStation.getAlliance().get();
@@ -254,13 +255,13 @@ public class StrafeCommand extends Command {
     System.out.println(strafeLine);
 
     
-    final Pose2d targetPose = new Pose2d(pose.getX(), strafeLine, pose.getRotation());
+    final Pose2d targetPose = new Pose2d(strafeLine, pose.getY(), pose.getRotation());
     final double directionMultiplier = alliance == Alliance.Blue ? -1.0 : 1.0;
     
     Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
       pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
-    return velocity.getY();
+    return velocity.getX();
   }
 
   /**

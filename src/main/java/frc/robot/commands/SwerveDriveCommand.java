@@ -154,9 +154,18 @@ public class SwerveDriveCommand extends Command {
     } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
+      double xSpeed = speeds.vxMetersPerSecond * coeff;
+      double ySpeed = speeds.vyMetersPerSecond * coeff;
+
+      if (controller.rightTrigger(0.5).getAsBoolean()){
+        final double DRIVE_AND_SHOOT_SPEED = 0.1;
+        xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
+        ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
+      }
+
       drivetrain.drive(
-          speeds.vxMetersPerSecond * coeff,
-          speeds.vyMetersPerSecond * coeff,
+          xSpeed,
+          ySpeed,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
     }

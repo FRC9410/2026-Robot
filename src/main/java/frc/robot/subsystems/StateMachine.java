@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import java.nio.file.FileSystem;
 import java.util.Map;
 import java.util.Optional;
 
@@ -68,7 +69,7 @@ public class StateMachine extends SubsystemBase {
   @Override
   public void periodic() {
     if (currentState != RobotState.SHOOTING) {
-      pointTurret();
+      pointTurret(isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
     }
 
     handleStateTransitions();
@@ -170,7 +171,9 @@ public class StateMachine extends SubsystemBase {
     shooter.brake();
     spindexer.brake();
     feeder.brake();
-    intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+    if (intakeWrist.getSetpointRotations() > Constants.Intake.INTAKE_IDLE){
+      intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+    }
     intakeTimer = 0;
   }
 
@@ -196,7 +199,6 @@ public class StateMachine extends SubsystemBase {
     Translation2d target = inOurZone
         ? (zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED)
         : getTargetCornerLocation();
-    System.out.println(intakeWrist.getSetpointRotations());
     runShootingToTarget(target);
     if (intakeWrist.getSetpointRotations() >= Constants.Intake.INTAKE_IDLE) {
       if (intakeTimer % 50 == 0) {
@@ -212,13 +214,13 @@ public class StateMachine extends SubsystemBase {
     var state = drivetrain.getState();
     Pose2d pose = state.Pose;
     var speeds = state.Speeds;
-    double linearSpeedMps = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
-    if (linearSpeedMps > TurretConstants.SHOOT_MAX_DRIVETRAIN_SPEED_MPS) {
-      shooter.brake();
-      feeder.brake();
-      spindexer.brake();
-      return;
-    }
+    // double linearSpeedMps = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
+    // if (linearSpeedMps > TurretConstants.SHOOT_MAX_DRIVETRAIN_SPEED_MPS) {
+    //   shooter.brake();
+    //   feeder.brake();
+    //   spindexer.brake();
+    //   return;
+    // }
 
     double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, target) - pose.getRotation().getRadians();
     // if (Math.abs(turretRotation) > Math.PI / 2) {
@@ -248,15 +250,16 @@ public class StateMachine extends SubsystemBase {
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
 
-    shooter.setVelocity(-shooterVelo);
+    shooter.setVelocity(-shooterVelo - 1);
     shooterHood.setPositionRotations(hoodPos);
     feeder.setVelocity(-feederVelo);
     pointTurret(target);
 
-    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1;
+    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
+    System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold) {
-      if (intakeTimer > 50) {
-        spindexer.setVelocity(65);
+      if (intakeTimer > 25) {
+        spindexer.setVelocity(60);
       } else {
         spindexer.setVelocity(95);
       }
@@ -266,19 +269,20 @@ public class StateMachine extends SubsystemBase {
     }
   }
 
-  private void pointTurret() {
-    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
-    double rotationConstant = 0.09;
+  // private void pointTurret() {
+  //   double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
+  //   double rotationConstant = 0.09;
 
-    double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
-        if (Math.toDegrees(Math.abs(dir)) < 90) {
-          turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
-          // System.out.println(dir / Math.PI * (8.5/9));
-        }
-  }
+  //   double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
+  //       if (Math.toDegrees(Math.abs(dir)) < 90) {
+  //         turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
+  //         // System.out.println(dir / Math.PI * (8.5/9));
+  //       }
+  // }
 
   private void pointTurret(Translation2d point) {
     double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, point) - drivetrain.getState().Pose.getRotation().getRadians();
+    // System.out.println(turretRotation);
     double rotationConstant = 0.09;
 
     double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
@@ -286,6 +290,11 @@ public class StateMachine extends SubsystemBase {
           turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
           // System.out.println(dir / Math.PI * (8.5/9));
         }
+
+    // delta 2pi and turret rotation
+    // multiply delta * 8.5/9
+    // apply new delta to turret rotation
+    // continue...
   }
 
   public void setWantedState(RobotState state) {
@@ -328,7 +337,7 @@ public class StateMachine extends SubsystemBase {
       Translation2d fromTop = new Translation2d(
           Constants.Field.BLUE_TOP_CORNER.getX() + CORNER_TARGET_OFFSET_M,
           Constants.Field.BLUE_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
-      return robotPos.getDistance(fromBottom) <= robotPos.getDistance(fromTop) ? fromBottom : fromTop;
+      return robotPos.getY() > 4 ? fromTop : fromBottom;
     } else {
       // Red corners: 1m from red wall (high X) and 1m from bottom (low Y) or top (high Y)
       Translation2d fromBottom = new Translation2d(
@@ -337,7 +346,8 @@ public class StateMachine extends SubsystemBase {
       Translation2d fromTop = new Translation2d(
           Constants.Field.RED_TOP_CORNER.getX() - CORNER_TARGET_OFFSET_M,
           Constants.Field.RED_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
-      return robotPos.getDistance(fromBottom) <= robotPos.getDistance(fromTop) ? fromBottom : fromTop;
+      System.out.println(robotPos.getY() > 4 ? fromTop : fromBottom);
+      return robotPos.getY() > 4 ? fromTop : fromBottom;
     }
   }
 
