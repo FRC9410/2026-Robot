@@ -9,6 +9,7 @@ import choreo.auto.AutoChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.constants.AutoConstants;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.Swerve;
 
@@ -16,21 +17,19 @@ public class AutoBuilder {
 
     private final Swerve drive;
     private final CommandXboxController controller;
-    private final StateMachine stateMachine;
 
-    public AutoBuilder (Swerve drive, CommandXboxController controller, StateMachine stateMachine) {
+    public AutoBuilder (Swerve drive, CommandXboxController controller) {
         this.drive = drive;
         this.controller = controller;
-        this.stateMachine = stateMachine;
     }
 
     public SendableChooser<SequentialCommandGroup> build () {
         var map = ImmutableMap.<String, CommandBuilder>builder()
             .put("test1",
-                new CommandBuilder(drive, controller, stateMachine)
+                new CommandBuilder(drive, controller).drive(AutoConstants.TEST_POSITION)
             )
             .put("test2",
-                new CommandBuilder(drive, controller, stateMachine)
+                new CommandBuilder(drive, controller)
             )
             .build()
         ;

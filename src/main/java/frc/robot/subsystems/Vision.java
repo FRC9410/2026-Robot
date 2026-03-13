@@ -55,25 +55,16 @@ public class Vision extends SubsystemBase {
 
   @Override
   public void periodic() {}
-
-  // TODO: fix this because the robot moves lol
-  /** Robot pose from Limelight (when using 2D or 3D pose). */
-  public Pose2d getRobotPose(NetworkTable table) {
-    // double[] arr = table.getEntry("botpose").getDoubleArray(new double[6]);
-    // if (arr.length >= 6) {
-    //   return new Pose2d(
-    //       new Translation2d(arr[0], arr[1]),
-    //       Rotation2d.fromDegrees(arr[5]));
-    // }
-    return new Pose2d(10.0, 10.0, new Rotation2d(10.0));
-  }
   
   public void setRobotPose(String limelight, double yaw) {
+    if (limelight == null || limelight.isEmpty()) {
+      return;
+    }
     Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(limelight);
     LimelightHelpers.PoseEstimate bestMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
 
-    if (limelight == "limelight-turret") {
+    if ("limelight-turret".equals(limelight)) {
       Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
 
       double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;

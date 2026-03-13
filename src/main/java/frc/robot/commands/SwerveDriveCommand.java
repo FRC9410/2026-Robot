@@ -16,7 +16,10 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.DriveUtil;
-import frc.robot.subsystems.StateMachine;
+import frc.robot.utils.FieldUtils;
+import frc.robot.utils.FieldUtils.GameZone;
+import frc.robot.constants.LocationConstants;
+import frc.robot.constants.OIConstants;
 import frc.robot.subsystems.Swerve;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
@@ -32,7 +35,6 @@ public class SwerveDriveCommand extends Command {
 
   private final Swerve drivetrain;
   private final CommandXboxController controller;
-  private final StateMachine stateMachine;
   private final boolean autoDrive;
   private final PIDController driveToPointController;
   private Pose2d requestedPose;
@@ -42,11 +44,9 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = null;
     this.poseTolerance = -1;
@@ -60,12 +60,10 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive,
       Pose2d requestedPose) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = -1.0;
@@ -79,13 +77,11 @@ public class SwerveDriveCommand extends Command {
   public SwerveDriveCommand(
       Swerve drivetrain,
       CommandXboxController controller,
-      StateMachine stateMachine,
       boolean autoDrive,
       Pose2d requestedPose,
       double poseTolerance) {
     this.drivetrain = drivetrain;
     this.controller = controller;
-    this.stateMachine = stateMachine;
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = poseTolerance;
@@ -103,37 +99,24 @@ public class SwerveDriveCommand extends Command {
   @Override
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
+    final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT : 1.0;
     Pose2d targetPose = new Pose2d();
+    targetPose = requestedPose;
 
-    // if (currentPose != null && requestedPose == null) {
-    //   targetPose =
-    //       getTargetPose(
-    //           currentPose,
-    //           stateMachine.getCurrentState(),
-    //           stateMachine.getCurrentCoralPosition());
-    // } else if (currentPose != null && requestedPose != null) {
-    //   targetPose = requestedPose;
-    // }
+    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+      boolean isBlueAlliance = true;
+      if (DriverStation.getAlliance().isPresent()) {
+        if (DriverStation.getAlliance().get() == Alliance.Red) {
+          isBlueAlliance = false;
+        }
+      }
+      final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-    // if (currentPose == null || targetPose == null) stateMachine.setIsInPosition(false);
-    // else
-    //   stateMachine.setIsInPosition(
-    //       getIsInPosition(currentPose, targetPose, drivetrain.getState().Speeds));
+      Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+          currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
-    // if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
-    //   boolean isBlueAlliance = true;
-    //   if (DriverStation.getAlliance().isPresent()) {
-    //     if (DriverStation.getAlliance().get() == Alliance.Red) {
-    //       isBlueAlliance = false;
-    //     }
-    //   }
-    //   final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
-
-    //   Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
-    //       currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
-
-    //   drivetrain.drive(
-    //       -velocity.getX(), -velocity.getY(), targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+      drivetrain.drive(
+          -velocity.getX() * speedCoefficient, -velocity.getY() * speedCoefficient, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
     // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
     //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
     //   drivetrain.drive(
@@ -142,14 +125,50 @@ public class SwerveDriveCommand extends Command {
     //       // currentPose.getRotation().getDegrees(),
     //       targetPose.getRotation().getDegrees(),
     //       Swerve.DriveMode.ROTATION_LOCK);
-    // } else {
+    } else if (controller.a().getAsBoolean()) {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
+      StrafeSide  thatSide = getClosestSide(drivetrain);
+
+      StrafeAxis axis = getStrafeAxis(thatSide);
+      Pose2d pose = drivetrain.getState().Pose;
+      GameZone zone = FieldUtils.getZone(pose);
+
+      if (zone != GameZone.INTERCHANGE) {
+        final double coeff = OIConstants.MAX_SPEED_COEFFICIENT;
+
+        double speedX = axis == StrafeAxis.X ? speeds.vxMetersPerSecond * coeff : -getYInput(axis, thatSide);
+        double speedY = axis == StrafeAxis.Y ? speeds.vyMetersPerSecond * coeff : -getXInput(axis, thatSide);
+
+        drivetrain.drive(
+            speedX,
+            speedY,
+            getRotation(axis != StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, thatSide, zone, pose),
+            Swerve.DriveMode.ROTATION_LOCK);
+      } else {
+        drivetrain.drive(
+            speeds.vxMetersPerSecond * speedCoefficient,
+            speeds.vyMetersPerSecond * speedCoefficient,
+            -speeds.omegaRadiansPerSecond,
+            Swerve.DriveMode.FIELD_RELATIVE);
+      }
+    } else {
+      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
+      final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
+      double xSpeed = speeds.vxMetersPerSecond * coeff;
+      double ySpeed = speeds.vyMetersPerSecond * coeff;
+
+      if (controller.rightTrigger(0.5).getAsBoolean()){
+        final double DRIVE_AND_SHOOT_SPEED = 0.1;
+        xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
+        ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
+      }
+
       drivetrain.drive(
-          speeds.vxMetersPerSecond,
-          speeds.vyMetersPerSecond,
+          xSpeed,
+          ySpeed,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
-    // }
+    }
   }
 
   // Called once the command ends or is interrupted.
@@ -166,119 +185,6 @@ public class SwerveDriveCommand extends Command {
     return false;
   }
 
-//   private Pose2d getTargetPose(
-//       Pose2d currentPose, RobotState robotState, CoralPositions coralPosition) {
-
-//     boolean isBlueAlliance = true;
-//     if (DriverStation.getAlliance().isPresent()) {
-//       if (DriverStation.getAlliance().get() == Alliance.Red) {
-//         isBlueAlliance = false;
-//       }
-//     }
-
-//     Pose2d targetPose = null;
-
-//     List<Pose2d> redLeftScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_FRONT_LEFT,
-//             Constants.ScoringConstants.RED_FRONT_LEFT_LEFT,
-//             Constants.ScoringConstants.RED_BACK_LEFT_LEFT,
-//             Constants.ScoringConstants.RED_BACK_LEFT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT_LEFT,
-//             Constants.ScoringConstants.RED_FRONT_RIGHT_LEFT);
-
-//     List<Pose2d> redRightScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_FRONT_RIGHT,
-//             Constants.ScoringConstants.RED_FRONT_LEFT_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_LEFT_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT,
-//             Constants.ScoringConstants.RED_BACK_RIGHT_RIGHT,
-//             Constants.ScoringConstants.RED_FRONT_RIGHT_RIGHT);
-
-//     List<Pose2d> blueLeftScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT,
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT_LEFT,
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT_LEFT);
-
-//     List<Pose2d> blueRightScoringPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT,
-//             Constants.ScoringConstants.BLUE_FRONT_LEFT_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_LEFT_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT,
-//             Constants.ScoringConstants.BLUE_BACK_RIGHT_RIGHT,
-//             Constants.ScoringConstants.BLUE_FRONT_RIGHT_RIGHT);
-
-//     List<Pose2d> blueIntakingPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.BLUE_HP_LEFT, Constants.ScoringConstants.BLUE_HP_RIGHT);
-
-//     List<Pose2d> redIntakingPoints =
-//         Arrays.asList(
-//             Constants.ScoringConstants.RED_HP_LEFT, Constants.ScoringConstants.RED_HP_RIGHT);
-
-//     List<Pose2d> targetLocations = null; // change to target locations
-//     // if state scoral
-//     if (stateMachine.getCurrentRobotState() == RobotState.SCORAL) {
-//       if (isBlueAlliance) {
-//         switch (coralPosition) {
-//           case LEFT_L1, LEFT_L2, LEFT_L3, LEFT_L4:
-//             targetLocations = blueLeftScoringPoints;
-//             break;
-//           case RIGHT_L1, RIGHT_L2, RIGHT_L3, RIGHT_L4:
-//             targetLocations = blueRightScoringPoints;
-//             break;
-//           default:
-//             return null;
-//         }
-//       } else {
-//         switch (coralPosition) {
-//           case LEFT_L1, LEFT_L2, LEFT_L3, LEFT_L4:
-//             targetLocations = redLeftScoringPoints;
-//             break;
-//           case RIGHT_L1, RIGHT_L2, RIGHT_L3, RIGHT_L4:
-//             targetLocations = redRightScoringPoints;
-//             break;
-//           default:
-//             return null;
-//         }
-//       }
-//     } else if (stateMachine.getCurrentRobotState() == RobotState.INTAKE_CORAL) {
-//       if (isBlueAlliance) {
-//         targetLocations = blueIntakingPoints;
-//       } else {
-//         targetLocations = redIntakingPoints;
-//       }
-//     } else {
-//     }
-
-//     // if state intaking
-//     // ...
-
-//     double leastDistance = 0;
-//     double indexOfClosestPoint;
-//     if (targetLocations != null) {
-//       for (int i = 0; i < targetLocations.size(); i++) {
-//         Pose2d testPoint = targetLocations.get(i);
-//         Translation2d distanceTranslation =
-//             currentPose.getTranslation().minus(testPoint.getTranslation());
-//         double distance = Math.abs(distanceTranslation.getNorm());
-
-//         if (i == 0 || distance < leastDistance) {
-//           leastDistance = distance;
-//           indexOfClosestPoint = i;
-//           targetPose = testPoint;
-//         }
-//       }
-//     }
-
-//     return targetPose;
-//   }
 
   private boolean getIsInPosition(Pose2d currentPose, Pose2d targetPose, ChassisSpeeds speeds) {
     final Translation2d translationToPoint =
@@ -287,6 +193,227 @@ public class SwerveDriveCommand extends Command {
     final double currentVelocity = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
     final double tolerance = poseTolerance > 0 ? poseTolerance : 1;
     return linearDistance < Units.inchesToMeters(tolerance) && currentVelocity < 0.01; // meters
+  }
+
+
+  //
+  //
+  // Game Specific Code
+  //
+  //
+  ///////////////////////////////////////////////////////////
+  
+  private double getRotation(double speed, StrafeSide side, GameZone zone, Pose2d pose) {
+    Alliance alliance = DriverStation.getAlliance().get();
+    double centerLine = getCenterLine(zone);
+
+    switch (side) {
+      case FRONT:
+        if (Math.abs(speed) < 0.1) {
+          if ((alliance == Alliance.Blue && pose.getY() > centerLine)
+              || (alliance == Alliance.Red && pose.getY() < centerLine)) {
+            return -45.0;
+          } else {
+            return 45.0;
+          }
+        } else if (speed > 0) {
+          return 45.0;
+        } else {
+          return -45.0;
+        }
+      case LEFT:
+        if (Math.abs(speed) < 0.1) {
+          if ((alliance == Alliance.Blue && pose.getX() > 2 || (alliance == Alliance.Red && pose.getX() < 2))) {
+            return 135.0;
+          } else {
+            return 45.0;
+          }
+        } else if (speed > 0) {
+          return 45.0;
+        } else {
+          return 135.0;
+        }
+      case RIGHT:
+        if (Math.abs(speed) < 0.1) {
+          if ((alliance == Alliance.Blue && pose.getX() > 2) || (alliance == Alliance.Red && pose.getX() < 2)) {
+            return -135.0;
+          } else {
+            return -45.0;
+          }
+        } else if (speed > 0.0) {
+          return -45.0;
+        } else {
+          return -135.0;
+        }
+      case BACK:
+        if (Math.abs(speed) < 0.1) {
+          if ((alliance == Alliance.Blue && pose.getY() > centerLine)
+              || (alliance == Alliance.Red && pose.getY() < centerLine)) {
+            return 135.0;
+          } else {
+            return -135.0;
+          }
+        } else if (speed > 0) {
+          return 135.0;
+        } else {
+          return -135.0;
+        }
+      default:
+        return 0.0;
+    }
+  }
+
+  private double getCenterLine(GameZone zone) {
+    switch (zone) {
+      case BLUE_ALLIANCE:
+        return LocationConstants.BLUE_ZONE_X_MID;
+      case RED_ALLIANCE:
+        return LocationConstants.RED_ZONE_X_MID;
+      case NEUTRAL:
+        return LocationConstants.NEUTRAL_X_MID;
+      default:
+        return -1;
+    }
+  }
+
+  private double getXInput(StrafeAxis axis, StrafeSide side) {
+    Pose2d pose = drivetrain.getState().Pose;
+    GameZone zone = FieldUtils.getZone(pose);
+    Alliance alliance = DriverStation.getAlliance().get();
+    double strafeLine;
+
+    if ((alliance == Alliance.Blue && side == StrafeSide.LEFT)
+        ||
+        (alliance == Alliance.Red && side == StrafeSide.RIGHT)) {
+      strafeLine = LocationConstants.FAR_WALL_Y;
+    } else {
+      strafeLine = LocationConstants.NEAR_WALL_Y;
+    }
+
+    final Pose2d targetPose = new Pose2d(pose.getX(), strafeLine, pose.getRotation());
+    final double directionMultiplier = alliance == Alliance.Blue ? -1.0 : 1.0;
+
+    Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+        pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+
+    return velocity.getX();
+  }
+
+  private double getYInput(StrafeAxis axis, StrafeSide side) {
+    Pose2d pose = drivetrain.getState().Pose;
+    GameZone zone = FieldUtils.getZone(pose);
+    Alliance alliance = DriverStation.getAlliance().get();
+    double strafeLine;
+
+    switch (zone) {
+      case BLUE_ALLIANCE:
+        if ((alliance == Alliance.Blue && side == StrafeSide.FRONT)
+            ||
+            (alliance == Alliance.Red && side == StrafeSide.BACK)) {
+          strafeLine = LocationConstants.BLUE_HUB_WALL_X;
+        } else {
+          strafeLine = LocationConstants.BLUE_ALLIANCE_WALL_X;
+        }
+
+        break;
+      case RED_ALLIANCE:
+        if ((alliance == Alliance.Blue && side == StrafeSide.FRONT)
+            ||
+            (alliance == Alliance.Red && side == StrafeSide.BACK)) {
+          strafeLine = LocationConstants.RED_ALLIANCE_WALL_X;
+        } else {
+          strafeLine = LocationConstants.RED_HUB_WALL_X;
+        }
+
+      case NEUTRAL:
+        if ((alliance == Alliance.Blue && side == StrafeSide.FRONT)
+            ||
+            (alliance == Alliance.Red && side == StrafeSide.BACK)) {
+          strafeLine = LocationConstants.RED_CENTER_WALL_X;
+        } else {
+          strafeLine = LocationConstants.BLUE_CENTER_WALL_X;
+        }
+
+      default:
+        strafeLine = 0.0;
+        break;
+    }
+
+    
+    final Pose2d targetPose = new Pose2d(pose.getX(), strafeLine, pose.getRotation());
+    final double directionMultiplier = alliance == Alliance.Blue ? -1.0 : 1.0;
+    
+    Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
+      pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+
+    return velocity.getY();
+  }
+
+  /**
+   * Returns the strafe side (wall) closest to the robot's current pose.
+   * Uses alliance and zone to pick the correct wall X/Y constants.
+   */
+  private static StrafeSide getClosestSide(Swerve drivetrain) {
+    Pose2d pose = drivetrain.getState().Pose;
+    GameZone zone = FieldUtils.getZone(pose);
+    Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+
+    double frontWallX;
+    double backWallX;
+    switch (zone) {
+      case BLUE_ALLIANCE:
+        frontWallX = LocationConstants.BLUE_HUB_WALL_X;
+        backWallX = LocationConstants.BLUE_ALLIANCE_WALL_X;
+        break;
+      case RED_ALLIANCE:
+        frontWallX = LocationConstants.RED_HUB_WALL_X;
+        backWallX = LocationConstants.RED_ALLIANCE_WALL_X;
+        break;
+      case NEUTRAL:
+        frontWallX = alliance == Alliance.Blue ? LocationConstants.RED_CENTER_WALL_X
+            : LocationConstants.BLUE_CENTER_WALL_X;
+        backWallX = alliance == Alliance.Blue ? LocationConstants.BLUE_CENTER_WALL_X
+            : LocationConstants.RED_CENTER_WALL_X;
+        break;
+      default:
+        return StrafeSide.FRONT;
+    }
+
+    // Far/near wall Y are fixed field positions; LEFT/RIGHT map by alliance (see
+    // getXInput).
+    double distFront = Math.abs(pose.getX() - frontWallX);
+    double distBack = Math.abs(pose.getX() - backWallX);
+    double distToFarWall = Math.abs(pose.getY() - LocationConstants.FAR_WALL_Y);
+    double distToNearWall = Math.abs(pose.getY() - LocationConstants.NEAR_WALL_Y);
+
+    double min = Math.min(Math.min(distFront, distBack), Math.min(distToFarWall, distToNearWall));
+    if (min == distFront)
+      return StrafeSide.FRONT;
+    if (min == distBack)
+      return StrafeSide.BACK;
+    if (min == distToFarWall)
+      return alliance == Alliance.Blue ? StrafeSide.LEFT : StrafeSide.RIGHT;
+    return alliance == Alliance.Blue ? StrafeSide.RIGHT : StrafeSide.LEFT;
+  }
+
+  private StrafeAxis getStrafeAxis(StrafeSide side) {
+    if (side == StrafeSide.LEFT || side == StrafeSide.RIGHT) {
+      return StrafeAxis.X;
+    } else {
+      return StrafeAxis.Y;
+    }
+  }
+
+  private static enum StrafeAxis {
+    X,
+    Y
+  }
+
+  public static enum StrafeSide {
+    LEFT,
+    RIGHT,
+    FRONT,
+    BACK
   }
 
 }

@@ -86,6 +86,20 @@ public class TurretHelpers {
 
         // System.out.println("x: " + relative.getX());
         // System.out.println("Y: " + relative.getY());
+        
+
+        return Math.atan2(relative.getY(), relative.getX());
+    }
+
+    public static double getTurretRotationsWithoutLead(StateMachine stateMachine, Translation2d point) {
+        Translation2d hub = point;
+
+        Translation2d relative = stateMachine.drivetrain.getState().Pose.getTranslation()
+                .minus(hub)
+                .plus(new Translation2d(0, TurretConstants.TURRET_DIST_FROM_ROBOT_CENTER).rotateBy(stateMachine.drivetrain.getState().Pose.getRotation()));
+
+        // System.out.println("x: " + relative.getX());
+        // System.out.println("Y: " + relative.getY());
 
         return Math.atan2(relative.getY(), relative.getX());
     }

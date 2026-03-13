@@ -57,7 +57,7 @@ public class SweepHelpers {
         yield SweepConstants.RIGHT_TARGET;
     };
 
-    return new CommandBuilder(config.drive(), config.controller(), config.stateMachine())
+    return new CommandBuilder(config.drive(), config.controller())
       .drive(dir)
       .build();
   }

@@ -19,12 +19,10 @@ public class CommandBuilder {
 
     private final Swerve drive;
     private final CommandXboxController controller;
-    private final StateMachine stateMachine;
 
-    public CommandBuilder (Swerve drive, CommandXboxController controller, StateMachine stateMachine) {
+    public CommandBuilder (Swerve drive, CommandXboxController controller) {
         this.drive = drive;
         this.controller = controller;
-        this.stateMachine = stateMachine;
 
     }
 
@@ -42,13 +40,13 @@ public class CommandBuilder {
     }
 
     public CommandBuilder drive (boolean autoDrive, Pose2d pose) {
-        this.commands.add(new SwerveDriveCommand(this.drive, this.controller, this.stateMachine, autoDrive, pose));
+        this.commands.add(new SwerveDriveCommand(this.drive, this.controller, autoDrive, pose));
 
         return this;
     }
 
     public CommandBuilder drive (Pose2d pose) {
-        this.commands.add(new SwerveDriveCommand(this.drive, this.controller, this.stateMachine, true, pose));
+        this.commands.add(new SwerveDriveCommand(this.drive, this.controller, true, pose));
 
         return this;
     }
