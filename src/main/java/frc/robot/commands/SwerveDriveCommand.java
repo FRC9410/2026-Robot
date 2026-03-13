@@ -158,7 +158,7 @@ public class SwerveDriveCommand extends Command {
       double ySpeed = speeds.vyMetersPerSecond * coeff;
 
       if (controller.rightTrigger(0.5).getAsBoolean()){
-        final double DRIVE_AND_SHOOT_SPEED = 0.1;
+        final double DRIVE_AND_SHOOT_SPEED = 0.0;
         xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
         ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
       }
