@@ -65,6 +65,8 @@ public class StateMachine extends SubsystemBase {
 
   private int intakeTimer = 0;
 
+  private String bestLimelight = "";
+
   public StateMachine() {}
 
   @Override
@@ -97,7 +99,7 @@ public class StateMachine extends SubsystemBase {
   }
 
   public void setRobotPose () {
-    String bestLimelight = vision.getBestLimelight();
+    bestLimelight = vision.getBestLimelight();
 
     // Don't use vision when no Limelight has valid data (avoids bad/default pose from empty/wrong table on boot).
     if (bestLimelight == null || bestLimelight.isEmpty()) {
@@ -106,7 +108,7 @@ public class StateMachine extends SubsystemBase {
       vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
 
       LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
-      if (mt2 != null && mt2.tagCount > 0 && mt2.avgTagArea > 0.1) {
+      if (mt2 != null && mt2.tagCount > 0) {
         Pose2d newPose = mt2.pose;
         // Reject poses outside field bounds (e.g. 0,0 or garbage from cold Limelight).
         double x = newPose.getX();
@@ -118,7 +120,7 @@ public class StateMachine extends SubsystemBase {
           if (gyroReset) {
             newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
           } else {
-            gyroReset = true;
+            //gyroReset = true;
           }
           drivetrain.resetPose(newPose);
           drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
@@ -135,6 +137,7 @@ public class StateMachine extends SubsystemBase {
       SmartDashboard.putNumber("currentPoseY", drivetrain.getState().Pose.getY());
       SmartDashboard.putNumber("currentPoseYaw", drivetrain.getState().Pose.getRotation().getDegrees());
       SmartDashboard.putNumber("turretLimelightAngle", TurretHelpers.getTurretAngle(turret.getPositionRotations()));
+      SmartDashboard.putString("bestLimelight", bestLimelight);
 
       
       SmartDashboard.putNumber("turretOffsetX", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getX());
@@ -303,7 +306,11 @@ public class StateMachine extends SubsystemBase {
     // translating setpoint to gear ration
     double sensorRotations = clampedTurretRotations * (8.5 / 9.0);
 
-    turret.setPositionRotations(sensorRotations);
+    if (!bestLimelight.equals("limelight-turret")) {
+      turret.setPositionRotations(0.0);
+    } else if (Math.abs(turretRotations * (8.5 / 9.0)) <= 0.25* (8.5 / 9.0)) {
+      turret.setPositionRotations(sensorRotations + 0.02);
+    }
 
     // delta 2pi and turret rotation
     // multiply delta * 8.5/9

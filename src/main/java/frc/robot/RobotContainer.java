@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.AutoBuilder;
 import frc.robot.utils.FieldUtils;
 import frc.robot.commands.VelocitySysId;
+import frc.robot.constants.AutoConstants;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.SwerveDriveCommand;
 
@@ -36,7 +37,7 @@ public class RobotContainer implements PowerRobotContainer {
   private final CommandXboxController driverController = new CommandXboxController(0);
 
   private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
-    driverController).build();
+    driverController, stateMachine).build();
 
   private final VelocitySysId shooterSysId = new VelocitySysId(stateMachine.shooter, "Shooter");
   private final VelocitySysId feederSysId = new VelocitySysId(stateMachine.feeder, "Feeder");
@@ -111,7 +112,28 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    return new SequentialCommandGroup(
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_1, 6.0),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_2, 12.0),
+                    new InstantCommand(
+                      () -> {
+                        stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+                        stateMachine.intakeRoller.setVelocity(125);
+                    }),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_3, 12.0),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_4, 6.0),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_5, 6.0),
+                    new InstantCommand(
+                      () -> {
+                        stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+                        stateMachine.intakeRoller.brake();
+                    }),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_6, 3.0),
+                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_7, 3.0),
+                    new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING))
+                    
+                );
+    // return autoChooser.getSelected();
   }
 
   public StateMachine getStateMachine() {

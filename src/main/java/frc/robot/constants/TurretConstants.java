@@ -16,7 +16,7 @@ public class TurretConstants {
     public static final int MOTOR_ID = 60;
     public static final int ENCODER_ID = 61;
 
-    public static final double TURRET_KP = 54;
+    public static final double TURRET_KP = 57;
     public static final double TURRET_KI = 0;
     public static final double TURRET_KD = 0;
     public static final double TURRET_KG = 0;
@@ -28,7 +28,7 @@ public class TurretConstants {
     public static final double TURRET_SENSOR_TO_MECHANISM_RATIO = -1;
     public static final double TURRET_ROTOR_TO_SENSOR_RATIO = 51 * (8.5 / 9);
 
-    public static final double TURRET_MM_CRUISE_VELOCITY = 0.5; // 5
+    public static final double TURRET_MM_CRUISE_VELOCITY = 3; // 5
     public static final double TURRET_MM_ACCELERATION = 60; // 60
     public static final double TURRET_MAGNET_OFFSET_ROTATIONS = 0.1255;
     public static final double TURRET_DISCONTINUITY_POINT_ROTATIONS = 0.5;

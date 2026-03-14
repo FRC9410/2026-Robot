@@ -8,6 +8,7 @@ import static edu.wpi.first.units.Units.*;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
@@ -20,16 +21,22 @@ import frc.robot.utils.FieldUtils;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.constants.LocationConstants;
 import frc.robot.constants.OIConstants;
+import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.Swerve;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class SwerveDriveCommand extends Command {
+  public double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
+  public double MAX_DRIVE_TO_POINT_SPEED =
+      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.75;
   public double MAX_ANGULAR_RATE =
       RotationsPerSecond.of(1.5)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
       RotationsPerSecond.of(0.5)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
+  public double STATIC_FRICTION_CONSTANT =
+        0.085; // Adjust this value based on your robot's characteristics
   public double SKEW_COMPENSATION =
       0. - 0.03; // Adjust this value based on your robot's characteristics
 
@@ -112,11 +119,25 @@ public class SwerveDriveCommand extends Command {
       }
       final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-      Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
-          currentPose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+      final Translation2d translationToPoint =
+          currentPose.getTranslation().minus(targetPose.getTranslation());
+      final double linearDistance = translationToPoint.getNorm();
+      double ff = 0;
+      if (linearDistance >= Units.inchesToMeters(3)) {
+        ff = STATIC_FRICTION_CONSTANT * MAX_SPEED;
+      }
+
+      double maxSpeed = MAX_DRIVE_TO_POINT_SPEED;
+          // isClose(currentPose, targetPose) && poseTolerance < 6 ? SLOW_DRIVE_TO_POINT_SPEED : MAX_DRIVE_TO_POINT_SPEED;
+
+      final Rotation2d directionOfTravel = translationToPoint.getAngle();
+      final double velocity =
+          Math.min(Math.abs(driveToPointController.calculate(linearDistance, 0)) + ff, maxSpeed);
+      final double xSpeed = velocity * directionOfTravel.getCos() * directionMultiplier;
+      final double ySpeed = velocity * directionOfTravel.getSin() * directionMultiplier;
 
       drivetrain.drive(
-          -velocity.getX() * speedCoefficient, -velocity.getY() * speedCoefficient, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+          xSpeed, ySpeed, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
     // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
     //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
     //   drivetrain.drive(
@@ -125,32 +146,6 @@ public class SwerveDriveCommand extends Command {
     //       // currentPose.getRotation().getDegrees(),
     //       targetPose.getRotation().getDegrees(),
     //       Swerve.DriveMode.ROTATION_LOCK);
-    } else if (controller.a().getAsBoolean()) {
-      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
-      StrafeSide  thatSide = getClosestSide(drivetrain);
-
-      StrafeAxis axis = getStrafeAxis(thatSide);
-      Pose2d pose = drivetrain.getState().Pose;
-      GameZone zone = FieldUtils.getZone(pose);
-
-      if (zone != GameZone.INTERCHANGE) {
-        final double coeff = OIConstants.MAX_SPEED_COEFFICIENT;
-
-        double speedX = axis == StrafeAxis.X ? speeds.vxMetersPerSecond * coeff : -getYInput(axis, thatSide);
-        double speedY = axis == StrafeAxis.Y ? speeds.vyMetersPerSecond * coeff : -getXInput(axis, thatSide);
-
-        drivetrain.drive(
-            speedX,
-            speedY,
-            getRotation(axis != StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, thatSide, zone, pose),
-            Swerve.DriveMode.ROTATION_LOCK);
-      } else {
-        drivetrain.drive(
-            speeds.vxMetersPerSecond * speedCoefficient,
-            speeds.vyMetersPerSecond * speedCoefficient,
-            -speeds.omegaRadiansPerSecond,
-            Swerve.DriveMode.FIELD_RELATIVE);
-      }
     } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
@@ -192,7 +187,7 @@ public class SwerveDriveCommand extends Command {
     final double linearDistance = translationToPoint.getNorm();
     final double currentVelocity = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
     final double tolerance = poseTolerance > 0 ? poseTolerance : 1;
-    return linearDistance < Units.inchesToMeters(tolerance) && currentVelocity < 0.01; // meters
+    return linearDistance < Units.inchesToMeters(tolerance); // && currentVelocity < 0.01; // meters
   }
 
 

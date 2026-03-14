@@ -16,6 +16,7 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTableValue;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
@@ -103,21 +104,22 @@ public class Vision extends SubsystemBase {
 
     String bestLimelight = "";
     double bestArea = 0;
+    
+    SmartDashboard.putNumber("turretArea", turretMeasurement.avgTagArea);
+    SmartDashboard.putNumber("leftArea", leftMeasurement.avgTagArea);
+    SmartDashboard.putNumber("rightArea", rightMeasurement.avgTagArea);
 
-    if (turretMeasurement != null && tagIds.contains(getTagId(turretLimelight))
-        && turretMeasurement.avgTagArea > bestArea) {
+    if (turretMeasurement != null && turretMeasurement.avgTagArea > bestArea) {
       bestLimelight = "limelight-turret";
       bestArea = turretMeasurement.avgTagArea;
     }
 
-    if (leftMeasurement != null && tagIds.contains(getTagId(leftLimelight))
-        && leftMeasurement.avgTagArea > bestArea) {
+    if (!bestLimelight.equals("limelight-turret") && leftMeasurement != null && leftMeasurement.avgTagArea > bestArea) {
       bestLimelight = "limelight-left";
       bestArea = leftMeasurement.avgTagArea;
     }
 
-    if (rightMeasurement != null && tagIds.contains(getTagId(rightLimelight))
-        && rightMeasurement.avgTagArea > bestArea) {
+    if (!bestLimelight.equals("limelight-turret") && rightMeasurement != null && rightMeasurement.avgTagArea > bestArea) {
       bestLimelight = "limelight-right";
       bestArea = rightMeasurement.avgTagArea;
     }
