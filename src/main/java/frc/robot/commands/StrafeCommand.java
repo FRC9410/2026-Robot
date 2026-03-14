@@ -36,6 +36,7 @@ public class StrafeCommand extends Command {
   private StrafeSide side = null;
   private final PIDController driveToPointController;
   private final double poseTolerance;
+  private StrafeDirection direction = null;
 
   public StrafeCommand(
       Swerve drivetrain,
@@ -86,13 +87,10 @@ public class StrafeCommand extends Command {
       double speedX = axis == StrafeAxis.X ? speeds.vxMetersPerSecond * coeff : getXInput(axis, thatSide);
       double speedY = axis == StrafeAxis.Y ? speeds.vyMetersPerSecond * coeff : getYInput(axis, thatSide);
 
-      System.out.println("vx:" + speedX);
-      System.out.println("vy:" + speedY);
-
       drivetrain.drive(
           speedX,
           speedY,
-          getRotation(axis != StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, thatSide, zone, pose),
+          getRotation(axis != StrafeAxis.Y ? speeds.vxMetersPerSecond : speeds.vyMetersPerSecond, thatSide),
           Swerve.DriveMode.ROTATION_LOCK);
     }
 
@@ -109,60 +107,63 @@ public class StrafeCommand extends Command {
     return false;
   }
 
-  private double getRotation(double speed, StrafeSide side, GameZone zone, Pose2d pose) {
-    Alliance alliance = DriverStation.getAlliance().get();
-    double centerLine = getCenterLine(zone);
-
+  private double getRotation(double speed, StrafeSide side) {
     switch (side) {
       case FRONT:
-        if (Math.abs(speed) < 0.1) {
-          if ((alliance == Alliance.Blue && pose.getY() > centerLine)
-              || (alliance == Alliance.Red && pose.getY() < centerLine)) {
-            return -45.0;
-          } else {
-            return 45.0;
-          }
-        } else if (speed > 0) {
+        if (speed > 0.1) {
+          direction = StrafeDirection.POSITIVE;
           return 45.0;
-        } else {
+        } else if (speed < -0.1) {
+          direction = StrafeDirection.NEGATIVE;
           return -45.0;
+        } else if (direction == StrafeDirection.POSITIVE) {
+          return 45.0;
+        } else if (direction == StrafeDirection.NEGATIVE) {
+          return -45.0;
+        } else {
+          return 0;
         }
       case LEFT:
-        if (Math.abs(speed) < 0.1) {
-          if ((alliance == Alliance.Blue && pose.getX() > 2 || (alliance == Alliance.Red && pose.getX() < 2))) {
-            return 135.0;
-          } else {
-            return 45.0;
-          }
-        } else if (speed > 0) {
+        if (speed > 0.1) {
+          direction = StrafeDirection.POSITIVE;
           return 45.0;
-        } else {
+        } else if (speed < -0.1) {
+          direction = StrafeDirection.NEGATIVE;
           return 135.0;
+        } else if (direction == StrafeDirection.POSITIVE) {
+          return 45.0;
+        } else if (direction == StrafeDirection.NEGATIVE) {
+          return 135.0;
+        } else {
+          return 90;
         }
       case RIGHT:
-        if (Math.abs(speed) < 0.1) {
-          if ((alliance == Alliance.Blue && pose.getX() > 2) || (alliance == Alliance.Red && pose.getX() < 2)) {
-            return -135.0;
-          } else {
-            return -45.0;
-          }
-        } else if (speed > 0.0) {
+        if (speed > 0.1) {
+          direction = StrafeDirection.POSITIVE;
           return -45.0;
-        } else {
+        } else if (speed < -0.1) {
+          direction = StrafeDirection.NEGATIVE;
           return -135.0;
+        } else if (direction == StrafeDirection.POSITIVE) {
+          return -45.0;
+        } else if (direction == StrafeDirection.NEGATIVE) {
+          return -135.0;
+        } else {
+          return -90;
         }
       case BACK:
-        if (Math.abs(speed) < 0.1) {
-          if ((alliance == Alliance.Blue && pose.getY() > centerLine)
-              || (alliance == Alliance.Red && pose.getY() < centerLine)) {
-            return 135.0;
-          } else {
-            return -135.0;
-          }
-        } else if (speed > 0) {
+        if (speed > 0.1) {
+          direction = StrafeDirection.POSITIVE;
           return 135.0;
-        } else {
+        } else if (speed < -0.1) {
+          direction = StrafeDirection.NEGATIVE;
           return -135.0;
+        } else if (direction == StrafeDirection.POSITIVE) {
+          return 135.0;
+        } else if (direction == StrafeDirection.NEGATIVE) {
+          return -135.0;
+        } else {
+          return 180;
         }
       default:
         return 0.0;
@@ -322,6 +323,11 @@ public class StrafeCommand extends Command {
   private static enum StrafeAxis {
     X,
     Y
+  }
+
+  private static enum StrafeDirection {
+    POSITIVE,
+    NEGATIVE
   }
 
   public static enum StrafeSide {
