@@ -17,6 +17,7 @@ import frc.robot.subsystems.StateMachine.RobotState;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.commands.VelocitySysId;
 import frc.robot.constants.AutoConstants;
+import frc.robot.constants.FieldConstants;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.SwerveDriveCommand;
 
@@ -34,8 +35,6 @@ public class RobotContainer implements PowerRobotContainer {
   // Controller
   private final CommandXboxController driverController = new CommandXboxController(0);
 
-  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
-
   private final VelocitySysId shooterSysId = new VelocitySysId(stateMachine.shooter, "Shooter");
   private final VelocitySysId feederSysId = new VelocitySysId(stateMachine.feeder, "Feeder");
   private final VelocitySysId spindexerSysId = new VelocitySysId(stateMachine.spindexer, "Spindexer");
@@ -43,11 +42,10 @@ public class RobotContainer implements PowerRobotContainer {
   public RobotContainer() {
     configureBindings();
 
-    autoChooser.setDefaultOption("Red Left", getRedLeftAuto());
-    autoChooser.addOption("Red Right", getRedRightAuto());
-    autoChooser.addOption("Blue Left", getBlueLeftAuto());
-    autoChooser.addOption("Blue Right", getBlueRightAuto());
-    SmartDashboard.putData("Auto Chooser", autoChooser);
+    SmartDashboard.putBoolean("Red Left Auto", true);
+    SmartDashboard.putBoolean("Red Right Auto", false);
+    SmartDashboard.putBoolean("Blue Left Auto", false);
+    SmartDashboard.putBoolean("Blue Right Auto", false);
 
     // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev), then stop log
     SmartDashboard.putData("SysId/Start Log", VelocitySysId.startLog());
@@ -80,17 +78,7 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }));
-    // Intake in and out
-    driverController.y()
-     //   .or(driverController.leftTrigger(0.5))
-        .onTrue(new InstantCommand(
-            () -> {
-              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
-            }))
-        .onFalse(new InstantCommand(
-            () -> {
-              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
-            }));
+    
     
     driverController.rightTrigger(0.5).onTrue(new InstantCommand(
         () -> {
@@ -106,36 +94,78 @@ public class RobotContainer implements PowerRobotContainer {
       }
     ));
 
+    driverController.b().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_1, 3.0));
+    driverController.y().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_2, 3.0));
+    driverController.x().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_3, 3.0));
+    
+
     driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController));
 
     stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
   }
 
+  public AutoPath getAutoPathFromDash () {
+    if (SmartDashboard.getBoolean("Red Left Auto", false)) {
+      return AutoPath.RED_LEFT;
+    } else if (SmartDashboard.getBoolean("Red Right Auto", false)) {
+      return AutoPath.RED_RIGHT;
+    } else if (SmartDashboard.getBoolean("Blue Left Auto", false)) {
+      return AutoPath.BLUE_LEFT;
+    } else if (SmartDashboard.getBoolean("Blue Right Auto", false)) {
+      return AutoPath.BLUE_RIGHT;
+    } else {
+      return null;
+    }
+  }
+
   public Command getAutonomousCommand() {
-    return autoChooser.getSelected();
+    AutoPath path = getAutoPathFromDash();
+
+    switch (path) {
+      case RED_LEFT:
+        return getRedLeftAuto();
+      case RED_RIGHT:
+        return getRedRightAuto();
+      case BLUE_LEFT:
+        return getBlueLeftAuto();
+      case BLUE_RIGHT:
+        return getBlueRightAuto();
+      default:
+        return new InstantCommand(
+          () -> System.out.println("Invalid auto")
+        );
+    }
+  }
+
+  public static enum AutoPath {
+    RED_LEFT,
+    RED_RIGHT,
+    BLUE_LEFT,
+    BLUE_RIGHT
   }
 
   /** Builds the standard quadrant auto sequence with the given 7 poses. */
   private Command buildQuadrantAuto(
       Pose2d p1, Pose2d p2, Pose2d p3, Pose2d p4, Pose2d p5, Pose2d p6, Pose2d p7) {
     return new SequentialCommandGroup(
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p1, 6.0),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p2, 12.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p1, 6.0, 0.5),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p2, 3.0, 1.0, true),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
               stateMachine.intakeRoller.setVelocity(125);
             }),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0, 0.75),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.5),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p6, 3.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p6, 3.0, 0.75),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0, 1.0, true),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0),
         new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING)));
   }

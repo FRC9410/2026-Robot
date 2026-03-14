@@ -57,7 +57,7 @@ public class Vision extends SubsystemBase {
   @Override
   public void periodic() {}
   
-  public void setRobotPose(String limelight, double yaw) {
+  public void setRobotPose(String limelight, double yaw, Swerve drivetrain) {
     if (limelight == null || limelight.isEmpty()) {
       return;
     }
@@ -77,14 +77,14 @@ public class Vision extends SubsystemBase {
       turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
       turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
 
-      LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, 0, pitch, yaw);
+      LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, drivetrain.getPigeon2().getRoll().getValueAsDouble(), pitch, yaw);
     }
 
     if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
       Pose2d newPose = pose.toPose2d();
 
       LimelightHelpers.SetRobotOrientation(
-          limelight, newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
+          limelight, newPose.getRotation().getDegrees(), 0, drivetrain.getPigeon2().getPitch().getValueAsDouble(), 0, drivetrain.getPigeon2().getRoll().getValueAsDouble(), 0);
     }
   }
 
@@ -93,8 +93,6 @@ public class Vision extends SubsystemBase {
   }
 
   public String getBestLimelight() {
-    
-
     LimelightHelpers.PoseEstimate leftMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight-left");
     LimelightHelpers.PoseEstimate rightMeasurement =

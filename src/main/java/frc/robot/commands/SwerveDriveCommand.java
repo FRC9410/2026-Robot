@@ -28,12 +28,12 @@ import frc.robot.subsystems.Swerve;
 public class SwerveDriveCommand extends Command {
   public double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
   public double MAX_DRIVE_TO_POINT_SPEED =
-      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.75;
+      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // * 0.75;
   public double MAX_ANGULAR_RATE =
       RotationsPerSecond.of(1.5)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
-      RotationsPerSecond.of(0.5)
+      RotationsPerSecond.of(1)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double STATIC_FRICTION_CONSTANT =
         0.085; // Adjust this value based on your robot's characteristics
@@ -48,6 +48,7 @@ public class SwerveDriveCommand extends Command {
   private double poseTolerance;
   /** If set, scales MAX_DRIVE_TO_POINT_SPEED for drive-to-point (0.0 to 1.0 = 0% to 100%). */
   private final Double driveToPointSpeedMultiplier;
+  private final boolean disableRotationLock;
 
   /** Creates a new DriveCommand. */
   public SwerveDriveCommand(
@@ -61,6 +62,7 @@ public class SwerveDriveCommand extends Command {
     this.poseTolerance = -1;
     this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.disableRotationLock = false;
 
     addRequirements(drivetrain);
   }
@@ -78,6 +80,7 @@ public class SwerveDriveCommand extends Command {
     this.poseTolerance = -1.0;
     this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.disableRotationLock = false;
 
     addRequirements(drivetrain);
   }
@@ -96,6 +99,7 @@ public class SwerveDriveCommand extends Command {
     this.poseTolerance = poseTolerance;
     this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.disableRotationLock = false;
 
     addRequirements(drivetrain);
   }
@@ -119,6 +123,27 @@ public class SwerveDriveCommand extends Command {
     this.poseTolerance = poseTolerance;
     this.driveToPointSpeedMultiplier = driveToPointSpeedMultiplier;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.disableRotationLock = false;
+
+    addRequirements(drivetrain);
+  }
+
+  public SwerveDriveCommand(
+      Swerve drivetrain,
+      CommandXboxController controller,
+      boolean autoDrive,
+      Pose2d requestedPose,
+      double poseTolerance,
+      double driveToPointSpeedMultiplier,
+      boolean disableRotationLock) {
+    this.drivetrain = drivetrain;
+    this.controller = controller;
+    this.autoDrive = autoDrive;
+    this.requestedPose = requestedPose;
+    this.poseTolerance = poseTolerance;
+    this.driveToPointSpeedMultiplier = driveToPointSpeedMultiplier;
+    this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.disableRotationLock = disableRotationLock;
 
     addRequirements(drivetrain);
   }
@@ -164,7 +189,10 @@ public class SwerveDriveCommand extends Command {
       final double ySpeed = velocity * directionOfTravel.getSin() * directionMultiplier;
 
       drivetrain.drive(
-          xSpeed, ySpeed, targetPose.getRotation().getDegrees(), Swerve.DriveMode.DRIVE_TO_POINT);
+          xSpeed,
+          ySpeed,
+          disableRotationLock ? 0.0 : targetPose.getRotation().getDegrees(),
+          disableRotationLock ? Swerve.DriveMode.FIELD_RELATIVE : Swerve.DriveMode.DRIVE_TO_POINT);
     // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
     //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
     //   drivetrain.drive(
@@ -207,14 +235,36 @@ public class SwerveDriveCommand extends Command {
     return false;
   }
 
+  private double getFieldRelativeTargetRotation (double degrees) {
+    Alliance alliance = DriverStation.getAlliance().get();
+
+    if (alliance == Alliance.Red) {
+      switch ((int) degrees) {
+        case -90:
+          return 90.0;
+        case 135:
+          return -45.0;
+        case 90:
+          return -90;
+        case -135:
+          return 45.0;
+        default:
+          return degrees;
+      }
+    } else {
+      return degrees;
+    }
+  }
+
 
   private boolean getIsInPosition(Pose2d currentPose, Pose2d targetPose, ChassisSpeeds speeds) {
     final Translation2d translationToPoint =
         currentPose.getTranslation().minus(targetPose.getTranslation());
     final double linearDistance = translationToPoint.getNorm();
+    final double linearRotation = currentPose.getRotation().getDegrees() - getFieldRelativeTargetRotation(targetPose.getRotation().getDegrees());
     final double currentVelocity = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
     final double tolerance = poseTolerance > 0 ? poseTolerance : 1;
-    return linearDistance < Units.inchesToMeters(tolerance); // && currentVelocity < 0.01; // meters
+    return linearDistance < Units.inchesToMeters(tolerance) && (Math.abs(linearRotation) < 10 || disableRotationLock); // && currentVelocity < 0.01; // meters
   }
 
 

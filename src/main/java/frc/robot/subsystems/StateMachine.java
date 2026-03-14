@@ -105,7 +105,7 @@ public class StateMachine extends SubsystemBase {
     if (bestLimelight == null || bestLimelight.isEmpty()) {
       // Skip vision pose update; dashboard/PRC still use current drivetrain pose below.
     } else {
-      vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5));
+      vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5), drivetrain);
 
       LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
       if (mt2 != null && mt2.tagCount > 0) {
@@ -309,7 +309,7 @@ public class StateMachine extends SubsystemBase {
     if (!bestLimelight.equals("limelight-turret")) {
       turret.setPositionRotations(0.0);
     } else if (Math.abs(turretRotations * (8.5 / 9.0)) <= 0.25* (8.5 / 9.0)) {
-      turret.setPositionRotations(sensorRotations + 0.02);
+      turret.setPositionRotations(sensorRotations);
     }
 
     // delta 2pi and turret rotation
