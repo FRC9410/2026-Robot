@@ -46,6 +46,8 @@ public class SwerveDriveCommand extends Command {
   private final PIDController driveToPointController;
   private Pose2d requestedPose;
   private double poseTolerance;
+  /** If set, scales MAX_DRIVE_TO_POINT_SPEED for drive-to-point (0.0 to 1.0 = 0% to 100%). */
+  private final Double driveToPointSpeedMultiplier;
 
   /** Creates a new DriveCommand. */
   public SwerveDriveCommand(
@@ -57,10 +59,10 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = null;
     this.poseTolerance = -1;
+    this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
-    // Use addRequirements() here to declare subsystem dependencies.
   }
 
   /** Creates a new DriveCommand. */
@@ -74,10 +76,10 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = -1.0;
+    this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
-    // Use addRequirements() here to declare subsystem dependencies.
   }
 
   /** Creates a new DriveCommand. */
@@ -92,10 +94,33 @@ public class SwerveDriveCommand extends Command {
     this.autoDrive = autoDrive;
     this.requestedPose = requestedPose;
     this.poseTolerance = poseTolerance;
+    this.driveToPointSpeedMultiplier = null;
     this.driveToPointController = new PIDController(3.2, 0, 0.2);
 
     addRequirements(drivetrain);
-    // Use addRequirements() here to declare subsystem dependencies.
+  }
+
+  /**
+   * Creates a new DriveCommand with requested pose, pose tolerance, and drive-to-point speed as a percent of default.
+   *
+   * @param driveToPointSpeedMultiplier scale for max drive-to-point speed (0.0 to 1.0 = 0% to 100% of {@link #MAX_DRIVE_TO_POINT_SPEED})
+   */
+  public SwerveDriveCommand(
+      Swerve drivetrain,
+      CommandXboxController controller,
+      boolean autoDrive,
+      Pose2d requestedPose,
+      double poseTolerance,
+      double driveToPointSpeedMultiplier) {
+    this.drivetrain = drivetrain;
+    this.controller = controller;
+    this.autoDrive = autoDrive;
+    this.requestedPose = requestedPose;
+    this.poseTolerance = poseTolerance;
+    this.driveToPointSpeedMultiplier = driveToPointSpeedMultiplier;
+    this.driveToPointController = new PIDController(3.2, 0, 0.2);
+
+    addRequirements(drivetrain);
   }
 
   // Called when the command is initially scheduled.
@@ -127,8 +152,10 @@ public class SwerveDriveCommand extends Command {
         ff = STATIC_FRICTION_CONSTANT * MAX_SPEED;
       }
 
-      double maxSpeed = MAX_DRIVE_TO_POINT_SPEED;
-          // isClose(currentPose, targetPose) && poseTolerance < 6 ? SLOW_DRIVE_TO_POINT_SPEED : MAX_DRIVE_TO_POINT_SPEED;
+      double multiplier = (driveToPointSpeedMultiplier != null)
+          ? Math.max(0.0, Math.min(1.0, driveToPointSpeedMultiplier))
+          : 1.0;
+      double maxSpeed = MAX_DRIVE_TO_POINT_SPEED * multiplier * speedCoefficient;
 
       final Rotation2d directionOfTravel = translationToPoint.getAngle();
       final double velocity =

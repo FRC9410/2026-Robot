@@ -7,16 +7,14 @@ package frc.robot;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
-import frc.lib.team9410.configs.SweepConfig;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.StateMachine.RobotState;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import frc.robot.utils.AutoBuilder;
-import frc.robot.utils.FieldUtils;
 import frc.robot.commands.VelocitySysId;
 import frc.robot.constants.AutoConstants;
 import frc.robot.commands.StrafeCommand;
@@ -36,8 +34,7 @@ public class RobotContainer implements PowerRobotContainer {
   // Controller
   private final CommandXboxController driverController = new CommandXboxController(0);
 
-  private final SendableChooser<SequentialCommandGroup> autoChooser = new AutoBuilder(stateMachine.drivetrain,
-    driverController, stateMachine).build();
+  private final SendableChooser<Command> autoChooser = new SendableChooser<>();
 
   private final VelocitySysId shooterSysId = new VelocitySysId(stateMachine.shooter, "Shooter");
   private final VelocitySysId feederSysId = new VelocitySysId(stateMachine.feeder, "Feeder");
@@ -46,6 +43,10 @@ public class RobotContainer implements PowerRobotContainer {
   public RobotContainer() {
     configureBindings();
 
+    autoChooser.setDefaultOption("Red Left", getRedLeftAuto());
+    autoChooser.addOption("Red Right", getRedRightAuto());
+    autoChooser.addOption("Blue Left", getBlueLeftAuto());
+    autoChooser.addOption("Blue Right", getBlueRightAuto());
     SmartDashboard.putData("Auto Chooser", autoChooser);
 
     // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev), then stop log
@@ -112,28 +113,55 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   public Command getAutonomousCommand() {
+    return autoChooser.getSelected();
+  }
+
+  /** Builds the standard quadrant auto sequence with the given 7 poses. */
+  private Command buildQuadrantAuto(
+      Pose2d p1, Pose2d p2, Pose2d p3, Pose2d p4, Pose2d p5, Pose2d p6, Pose2d p7) {
     return new SequentialCommandGroup(
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_1, 6.0),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_2, 12.0),
-                    new InstantCommand(
-                      () -> {
-                        stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-                        stateMachine.intakeRoller.setVelocity(125);
-                    }),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_3, 12.0),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_4, 6.0),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_5, 6.0),
-                    new InstantCommand(
-                      () -> {
-                        stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
-                        stateMachine.intakeRoller.brake();
-                    }),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_6, 3.0),
-                    new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.RED_HP_7, 3.0),
-                    new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING))
-                    
-                );
-    // return autoChooser.getSelected();
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p1, 6.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p2, 12.0),
+        new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+              stateMachine.intakeRoller.setVelocity(125);
+            }),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.5),
+        new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+              stateMachine.intakeRoller.brake();
+            }),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p6, 3.0),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0),
+        new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING)));
+  }
+
+  public Command getRedLeftAuto() {
+    return buildQuadrantAuto(
+        AutoConstants.RED_LEFT_1, AutoConstants.RED_LEFT_2, AutoConstants.RED_LEFT_3,
+        AutoConstants.RED_LEFT_4, AutoConstants.RED_LEFT_5, AutoConstants.RED_LEFT_6, AutoConstants.RED_LEFT_7);
+  }
+
+  public Command getRedRightAuto() {
+    return buildQuadrantAuto(
+        AutoConstants.RED_RIGHT_1, AutoConstants.RED_RIGHT_2, AutoConstants.RED_RIGHT_3,
+        AutoConstants.RED_RIGHT_4, AutoConstants.RED_RIGHT_5, AutoConstants.RED_RIGHT_6, AutoConstants.RED_RIGHT_7);
+  }
+
+  public Command getBlueLeftAuto() {
+    return buildQuadrantAuto(
+        AutoConstants.BLUE_LEFT_1, AutoConstants.BLUE_LEFT_2, AutoConstants.BLUE_LEFT_3,
+        AutoConstants.BLUE_LEFT_4, AutoConstants.BLUE_LEFT_5, AutoConstants.BLUE_LEFT_6, AutoConstants.BLUE_LEFT_7);
+  }
+
+  public Command getBlueRightAuto() {
+    return buildQuadrantAuto(
+        AutoConstants.BLUE_RIGHT_1, AutoConstants.BLUE_RIGHT_2, AutoConstants.BLUE_RIGHT_3,
+        AutoConstants.BLUE_RIGHT_4, AutoConstants.BLUE_RIGHT_5, AutoConstants.BLUE_RIGHT_6, AutoConstants.BLUE_RIGHT_7);
   }
 
   public StateMachine getStateMachine() {

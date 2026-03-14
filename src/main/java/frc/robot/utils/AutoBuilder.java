@@ -33,29 +33,29 @@ public class AutoBuilder {
         var map = ImmutableMap.<String, SequentialCommandGroup>builder()
             .put("RedHP",
                 new SequentialCommandGroup(
-                    new SwerveDriveCommand(this.drive, this.controller, true, AutoConstants.RED_HP_1, 1.0)
+                    new SwerveDriveCommand(this.drive, this.controller, true, AutoConstants.RED_LEFT_1, 1.0)
                 )
                 // new CommandBuilder(drive, controller)
-                //     .drive(AutoConstants.RED_HP_1, 1.0)
-                    // .drive(AutoConstants.RED_HP_2, 1.0)
-                    // .drive(AutoConstants.RED_HP_3)
-                    // .drive(AutoConstants.RED_HP_4)
+                //     .drive(AutoConstants.RED_LEFT_1, 1.0)
+                    // .drive(AutoConstants.RED_LEFT_2, 1.0)
+                    // .drive(AutoConstants.RED_LEFT_3)
+                    // .drive(AutoConstants.RED_LEFT_4)
                     // .command(new InstantCommand(
                     //     () -> {
                     //         stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
                     //         stateMachine.intakeRoller.setVelocity(125);
                     //     }
                     // ))
-                    // .drive(AutoConstants.RED_HP_5)
+                    // .drive(AutoConstants.RED_LEFT_5)
                     // .command(new InstantCommand(
                     //     () -> {
                     //         stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
                     //         stateMachine.intakeRoller.brake();
                     //     }
                     // ))
-                    // .drive(AutoConstants.RED_HP_6)
-                    // .drive(AutoConstants.RED_HP_7)
-                    // .drive(AutoConstants.RED_HP_8)
+                    // .drive(AutoConstants.RED_LEFT_6)
+                    // .drive(AutoConstants.RED_LEFT_7)
+                    // .drive(AutoConstants.RED_LEFT_8)
                     // .command(new InstantCommand(
                     //     () -> stateMachine.setWantedState(RobotState.SHOOTING)
                     // ))
