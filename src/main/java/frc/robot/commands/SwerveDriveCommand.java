@@ -14,6 +14,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.DriveUtil;
@@ -213,9 +214,13 @@ public class SwerveDriveCommand extends Command {
         ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
       }
 
+      boolean isInverted = SmartDashboard.getBoolean("driveInverted",false);
+      double inversionMultiplier = isInverted ? -1.0 : 1.0;
+      System.out.println("isInverted: "+inversionMultiplier);
+      
       drivetrain.drive(
-          xSpeed,
-          ySpeed,
+          xSpeed * inversionMultiplier,
+          ySpeed * inversionMultiplier,
           -speeds.omegaRadiansPerSecond,
           Swerve.DriveMode.FIELD_RELATIVE);
     }

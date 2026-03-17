@@ -6,15 +6,15 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class AutoConstants {
   public static final double TRANSLATION_TOLERANCE = 0.05;
   public static final double ROTATION_TOLERANCE = 1.0;
-
+  
   // ---- Red left (driver station left) ----
   public static final Pose2d RED_LEFT_1 = new Pose2d(13.4, 2.5, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_2 = new Pose2d(10.2, 2.5, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_3 = new Pose2d(9.55, 0.73, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_4 = new Pose2d(8.7, 1, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_5 = new Pose2d(8.7, 3.5, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d RED_LEFT_6 = new Pose2d(10.5, 2.6, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d RED_LEFT_7 = new Pose2d(13.4, 2.6, Rotation2d.fromDegrees(135.0));
+  public static final Pose2d RED_LEFT_6 = new Pose2d(10.5, 2.5, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d RED_LEFT_7 = new Pose2d(13.4, 2.5, Rotation2d.fromDegrees(135.0));
 
   // ---- Red right (driver station right) ----
   public static final Pose2d RED_RIGHT_1 = new Pose2d(13.4, 5.6, Rotation2d.fromDegrees(90.0));
@@ -26,20 +26,20 @@ public class AutoConstants {
   public static final Pose2d RED_RIGHT_7 = new Pose2d(13.4, 5.6, Rotation2d.fromDegrees(-135.0));
 
   // ---- Blue left (driver station left) ----
-  public static final Pose2d BLUE_LEFT_1 = new Pose2d(3.6, 5.4, Rotation2d.fromDegrees(-45.0));
-  public static final Pose2d BLUE_LEFT_2 = new Pose2d(7, 5.4, Rotation2d.fromDegrees(-45.0));
-  public static final Pose2d BLUE_LEFT_3 = new Pose2d(7.95, 7.27, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d BLUE_LEFT_4 = new Pose2d(7.7, 7, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d BLUE_LEFT_5 = new Pose2d(7.7, 4.5, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d BLUE_LEFT_6 = new Pose2d(7, 5.4, Rotation2d.fromDegrees(-45.0));
-  public static final Pose2d BLUE_LEFT_7 = new Pose2d(4.24, 5.4, Rotation2d.fromDegrees(135.0));
+  public static final Pose2d BLUE_LEFT_1 = new Pose2d(3.1, 5.4, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_2 = new Pose2d(6.3, 5.4, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_3 = new Pose2d(6.95, 7.27, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_4 = new Pose2d(7.8, 7, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_5 = new Pose2d(7.8, 4.5, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_6 = new Pose2d(6.3, 5.6, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_7 = new Pose2d(3.1, 5.6, Rotation2d.fromDegrees(135.0));
 
   // ---- Blue right (driver station right) ----
-  public static final Pose2d BLUE_RIGHT_1 = new Pose2d(3.6, 2.6, Rotation2d.fromDegrees(45.0));
-  public static final Pose2d BLUE_RIGHT_2 = new Pose2d(7, 2.6, Rotation2d.fromDegrees(45.0));
-  public static final Pose2d BLUE_RIGHT_3 = new Pose2d(7.95, 0.73, Rotation2d.fromDegrees(90.0));
-  public static final Pose2d BLUE_RIGHT_4 = new Pose2d(7.7, 1, Rotation2d.fromDegrees(90.0));
-  public static final Pose2d BLUE_RIGHT_5 = new Pose2d(7.7, 3.5, Rotation2d.fromDegrees(90.0));
-  public static final Pose2d BLUE_RIGHT_6 = new Pose2d(7, 2.6, Rotation2d.fromDegrees(45.0));
-  public static final Pose2d BLUE_RIGHT_7 = new Pose2d(4.24, 2.6, Rotation2d.fromDegrees(-135.0));
+  public static final Pose2d BLUE_RIGHT_1 = new Pose2d(3.1, 2.5, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_2 = new Pose2d(6.3, 2.5, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_3 = new Pose2d(6.95, 0.73, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_4 = new Pose2d(7.8, 1, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_5 = new Pose2d(7.8, 3.5, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_6 = new Pose2d(6.3, 2.5, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_7 = new Pose2d(3.1, 2.5, Rotation2d.fromDegrees(-135.0));
 }
