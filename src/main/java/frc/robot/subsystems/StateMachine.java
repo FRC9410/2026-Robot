@@ -92,6 +92,9 @@ public class StateMachine extends SubsystemBase {
   
     SmartDashboard.putString("gameZone", FieldUtils.getZone(drivetrain.getState().Pose).name());
 
+    PowerRobotContainer.setData("SpindexerVelocity", spindexer.getVelocityMotor().getVelocity().getValueAsDouble());
+    PowerRobotContainer.setData("ShooterVelocity", shooter.getVelocityMotor().getVelocity().getValueAsDouble());
+    PowerRobotContainer.setData("FeederVelocity", feeder.getVelocityMotor().getVelocity().getValueAsDouble());
   }
 
   public void resetGyro () {
