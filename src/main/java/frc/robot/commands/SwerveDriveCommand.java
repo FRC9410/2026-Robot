@@ -212,6 +212,10 @@ public class SwerveDriveCommand extends Command {
         final double DRIVE_AND_SHOOT_SPEED = 0.0;
         xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
         ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
+      } else if (controller.leftTrigger(0.5).getAsBoolean()){
+        final double DRIVE_AND_INTAKE_SPEED = 0.5;
+        xSpeed = xSpeed * DRIVE_AND_INTAKE_SPEED;
+        ySpeed = ySpeed * DRIVE_AND_INTAKE_SPEED;
       }
 
       boolean isInverted = SmartDashboard.getBoolean("driveInverted",false);
