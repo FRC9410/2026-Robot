@@ -187,7 +187,7 @@ public class RobotContainer implements PowerRobotContainer {
             }),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0, 0.75),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.5),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.4),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
