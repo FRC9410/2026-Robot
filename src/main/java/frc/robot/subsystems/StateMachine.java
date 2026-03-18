@@ -253,9 +253,16 @@ public class StateMachine extends SubsystemBase {
     double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+    
+    boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
 
-    shooter.setVelocity(-shooterVelo - 1);
-    shooterHood.setPositionRotations(hoodPos);
+    if (velocityLock) {
+      shooter.setVelocity(-67);
+      shooterHood.setPositionRotations(0.04);
+    } else {
+      shooter.setVelocity(-shooterVelo - 1);
+      shooterHood.setPositionRotations(hoodPos);
+    }
     feeder.setVelocity(-feederVelo);
     pointTurret(target);
 
@@ -306,7 +313,9 @@ public class StateMachine extends SubsystemBase {
     // translating setpoint to gear ration
     double sensorRotations = clampedTurretRotations * (8.5 / 9.0);
 
-    if (!bestLimelight.equals("limelight-turret")) {
+
+    boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
+    if (!bestLimelight.equals("limelight-turret") || shooterLock) {
       turret.setPositionRotations(0.0);
     } else if (Math.abs(turretRotations * (8.5 / 9.0)) <= 0.25* (8.5 / 9.0)) {
       turret.setPositionRotations(sensorRotations);
