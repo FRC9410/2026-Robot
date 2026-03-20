@@ -89,8 +89,8 @@ public class TurretConstants {
         { 1.68, 58}
     };
 
-    public static final double TURRET_DIST_FROM_ROBOT_CENTER = -0.1778;
-    public static final double TURRET_RADIUS = 0.10795; //.127
+    public static final double TURRET_DIST_FROM_ROBOT_CENTER = -0.15875;
+    public static final double TURRET_RADIUS = 0.11596; //.127
 
     /** Max turret angle error (degrees) from target before allowing shoot (must be within this to fire). */
     public static final double TURRET_SHOOT_ANGLE_TOLERANCE_DEG = 2.0;

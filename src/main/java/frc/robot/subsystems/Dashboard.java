@@ -80,9 +80,8 @@ public class Dashboard extends SubsystemBase {
     // PowerRobotContainer.setData("SpindexerVelocity", spindexerVel);
     // PowerRobotContainer.setData("FeederVelocity", feederVel);
 
-    
-    testingTable.getEntry("spindexerVelocity").setInteger((int) PowerRobotContainer.getData("SpindexerVelocity", 0));
-    testingTable.getEntry("feederVelocity").setInteger((int) PowerRobotContainer.getData("FeederVelocity", 0));
-    testingTable.getEntry("shooterVelocity").setInteger((int) PowerRobotContainer.getData("ShooterVelocity", 0));
+    // testingTable.getEntry("spindexerVelocity").setDouble(PowerRobotContainer.getData("SpindexerVelocity", 0));
+    // testingTable.getEntry("feederVelocity").setDouble(PowerRobotContainer.getData("FeederVelocity", 0));
+    // testingTable.getEntry("shooterVelocity").setDouble(PowerRobotContainer.getData("ShooterVelocity", 0));
   }
 }

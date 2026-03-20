@@ -272,11 +272,11 @@ public class StateMachine extends SubsystemBase {
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
     System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold) {
-      if (intakeTimer > 25) {
+      // if (intakeTimer > 25) {
         spindexer.setVelocity(60);
-      } else {
-        spindexer.setVelocity(95);
-      }
+      // } else {
+      //   spindexer.setVelocity(95);
+      // }
     } else {
       feeder.brake();
       spindexer.brake();

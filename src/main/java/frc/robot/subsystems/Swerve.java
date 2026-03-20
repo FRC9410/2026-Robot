@@ -60,7 +60,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
       RotationsPerSecond.of(0.75)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
   public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
-      RotationsPerSecond.of(0.5)
+      RotationsPerSecond.of(0.75)
           .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
 
   public final SwerveRequest.FieldCentric FIELD_RELATIVE =

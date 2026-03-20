@@ -80,7 +80,7 @@ public class Vision extends SubsystemBase {
       LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, drivetrain.getPigeon2().getRoll().getValueAsDouble(), pitch, yaw);
     }
 
-    if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
+    if (bestMeasurement != null) {
       Pose2d newPose = pose.toPose2d();
 
       LimelightHelpers.SetRobotOrientation(

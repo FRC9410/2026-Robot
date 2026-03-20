@@ -9,5 +9,5 @@ public class OIConstants {
   public static final double MAX_SPEED_COEFFICIENT = 0.75;
 
   /** Linear speed coefficient when driving in interchange zone. */
-  public static final double INTERCHANGE_SPEED_COEFFICIENT = 0.5;
+  public static final double INTERCHANGE_SPEED_COEFFICIENT = 0.75;
 }

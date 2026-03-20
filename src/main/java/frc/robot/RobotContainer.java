@@ -99,12 +99,20 @@ public class RobotContainer implements PowerRobotContainer {
       }
     ));
 
-    driverController.b().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_1, 3.0));
-    driverController.y().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_2, 3.0));
-    driverController.x().onTrue(new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, AutoConstants.BLUE_RIGHT_3, 3.0));
+    driverController.b()
+        .onTrue(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+              stateMachine.intakeRoller.setVelocity(-125);
+            }))
+        .onFalse(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+              stateMachine.intakeRoller.brake();
+            }));
     
 
-    driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController));
+    // driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController));
 
     stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
