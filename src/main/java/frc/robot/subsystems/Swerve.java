@@ -53,7 +53,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
   private final SwerveRequest.SysIdSwerveRotation m_rotationCharacterization =
       new SwerveRequest.SysIdSwerveRotation();
 
-  private final PhoenixPIDController HEADING_CONTROLLER = new PhoenixPIDController(7, 0, 0);
+  private final PhoenixPIDController HEADING_CONTROLLER = new PhoenixPIDController(6, 0, 0);
 
   public double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
   public double MAX_ANGULAR_RATE =

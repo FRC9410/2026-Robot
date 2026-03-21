@@ -69,6 +69,10 @@ public class RobotContainer implements PowerRobotContainer {
     SmartDashboard.putData("SysId/Spindexer Dynamic Reverse", spindexerSysId.dynamic(SysIdRoutine.Direction.kReverse));
   }
 
+  public void resetState () {
+    stateMachine.setWantedState(RobotState.READY);
+  }
+
   private void configureBindings() {
     // Intake in and out
     driverController.leftTrigger(0.5)
@@ -76,7 +80,7 @@ public class RobotContainer implements PowerRobotContainer {
         .onTrue(new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-              stateMachine.intakeRoller.setVelocity(125);
+              stateMachine.intakeRoller.setVelocity(145);
             }))
         .onFalse(new InstantCommand(
             () -> {
@@ -103,7 +107,7 @@ public class RobotContainer implements PowerRobotContainer {
         .onTrue(new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-              stateMachine.intakeRoller.setVelocity(-125);
+              stateMachine.intakeRoller.setVelocity(-100);
             }))
         .onFalse(new InstantCommand(
             () -> {
@@ -191,11 +195,11 @@ public class RobotContainer implements PowerRobotContainer {
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-              stateMachine.intakeRoller.setVelocity(125);
+              stateMachine.intakeRoller.setVelocity(145);
             }),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0, 0.75),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.4),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 3.0, 0.4),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);

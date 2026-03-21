@@ -20,6 +20,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.DriveUtil;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.FieldUtils.GameZone;
+import frc.robot.Constants;
 import frc.robot.constants.LocationConstants;
 import frc.robot.constants.OIConstants;
 import frc.robot.constants.TunerConstants;
@@ -208,12 +209,15 @@ public class SwerveDriveCommand extends Command {
       double xSpeed = speeds.vxMetersPerSecond * coeff;
       double ySpeed = speeds.vyMetersPerSecond * coeff;
 
-      if (controller.rightTrigger(0.5).getAsBoolean()){
+      boolean shooterIsLocked = SmartDashboard.getBoolean("shooterLock",false);
+
+      if (controller.rightTrigger(0.5).getAsBoolean() && !shooterIsLocked){
         final double DRIVE_AND_SHOOT_SPEED = 0.0;
         xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
         ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
-      } else if (controller.leftTrigger(0.5).getAsBoolean()){
-        final double DRIVE_AND_INTAKE_SPEED = 0.5;
+      } else 
+      if (controller.leftTrigger(0.5).getAsBoolean()){
+        final double DRIVE_AND_INTAKE_SPEED = 0.4;
         xSpeed = xSpeed * DRIVE_AND_INTAKE_SPEED;
         ySpeed = ySpeed * DRIVE_AND_INTAKE_SPEED;
       }
@@ -221,12 +225,37 @@ public class SwerveDriveCommand extends Command {
       boolean isInverted = SmartDashboard.getBoolean("driveInverted",false);
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
       System.out.println("isInverted: "+inversionMultiplier);
-      
-      drivetrain.drive(
-          xSpeed * inversionMultiplier,
-          ySpeed * inversionMultiplier,
-          -speeds.omegaRadiansPerSecond,
-          Swerve.DriveMode.FIELD_RELATIVE);
+
+      if (controller.rightTrigger(0.5).getAsBoolean() && shooterIsLocked){
+        Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
+        // Get the robot's current position on the field
+        Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
+
+        // Find the vector from the robot to the target
+        double deltaX = targetPoint.getX() - robotPosition.getX();
+        double deltaY = targetPoint.getY() - robotPosition.getY();
+
+        // Find the angle from the robot to the target in field coordinates
+        double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
+
+        double targetAngleRobotRelative = isBlueAlliance()
+          ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
+          : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+
+      System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
+
+        drivetrain.drive(
+            xSpeed * inversionMultiplier,
+            ySpeed * inversionMultiplier,
+            Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
+            Swerve.DriveMode.ROTATION_LOCK);
+      } else {
+        drivetrain.drive(
+            xSpeed * inversionMultiplier,
+            ySpeed * inversionMultiplier,
+            -speeds.omegaRadiansPerSecond,
+            Swerve.DriveMode.FIELD_RELATIVE);
+      }
     }
   }
 
@@ -497,4 +526,13 @@ public class SwerveDriveCommand extends Command {
     BACK
   }
 
+  /** Distance (m) inward from each side when targeting a corner (field: blue right = 0,0, red left = max, max). */
+  private static final double CORNER_TARGET_OFFSET_M = 1.0;
+
+  /** Convenience: is the robot on the blue alliance? */
+  public boolean isBlueAlliance() {
+    if (DriverStation.getAlliance().isEmpty())
+      return true;
+    return DriverStation.getAlliance().get() == Alliance.Blue;
+  }
 }

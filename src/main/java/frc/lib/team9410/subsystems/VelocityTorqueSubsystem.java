@@ -6,6 +6,7 @@ package frc.lib.team9410.subsystems;
 
 import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.NeutralOut;
+import com.ctre.phoenix6.controls.VelocityTorqueCurrentFOC;
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
@@ -18,7 +19,7 @@ import frc.lib.team9410.configs.MotionMagicConfig;
 import frc.lib.team9410.configs.VelocitySubsystemConfig;
 
 
-public class VelocitySubsystem extends PowerSubsystem {
+public class VelocityTorqueSubsystem extends PowerSubsystem {
 
   /** Primary velocity-controlled motor; set in subclass after init. */
   protected TalonFX velocityMotor;
@@ -30,7 +31,7 @@ public class VelocitySubsystem extends PowerSubsystem {
    *
    * @param config single config containing motor configs, lead, motion magic, and name
    */
-  public VelocitySubsystem(VelocitySubsystemConfig config) {
+  public VelocityTorqueSubsystem(VelocitySubsystemConfig config) {
     super(config.motorConfigs(), config.subsystemName());
     TalonFX leader = getLeaderMotor();
     if (leader != null) {
@@ -78,7 +79,7 @@ public class VelocitySubsystem extends PowerSubsystem {
   public void setVelocity(double velocityRotationsPerSecond) {
     if (velocityMotor != null) {
       velocityMotor.setControl(
-          new MotionMagicVelocityVoltage(0).withVelocity(velocityRotationsPerSecond).withEnableFOC(true).withSlot(0));
+          new VelocityTorqueCurrentFOC(velocityRotationsPerSecond).withFeedForward(0));
     }
   }
 

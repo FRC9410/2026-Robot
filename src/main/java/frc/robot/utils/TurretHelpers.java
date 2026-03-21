@@ -108,6 +108,20 @@ public class TurretHelpers {
         return getOffsetTurretAngleRadiansFromBack(stateMachine.drivetrain.getState().Pose, point);
     }
 
+    public static double getRadiansToPoint (Pose2d robotPose, Translation2d target) {
+        // Get the robot's current position on the field
+        Translation2d robotPosition = robotPose.getTranslation();
+
+        // Find the vector from the robot to the target
+        double deltaX = target.getX() - robotPosition.getX();
+        double deltaY = target.getY() - robotPosition.getY();
+
+        // Find the angle from the robot to the target in field coordinates
+        double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
+
+        return targetAngleFieldRelative;
+    }
+
     public static double getTurretAngleRadiansFromBack(
     Pose2d robotPose,
     Translation2d targetPoint

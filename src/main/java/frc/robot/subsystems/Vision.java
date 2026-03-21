@@ -68,14 +68,16 @@ public class Vision extends SubsystemBase {
     if ("limelight-turret".equals(limelight)) {
       Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
 
-      double forward = relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
-      double right = relativePosition.getX();
+      boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
+      double forward = shooterLock ? TurretConstants.TURRET_LIMELIGHT_STATIC_OFFSET : relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
+      double right = shooterLock ? 0.0 : relativePosition.getX();
       double up = 0.71755;
       double pitch = 10;
 
       turretLimelight.putValue("yaw", NetworkTableValue.makeDouble(yaw));
       turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
       turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
+
 
       LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, drivetrain.getPigeon2().getRoll().getValueAsDouble(), pitch, yaw);
     }

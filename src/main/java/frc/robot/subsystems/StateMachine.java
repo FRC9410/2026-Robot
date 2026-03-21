@@ -23,6 +23,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
+import frc.lib.team9410.subsystems.VelocityTorqueSubsystem;
 import frc.robot.Constants;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TunerConstants;
@@ -51,7 +52,7 @@ public class StateMachine extends SubsystemBase {
 
   // --- Velocity subsystems ---
   public final VelocitySubsystem shooter = new VelocitySubsystem(Constants.Shooter.FLYWHEEL_CONFIG);
-  public final VelocitySubsystem intakeRoller = new VelocitySubsystem(Constants.Intake.ROLLER_CONFIG);
+  public final VelocityTorqueSubsystem intakeRoller = new VelocityTorqueSubsystem(Constants.Intake.ROLLER_CONFIG);
   public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.Spindexer.SPINDEXER_CONFIG);
   public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.Feeder.FEEDER_CONFIG);
 
@@ -66,6 +67,8 @@ public class StateMachine extends SubsystemBase {
   private int intakeTimer = 0;
 
   private String bestLimelight = "";
+
+  private boolean matchStarted = false;
 
   public StateMachine() {}
 
@@ -120,12 +123,15 @@ public class StateMachine extends SubsystemBase {
             || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
           // Bad pose; do not reset or add to estimator.
         } else {
-          if (gyroReset) {
-            newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
-          } else {
-            //gyroReset = true;
+          if (!gyroReset || !matchStarted) {
+            // newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
+            drivetrain.resetPose(newPose);
+            gyroReset = true;
           }
-          drivetrain.resetPose(newPose);
+          // else {
+          //   newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
+          // }
+          // drivetrain.resetPose(newPose);
           drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
           drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
         }
@@ -258,6 +264,7 @@ public class StateMachine extends SubsystemBase {
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     
     boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
+    boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
 
     if (velocityLock) {
       shooter.setVelocity(-67);
@@ -271,12 +278,24 @@ public class StateMachine extends SubsystemBase {
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
     System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
-    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold) {
+    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold && !shooterLock) {
       // if (intakeTimer > 25) {
         spindexer.setVelocity(60);
       // } else {
       //   spindexer.setVelocity(95);
       // }
+    } else if (shooterLock) {
+      double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
+      double currentDivetrainRotation = isBlueAlliance() ? pose.getRotation().getDegrees() : pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+      double tol = 5.0;
+      boolean rotationWithinTolerance = Math.abs(targetDrivetrainRotation - currentDivetrainRotation) < tol;
+
+      if (rotationWithinTolerance) {
+        spindexer.setVelocity(60);
+      } else {
+      feeder.brake();
+      spindexer.brake();
+    }
     } else {
       feeder.brake();
       spindexer.brake();
@@ -323,6 +342,8 @@ public class StateMachine extends SubsystemBase {
     } else if (Math.abs(turretRotations * (8.5 / 9.0)) <= 0.25* (8.5 / 9.0)) {
       turret.setPositionRotations(sensorRotations);
     }
+
+    turret.setPositionRotations(0.0);
 
     // delta 2pi and turret rotation
     // multiply delta * 8.5/9
@@ -453,5 +474,9 @@ public class StateMachine extends SubsystemBase {
       // End game, hub always active.
       return true;
     }
+  }
+
+  public void setMatchStarted () {
+    matchStarted = true;
   }
 }

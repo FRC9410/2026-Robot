@@ -25,7 +25,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
-    SmartDashboard.putBoolean("driveInvert",false);
+    SmartDashboard.putBoolean("driveInverted",false);
     SmartDashboard.putBoolean("shooterLock", false);
     SmartDashboard.putBoolean("velocityLock", false);
   }
@@ -56,6 +56,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       CommandScheduler.getInstance().schedule(m_autonomousCommand);
     }
+    
+    m_robotContainer.getStateMachine().setMatchStarted();
   }
 
   @Override
@@ -69,6 +71,8 @@ public class Robot extends TimedRobot {
     if (m_autonomousCommand != null) {
       m_autonomousCommand.cancel();
     }
+    
+    m_robotContainer.resetState();
   }
 
   @Override
