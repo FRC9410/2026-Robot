@@ -13,7 +13,7 @@ public class AutoConstants {
   public static final Pose2d RED_LEFT_3 = new Pose2d(9.55, 0.73, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_4 = new Pose2d(8.4, 1, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_5 = new Pose2d(8.4, 3.5, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d RED_LEFT_6 = new Pose2d(10.0, 2.4, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d RED_LEFT_6 = new Pose2d(8.4, 2.4, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d RED_LEFT_7 = new Pose2d(14.3, 2.4, Rotation2d.fromDegrees(135.0));
 
   // ---- Red right (driver station right) ----
@@ -22,7 +22,7 @@ public class AutoConstants {
   public static final Pose2d RED_RIGHT_3 = new Pose2d(9.55, 7.27, Rotation2d.fromDegrees(90.0));
   public static final Pose2d RED_RIGHT_4 = new Pose2d(8.4, 7, Rotation2d.fromDegrees(90.0));
   public static final Pose2d RED_RIGHT_5 = new Pose2d(8.4, 4.5, Rotation2d.fromDegrees(90.0));
-  public static final Pose2d RED_RIGHT_6 = new Pose2d(10.0, 5.7, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d RED_RIGHT_6 = new Pose2d(8.4, 5.7, Rotation2d.fromDegrees(90.0));
   public static final Pose2d RED_RIGHT_7 = new Pose2d(14.3, 5.7, Rotation2d.fromDegrees(-135.0));
 
   // ---- Blue left (driver station left) ----
@@ -31,7 +31,7 @@ public class AutoConstants {
   public static final Pose2d BLUE_LEFT_3 = new Pose2d(6.95, 7.27, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d BLUE_LEFT_4 = new Pose2d(8.1, 7, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d BLUE_LEFT_5 = new Pose2d(8.1, 4.5, Rotation2d.fromDegrees(-90.0));
-  public static final Pose2d BLUE_LEFT_6 = new Pose2d(6.5, 5.7, Rotation2d.fromDegrees(-90.0));
+  public static final Pose2d BLUE_LEFT_6 = new Pose2d(8.1, 5.7, Rotation2d.fromDegrees(-90.0));
   public static final Pose2d BLUE_LEFT_7 = new Pose2d(2.1, 5.7, Rotation2d.fromDegrees(135.0));
 
   // ---- Blue right (driver station right) ----
@@ -40,6 +40,6 @@ public class AutoConstants {
   public static final Pose2d BLUE_RIGHT_3 = new Pose2d(6.95, 0.73, Rotation2d.fromDegrees(90.0));
   public static final Pose2d BLUE_RIGHT_4 = new Pose2d(8.1, 1, Rotation2d.fromDegrees(90.0));
   public static final Pose2d BLUE_RIGHT_5 = new Pose2d(8.1, 3.5, Rotation2d.fromDegrees(90.0));
-  public static final Pose2d BLUE_RIGHT_6 = new Pose2d(6.5, 2.4, Rotation2d.fromDegrees(90.0));
+  public static final Pose2d BLUE_RIGHT_6 = new Pose2d(8.1, 2.4, Rotation2d.fromDegrees(90.0));
   public static final Pose2d BLUE_RIGHT_7 = new Pose2d(2.1, 2.4, Rotation2d.fromDegrees(-135.0));
 }

@@ -5,6 +5,7 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -24,6 +25,7 @@ import frc.robot.constants.FieldConstants;
 import frc.robot.Constants.Auto;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.SwerveDriveCommand;
+import frc.robot.commands.TurnToPointCommand;
 
 public class RobotContainer implements PowerRobotContainer {
 
@@ -34,7 +36,7 @@ public class RobotContainer implements PowerRobotContainer {
    * Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via
    * {@link #startGameTimer()}.
    */
-  
+
   public static final double GAME_DURATION_SECONDS = 2 * 60 + 40; // 2:40
 
   // Controller
@@ -52,31 +54,38 @@ public class RobotContainer implements PowerRobotContainer {
     SmartDashboard.putBoolean("Blue Left Auto", false);
     SmartDashboard.putBoolean("Blue Right Auto", false);
 
-    // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev), then stop log
+    // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev),
+    // then stop log
     SmartDashboard.putData("SysId/Start Log", VelocitySysId.startLog());
     SmartDashboard.putData("SysId/Stop Log", VelocitySysId.stopLog());
-    SmartDashboard.putData("SysId/Shooter Quasistatic Forward", shooterSysId.quasistatic(SysIdRoutine.Direction.kForward));
-    SmartDashboard.putData("SysId/Shooter Quasistatic Reverse", shooterSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Shooter Quasistatic Forward",
+        shooterSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Shooter Quasistatic Reverse",
+        shooterSysId.quasistatic(SysIdRoutine.Direction.kReverse));
     SmartDashboard.putData("SysId/Shooter Dynamic Forward", shooterSysId.dynamic(SysIdRoutine.Direction.kForward));
     SmartDashboard.putData("SysId/Shooter Dynamic Reverse", shooterSysId.dynamic(SysIdRoutine.Direction.kReverse));
-    SmartDashboard.putData("SysId/Feeder Quasistatic Forward", feederSysId.quasistatic(SysIdRoutine.Direction.kForward));
-    SmartDashboard.putData("SysId/Feeder Quasistatic Reverse", feederSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Feeder Quasistatic Forward",
+        feederSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Feeder Quasistatic Reverse",
+        feederSysId.quasistatic(SysIdRoutine.Direction.kReverse));
     SmartDashboard.putData("SysId/Feeder Dynamic Forward", feederSysId.dynamic(SysIdRoutine.Direction.kForward));
     SmartDashboard.putData("SysId/Feeder Dynamic Reverse", feederSysId.dynamic(SysIdRoutine.Direction.kReverse));
-    SmartDashboard.putData("SysId/Spindexer Quasistatic Forward", spindexerSysId.quasistatic(SysIdRoutine.Direction.kForward));
-    SmartDashboard.putData("SysId/Spindexer Quasistatic Reverse", spindexerSysId.quasistatic(SysIdRoutine.Direction.kReverse));
+    SmartDashboard.putData("SysId/Spindexer Quasistatic Forward",
+        spindexerSysId.quasistatic(SysIdRoutine.Direction.kForward));
+    SmartDashboard.putData("SysId/Spindexer Quasistatic Reverse",
+        spindexerSysId.quasistatic(SysIdRoutine.Direction.kReverse));
     SmartDashboard.putData("SysId/Spindexer Dynamic Forward", spindexerSysId.dynamic(SysIdRoutine.Direction.kForward));
     SmartDashboard.putData("SysId/Spindexer Dynamic Reverse", spindexerSysId.dynamic(SysIdRoutine.Direction.kReverse));
   }
 
-  public void resetState () {
+  public void resetState() {
     stateMachine.setWantedState(RobotState.READY);
   }
 
   private void configureBindings() {
     // Intake in and out
     driverController.leftTrigger(0.5)
-     //   .or(driverController.leftTrigger(0.5))
+        // .or(driverController.leftTrigger(0.5))
         .onTrue(new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
@@ -87,21 +96,19 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }));
-    
-    
+
     driverController.rightTrigger(0.5).onTrue(new InstantCommand(
         () -> {
           stateMachine.setWantedState(RobotState.SHOOTING);
         })).onFalse(new InstantCommand(
-        () -> {
-          stateMachine.setWantedState(RobotState.READY);
-        }));
+            () -> {
+              stateMachine.setWantedState(RobotState.READY);
+            }));
 
     driverController.back().onTrue(new InstantCommand(
-      () -> {
-        stateMachine.resetGyro();
-      }
-    ));
+        () -> {
+          stateMachine.resetGyro();
+        }));
 
     driverController.b()
         .onTrue(new InstantCommand(
@@ -114,15 +121,15 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
               stateMachine.intakeRoller.brake();
             }));
-    
 
-    // driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain, driverController));
+    // driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain,
+    // driverController));
 
     stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
   }
 
-  public AutoPath getAutoPathFromDash () {
+  public AutoPath getAutoPathFromDash() {
     if (SmartDashboard.getBoolean("Red Left Auto", false) && auto != AutoPath.RED_LEFT) {
       return AutoPath.RED_LEFT;
     } else if (SmartDashboard.getBoolean("Red Right Auto", false) && auto != AutoPath.RED_RIGHT) {
@@ -135,28 +142,28 @@ public class RobotContainer implements PowerRobotContainer {
       return null;
     }
   }
-   public void setAuto() {
+
+  public void setAuto() {
     AutoPath newAuto = getAutoPathFromDash();
     if (newAuto == null) {
       return;
     }
 
     auto = newAuto;
-  
 
     clearAutoSelections();
     switch (auto) {
       case RED_LEFT:
-        SmartDashboard.putBoolean("Red Left Auto",true );
+        SmartDashboard.putBoolean("Red Left Auto", true);
         break;
       case RED_RIGHT:
         SmartDashboard.putBoolean("Red Right Auto", true);
         break;
       case BLUE_LEFT:
-        SmartDashboard.putBoolean("Blue Left Auto",true);
+        SmartDashboard.putBoolean("Blue Left Auto", true);
         break;
       case BLUE_RIGHT:
-        SmartDashboard.putBoolean("Blue Right Auto",true);
+        SmartDashboard.putBoolean("Blue Right Auto", true);
         break;
     }
   }
@@ -174,8 +181,7 @@ public class RobotContainer implements PowerRobotContainer {
         return getBlueRightAuto();
       default:
         return new InstantCommand(
-          () -> System.out.println("Invalid auto")
-        );
+            () -> System.out.println("Invalid auto"));
     }
   }
 
@@ -191,7 +197,7 @@ public class RobotContainer implements PowerRobotContainer {
       Pose2d p1, Pose2d p2, Pose2d p3, Pose2d p4, Pose2d p5, Pose2d p6, Pose2d p7) {
     return new SequentialCommandGroup(
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p1, 6.0, 0.5),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p2, 3.0, 1.0, true),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p2, 6.0, 1.0, true),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
@@ -199,7 +205,7 @@ public class RobotContainer implements PowerRobotContainer {
             }),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p3, 12.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p4, 6.0, 0.75),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 3.0, 0.4),
+        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p5, 6.0, 0.4),
         new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
@@ -207,7 +213,10 @@ public class RobotContainer implements PowerRobotContainer {
             }),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p6, 3.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0, 1.0, true),
-        new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0),
+        new TurnToPointCommand(stateMachine.drivetrain,
+            DriverStation.getAlliance().get() == DriverStation.Alliance.Blue ? FieldConstants.HOPPER_BLUE
+                : FieldConstants.HOPPER_RED,
+            5),
         new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING)));
   }
 
@@ -240,9 +249,9 @@ public class RobotContainer implements PowerRobotContainer {
   }
 
   public void clearAutoSelections() {
-    SmartDashboard.putBoolean("Blue Right Auto",false);
-    SmartDashboard.putBoolean("Blue Left Auto",false);
+    SmartDashboard.putBoolean("Blue Right Auto", false);
+    SmartDashboard.putBoolean("Blue Left Auto", false);
     SmartDashboard.putBoolean("Red Right Auto", false);
-    SmartDashboard.putBoolean("Red Left Auto",false);
+    SmartDashboard.putBoolean("Red Left Auto", false);
   }
 }
