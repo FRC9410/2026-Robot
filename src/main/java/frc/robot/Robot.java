@@ -26,7 +26,6 @@ public class Robot extends TimedRobot {
   @Override
   public void robotInit() {
     SmartDashboard.putBoolean("driveInverted",false);
-    SmartDashboard.putBoolean("shooterLock", false);
     SmartDashboard.putBoolean("velocityLock", false);
   }
 

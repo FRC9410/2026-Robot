@@ -46,7 +46,6 @@ public class StateMachine extends SubsystemBase {
   private RobotState previousState = RobotState.READY;
 
   // --- Position subsystems ---
-  public final PositionSubsystem turret = new PositionSubsystem(Constants.Turret.TURRET_CONFIG);
   public final PositionSubsystem shooterHood = new PositionSubsystem(Constants.Shooter.HOOD_CONFIG);
   public final PositionSubsystem intakeWrist = new PositionSubsystem(Constants.Intake.WRIST_CONFIG);
 
@@ -74,10 +73,6 @@ public class StateMachine extends SubsystemBase {
 
   @Override
   public void periodic() {
-    if (currentState != RobotState.SHOOTING) {
-      pointTurret(isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED);
-    }
-
     handleStateTransitions();
     executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
@@ -111,7 +106,7 @@ public class StateMachine extends SubsystemBase {
     if (bestLimelight == null || bestLimelight.isEmpty()) {
       // Skip vision pose update; dashboard/PRC still use current drivetrain pose below.
     } else {
-      vision.setRobotPose(bestLimelight, TurretHelpers.getTurretAngle(turret.getPositionRotations() * 9/8.5), drivetrain);
+      vision.setRobotPose(bestLimelight, drivetrain);
 
       LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
       if (mt2 != null && mt2.tagCount > 0) {
@@ -145,12 +140,7 @@ public class StateMachine extends SubsystemBase {
       SmartDashboard.putNumber("currentPoseX", drivetrain.getState().Pose.getX());
       SmartDashboard.putNumber("currentPoseY", drivetrain.getState().Pose.getY());
       SmartDashboard.putNumber("currentPoseYaw", drivetrain.getState().Pose.getRotation().getDegrees());
-      SmartDashboard.putNumber("turretLimelightAngle", TurretHelpers.getTurretAngle(turret.getPositionRotations()));
       SmartDashboard.putString("bestLimelight", bestLimelight);
-
-      
-      SmartDashboard.putNumber("turretOffsetX", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getX());
-      SmartDashboard.putNumber("turretOffsetY", TurretHelpers.turretCamPosRelative(TurretHelpers.getTurretAngle(turret.getPositionRotations())).getY());
   }
 
   private void handleStateTransitions() {
@@ -226,45 +216,14 @@ public class StateMachine extends SubsystemBase {
   private void runShootingToTarget(Translation2d target) {
     var state = drivetrain.getState();
     Pose2d pose = state.Pose;
-    var speeds = state.Speeds;
-    // double linearSpeedMps = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
-    // if (linearSpeedMps > TurretConstants.SHOOT_MAX_DRIVETRAIN_SPEED_MPS) {
-    //   shooter.brake();
-    //   feeder.brake();
-    //   spindexer.brake();
-    //   return;
-    // }
 
-    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, target) - pose.getRotation().getRadians();
-    // if (Math.abs(turretRotation) > Math.PI / 2) {
-    //   shooter.brake();
-    //   feeder.brake();
-    //   spindexer.brake();
-    //   return;
-    // }
-
-    // Require turret to be within 2° of the angle to target before shooting
-    // double targetTurretAngle = Math.atan2(
-    //     target.getY() - pose.getY(),
-    //     target.getX() - pose.getX());
-    // double currentTurretAngle = turret.getPositionRotations() * 2 * Math.PI * (9.0 / 8.5);
-    // if (Math.abs(targetTurretAngle - currentTurretAngle) > Math.toRadians(TurretConstants.TURRET_SHOOT_ANGLE_TOLERANCE_DEG)) {
-    //   shooter.brake();
-    //   feeder.brake();
-    //   spindexer.brake();
-    //   return;
-    // }
-
-    double normalizedDistance = pose.getTranslation().minus(target).getNorm();
-    double rotationConstant = 0.0;
-    double distance = normalizedDistance + Math.abs(turretRotation * rotationConstant);
+    double distance = pose.getTranslation().minus(target).getNorm();
 
     double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     
     boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
-    boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
 
     if (velocityLock) {
       shooter.setVelocity(-67);
@@ -274,81 +233,25 @@ public class StateMachine extends SubsystemBase {
       shooterHood.setPositionRotations(hoodPos);
     }
     feeder.setVelocity(-feederVelo);
-    pointTurret(target);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
     System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
-    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() < velocityThreshold && !shooterLock) {
-      // if (intakeTimer > 25) {
-        spindexer.setVelocity(60);
-      // } else {
-      //   spindexer.setVelocity(95);
-      // }
-    } else if (shooterLock) {
+    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold) {
       double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
       double currentDivetrainRotation = isBlueAlliance() ? pose.getRotation().getDegrees() : pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
       double tol = 5.0;
-      boolean rotationWithinTolerance = Math.abs(targetDrivetrainRotation - currentDivetrainRotation) < tol;
+      double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
+      boolean rotationWithinTolerance = Math.abs(angleDiff) < tol;
 
       if (rotationWithinTolerance) {
         spindexer.setVelocity(60);
       } else {
-      feeder.brake();
-      spindexer.brake();
-    }
+        spindexer.brake();
+      }
     } else {
       feeder.brake();
       spindexer.brake();
     }
-  }
-
-  // private void pointTurret() {
-  //   double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this) - drivetrain.getState().Pose.getRotation().getRadians();
-  //   double rotationConstant = 0.09;
-
-  //   double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
-  //       if (Math.toDegrees(Math.abs(dir)) < 90) {
-  //         turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
-  //         // System.out.println(dir / Math.PI * (8.5/9));
-  //       }
-  // }
-
-  private void pointTurret(Translation2d point) {
-    double turretRotation = TurretHelpers.getTurretRotationsWithoutLead(this, point) - drivetrain.getState().Pose.getRotation().getRadians();
-    // System.out.println(turretRotation);
-    // double rotationConstant = 0.09;
-
-    // double dir = turretRotation > 0 ? turretRotation + Math.abs(turretRotation * rotationConstant) : turretRotation - Math.abs(turretRotation * rotationConstant);
-    //     if (Math.toDegrees(Math.abs(dir)) < 90) {
-    //       turret.setPositionRotations(dir / Math.PI / 2 * (8.5/9));
-    //       // System.out.println(dir / Math.PI * (8.5/9));
-    //     }
-
-    double desiredTurretRotations = TurretHelpers.getTurretRotationsWithoutLead(this, point);
-
-    // radians to turret setpoint
-    double turretRotations = desiredTurretRotations / (2.0 * Math.PI);
-
-    // restricting setpoint
-    double clampedTurretRotations = MathUtil.clamp(turretRotations, -0.25, 0.25);
-
-    // translating setpoint to gear ration
-    double sensorRotations = clampedTurretRotations * (8.5 / 9.0);
-
-
-    boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
-    if (!bestLimelight.equals("limelight-turret") || shooterLock) {
-      turret.setPositionRotations(0.0);
-    } else if (Math.abs(turretRotations * (8.5 / 9.0)) <= 0.25* (8.5 / 9.0)) {
-      turret.setPositionRotations(sensorRotations);
-    }
-
-    turret.setPositionRotations(0.0);
-
-    // delta 2pi and turret rotation
-    // multiply delta * 8.5/9
-    // apply new delta to turret rotation
-    // continue...
   }
 
   public void setWantedState(RobotState state) {

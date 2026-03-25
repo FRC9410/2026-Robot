@@ -57,7 +57,6 @@ public class Dashboard extends SubsystemBase {
     testingTable.getEntry("matchMessage").setString(DriverStation.getGameSpecificMessage());
 
     // pos
-    testingTable.getEntry("turretEncoder").setDouble(PowerRobotContainer.getData("TurretPosition", -1.0));
     testingTable.getEntry("shooterHoodEncoder").setDouble(PowerRobotContainer.getData("Shooter HoodPosition", -1.0));
     testingTable.getEntry("intakeWristEncoder").setDouble(PowerRobotContainer.getData("Intake WristPosition", -1.0));
     // hood target: read from dashboard and put in data map for left trigger / others

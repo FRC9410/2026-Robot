@@ -57,30 +57,13 @@ public class Vision extends SubsystemBase {
   @Override
   public void periodic() {}
   
-  public void setRobotPose(String limelight, double yaw, Swerve drivetrain) {
+  public void setRobotPose(String limelight, Swerve drivetrain) {
     if (limelight == null || limelight.isEmpty()) {
       return;
     }
     Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(limelight);
     LimelightHelpers.PoseEstimate bestMeasurement =
         LimelightHelpers.getBotPoseEstimate_wpiBlue(limelight);
-
-    if ("limelight-turret".equals(limelight)) {
-      Pose2d relativePosition = TurretHelpers.turretCamPosRelative(yaw);
-
-      boolean shooterLock = SmartDashboard.getBoolean("shooterLock", false);
-      double forward = shooterLock ? TurretConstants.TURRET_LIMELIGHT_STATIC_OFFSET : relativePosition.getY() - TurretConstants.TURRET_CAMERA_Y_OFFSET;
-      double right = shooterLock ? 0.0 : relativePosition.getX();
-      double up = 0.71755;
-      double pitch = 10;
-
-      turretLimelight.putValue("yaw", NetworkTableValue.makeDouble(yaw));
-      turretLimelight.putValue("forward", NetworkTableValue.makeDouble(forward));
-      turretLimelight.putValue("right", NetworkTableValue.makeDouble(right));
-
-
-      LimelightHelpers.setCameraPose_RobotSpace(limelight, forward, right, up, drivetrain.getPigeon2().getRoll().getValueAsDouble(), pitch, yaw);
-    }
 
     if (bestMeasurement != null) {
       Pose2d newPose = pose.toPose2d();
@@ -114,30 +97,16 @@ public class Vision extends SubsystemBase {
       bestArea = turretMeasurement.avgTagArea;
     }
 
-    if (!bestLimelight.equals("limelight-turret") && leftMeasurement != null && leftMeasurement.avgTagArea > bestArea) {
+    if (leftMeasurement != null && leftMeasurement.avgTagArea > bestArea) {
       bestLimelight = "limelight-left";
       bestArea = leftMeasurement.avgTagArea;
     }
 
-    if (!bestLimelight.equals("limelight-turret") && rightMeasurement != null && rightMeasurement.avgTagArea > bestArea) {
+    if (rightMeasurement != null && rightMeasurement.avgTagArea > bestArea) {
       bestLimelight = "limelight-right";
       bestArea = rightMeasurement.avgTagArea;
     }
 
     return bestLimelight;
   }
-    // Pose3d pose = LimelightHelpers.getBotPose3d_wpiBlue(bestLimelight);
-    // LimelightHelpers.PoseEstimate bestMeasurement =
-    //     LimelightHelpers.getBotPoseEstimate_wpiBlue(bestLimelight);
-
-    // if (bestMeasurement != null && bestMeasurement.avgTagArea > 0.1) {
-    //   Pose2d newPose = pose.toPose2d();
-    //   drive.resetRotation(newPose.getRotation());
-    //   LimelightHelpers.SetRobotOrientation(
-    //       "limelight-left", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
-    //   LimelightHelpers.SetRobotOrientation(
-    //       "limelight-right", newPose.getRotation().getDegrees(), 0, 0, 0, 0, 0);
-    // } else {
-    //   return;
-    // }
 }

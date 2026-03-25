@@ -195,23 +195,13 @@ public class SwerveDriveCommand extends Command {
           ySpeed,
           disableRotationLock ? 0.0 : targetPose.getRotation().getDegrees(),
           disableRotationLock ? Swerve.DriveMode.FIELD_RELATIVE : Swerve.DriveMode.DRIVE_TO_POINT);
-    // } else if (currentPose != null && targetPose != null && DriveUtil.isClose(currentPose, targetPose)) {
-    //   final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
-    //   drivetrain.drive(
-    //       speeds.vxMetersPerSecond,
-    //       speeds.vyMetersPerSecond,
-    //       // currentPose.getRotation().getDegrees(),
-    //       targetPose.getRotation().getDegrees(),
-    //       Swerve.DriveMode.ROTATION_LOCK);
     } else {
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
       double xSpeed = speeds.vxMetersPerSecond * coeff;
       double ySpeed = speeds.vyMetersPerSecond * coeff;
 
-      boolean shooterIsLocked = SmartDashboard.getBoolean("shooterLock",false);
-
-      if (controller.rightTrigger(0.5).getAsBoolean() && !shooterIsLocked){
+      if (controller.rightTrigger(0.5).getAsBoolean()){
         final double DRIVE_AND_SHOOT_SPEED = 0.0;
         xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
         ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
@@ -226,7 +216,7 @@ public class SwerveDriveCommand extends Command {
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
       System.out.println("isInverted: "+inversionMultiplier);
 
-      if (controller.rightTrigger(0.5).getAsBoolean() && shooterIsLocked){
+      if (controller.rightTrigger(0.5).getAsBoolean()){
         Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
         // Get the robot's current position on the field
         Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
