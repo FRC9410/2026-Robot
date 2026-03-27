@@ -15,9 +15,10 @@ import frc.lib.team9410.math.LinearInterpolator;
 
 public class ShooterConstants {
     public static final int HOOD_CAN_ID = 50;
-    public static final int HOOD_ENCODER_CAN_ID = 53;
+    public static final int HOOD_ENCODER_CAN_ID = 54;
     public static final int PRIMARY_FLYWHEELS_CAN_ID = 51;
-    public static final int SECONDARY_FLYWHEELS_CAN_ID = 52;
+    public static final int FOLLOWER_FLYWHEEL_1_CAN_ID = 52;
+    public static final int FOLLOWER_FLYWHEEL_2_CAN_ID = 53;
 
     public static final double SHOOTER_HOOD_MIN = 0.005;
     public static final double SHOOTER_HOOD_MAX = 0.14;
@@ -35,7 +36,8 @@ public class ShooterConstants {
 
     public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
             MotorConfig.leader(PRIMARY_FLYWHEELS_CAN_ID, NeutralModeValue.Coast, true),
-            MotorConfig.follower(SECONDARY_FLYWHEELS_CAN_ID, true));
+            MotorConfig.follower(FOLLOWER_FLYWHEEL_1_CAN_ID, true),
+            MotorConfig.follower(FOLLOWER_FLYWHEEL_2_CAN_ID, true));
 
     public static final LeadMotorConfig FLYWHEEL_LEAD_CONFIG = new LeadMotorConfig(
             FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, Optional.of(FLYWHEEL_KS), Optional.of(FLYWHEEL_KV), Optional.of(FLYWHEEL_KA), 1.0, 1.0);
