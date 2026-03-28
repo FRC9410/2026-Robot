@@ -212,7 +212,7 @@ public class TurretHelpers {
         return distance;
     }
 
-    // TODO: this
+    // todo this
     public static double getTangentalSpeed(ChassisSpeeds speeds, Pose2d robotPos) {
         double vx = speeds.vxMetersPerSecond;
         double vy = speeds.vyMetersPerSecond;

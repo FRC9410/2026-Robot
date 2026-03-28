@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
-// TODO: stop having to reset robot code because of limelights
+
 
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
