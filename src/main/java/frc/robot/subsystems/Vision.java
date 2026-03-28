@@ -30,6 +30,7 @@ public class Vision extends SubsystemBase {
   private final NetworkTable leftLimelight;
   private final NetworkTable rightLimelight;
   private final NetworkTable turretLimelight;
+  private boolean turretCanSeeTags = false;
   final List<Integer> blueTagIds = Arrays.asList(17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32);
   final List<Integer> redTagIds = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
   final List<Integer> tagIds;
@@ -93,8 +94,13 @@ public class Vision extends SubsystemBase {
     SmartDashboard.putNumber("rightArea", rightMeasurement.avgTagArea);
 
     if (turretMeasurement != null && turretMeasurement.avgTagArea > bestArea) {
+      turretCanSeeTags = true;
       bestLimelight = "limelight-turret";
       bestArea = turretMeasurement.avgTagArea;
+      PowerRobotContainer.setData("bestLimelight", bestLimelight);
+      return "limelight-turret";
+    } else {
+      turretCanSeeTags = false;
     }
 
     if (leftMeasurement != null && leftMeasurement.avgTagArea > bestArea) {
@@ -107,6 +113,12 @@ public class Vision extends SubsystemBase {
       bestArea = rightMeasurement.avgTagArea;
     }
 
+    PowerRobotContainer.setData("bestLimelight", bestLimelight);
+
     return bestLimelight;
+  }
+
+  public boolean getTurretCanSeeTags () {
+    return turretCanSeeTags;
   }
 }

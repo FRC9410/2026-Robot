@@ -2,6 +2,42 @@
 // Open Source Software; you can modify and/or share it under the terms of
 // the WPILib BSD license file in the root directory of this project.
 
+
+// 4.9:
+// s 37
+// h 0.09
+// f 80
+// sp 75
+//
+// 4.1:
+// 34
+// h 0.08
+// f 85
+// sp 80
+//
+// 3.5
+// 32
+// 0.07
+// 85
+// 80
+//
+//3.0
+//30
+//0.065
+//85
+//80
+//
+//2.5
+//29
+//0.055
+//85
+//80
+
+
+
+
+
+
 package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -86,7 +122,7 @@ public class RobotContainer implements PowerRobotContainer {
 
   private void configureBindings() {
     // Intake in and out
-    driverController.leftTrigger(0.5)
+    driverController.leftTrigger(0.5).and(() -> !driverController.rightTrigger(0.5).getAsBoolean())
         // .or(driverController.leftTrigger(0.5))
         .onTrue(new InstantCommand(
             () -> {
@@ -99,6 +135,17 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeRoller.brake();
             }));
 
+    driverController.leftTrigger(0.5).and(() -> driverController.rightTrigger(0.5).getAsBoolean())
+        // .or(driverController.leftTrigger(0.5))
+        .onTrue(new InstantCommand(
+            () -> {
+              stateMachine.intakeRoller.setVelocity(145);
+            }))
+        .onFalse(new InstantCommand(
+            () -> {
+              stateMachine.intakeRoller.brake();
+            }));
+
     // driverController.rightTrigger(0.5).onTrue(new InstantCommand(
     //     () -> {
     //       stateMachine.setWantedState(RobotState.SHOOTING);
@@ -107,21 +154,28 @@ public class RobotContainer implements PowerRobotContainer {
     //           stateMachine.setWantedState(RobotState.READY);
     //         }));
 
-    driverController.rightTrigger(0.5).onTrue(new SequentialCommandGroup(
-        new InstantCommand(() -> stateMachine.shooterHood.setPositionRotations((double) PowerRobotContainer.getData("Shooter HoodTarget"))),
-        new WaitCommand(0.5),
-        new InstantCommand(() -> stateMachine.shooter.setVelocity((double) PowerRobotContainer.getData("ShooterVelocity"))),
-        new WaitCommand(0.5),
-        new InstantCommand(() -> stateMachine.feeder.setVelocity(-((double) PowerRobotContainer.getData("FeederVelocity")))),
-        new WaitCommand(0.5),
-        new InstantCommand(() -> stateMachine.spindexer.setVelocity(75))
-      )
-    ).onFalse(new InstantCommand(() -> {
-      stateMachine.feeder.brake();
-      stateMachine.shooter.brake();
-      stateMachine.spindexer.brake();
-      stateMachine.shooterHood.setPositionRotations(0.0);
-    }));
+    // driverController.rightTrigger(0.5).onTrue(new SequentialCommandGroup(
+    //     new InstantCommand(() -> stateMachine.shooterHood.setPositionRotations((double) PowerRobotContainer.getData("Shooter HoodTarget"))),
+    //     new WaitCommand(0.5),
+    //     new InstantCommand(() -> stateMachine.shooter.setVelocity((double) PowerRobotContainer.getData("ShooterVelocity"))),
+    //     new WaitCommand(0.5),
+    //     new InstantCommand(() -> stateMachine.feeder.setVelocity(-((double) PowerRobotContainer.getData("FeederVelocity")))),
+    //     new WaitCommand(0.5),
+    //     new InstantCommand(() -> stateMachine.spindexer.setVelocity(75))
+    //   )
+    // ).onFalse(new InstantCommand(() -> {
+    //   stateMachine.feeder.brake();
+    //   stateMachine.shooter.brake();
+    //   stateMachine.spindexer.brake();
+    //   stateMachine.shooterHood.setPositionRotations(0.0);
+    // }));
+
+    driverController.rightTrigger(0.5)
+      .onTrue(new InstantCommand(()->{
+        stateMachine.setWantedState(RobotState.SHOOTING); 
+        stateMachine.resetGyro();
+      }))
+      .onFalse(new InstantCommand(() -> stateMachine.setWantedState(RobotState.READY)));
 
     driverController.y().onTrue(
       new InstantCommand(() -> stateMachine.feeder.setVelocity(30))

@@ -73,8 +73,8 @@ public class StateMachine extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // handleStateTransitions();
-    // executeState();
+    handleStateTransitions();
+    executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
     setRobotPose();
@@ -118,6 +118,7 @@ public class StateMachine extends SubsystemBase {
             || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
           // Bad pose; do not reset or add to estimator.
         } else {
+          System.out.println(matchStarted);
           if (!gyroReset || !matchStarted) {
             // newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
             drivetrain.resetPose(newPose);
@@ -192,16 +193,21 @@ public class StateMachine extends SubsystemBase {
     GameZone zone = FieldUtils.getZone(pose);
     boolean inOurZone = getAllianceZone() == zone;
 
-    // if (inOurZone && !isHubActive()) {
-    //   shooter.brake();
-    //   feeder.brake();
-    //   spindexer.brake();
-    //   return;
-    // }
-
     Translation2d target = inOurZone
         ? (zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED)
         : getTargetCornerLocation();
+
+    if (
+      !(pose.getTranslation().minus(target).getNorm() > 3.5) && 
+      !(vision.getTurretCanSeeTags())
+    ) {
+      feeder.brake();
+      spindexer.brake();
+      shooter.brake();
+      intakeRoller.brake();
+      return;
+    }
+
     runShootingToTarget(target);
     if (intakeWrist.getSetpointRotations() >= Constants.Intake.INTAKE_IDLE) {
       if (intakeTimer % 50 == 0) {
@@ -223,28 +229,34 @@ public class StateMachine extends SubsystemBase {
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     
-    boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
+    // TODO: bring this back if needed
+    boolean velocityLock = false; //SmartDashboard.getBoolean("velocityLock", false);
 
     if (velocityLock) {
       shooter.setVelocity(-67);
       shooterHood.setPositionRotations(0.04);
     } else {
-      shooter.setVelocity(-shooterVelo - 1);
-      shooterHood.setPositionRotations(hoodPos);
+      shooter.setVelocity(shooterVelo);
+      shooterHood.setPositionRotations(hoodPos -0.005);
     }
-    feeder.setVelocity(-feederVelo);
+    feeder.setVelocity(-90);
+    // feeder.setVelocity(-feederVelo);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
-    System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
+    // System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold) {
       double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
-      double currentDivetrainRotation = isBlueAlliance() ? pose.getRotation().getDegrees() : pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+      double currentDivetrainRotation = pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
       double tol = 5.0;
       double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
       boolean rotationWithinTolerance = Math.abs(angleDiff) < tol;
+      
+      System.out.println("diff: "+ angleDiff);
+      System.out.println("robot: "+ currentDivetrainRotation);
+      System.out.println("target: "+ targetDrivetrainRotation);
 
       if (rotationWithinTolerance) {
-        spindexer.setVelocity(60);
+        spindexer.setVelocity(90);
       } else {
         spindexer.brake();
       }

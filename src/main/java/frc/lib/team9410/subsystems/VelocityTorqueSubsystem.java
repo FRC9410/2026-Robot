@@ -79,7 +79,7 @@ public class VelocityTorqueSubsystem extends PowerSubsystem {
   public void setVelocity(double velocityRotationsPerSecond) {
     if (velocityMotor != null) {
       velocityMotor.setControl(
-          new VelocityTorqueCurrentFOC(velocityRotationsPerSecond).withFeedForward(0));
+          new VelocityTorqueCurrentFOC(velocityRotationsPerSecond).withFeedForward(10));
     }
   }
 

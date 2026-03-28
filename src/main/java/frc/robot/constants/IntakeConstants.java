@@ -24,10 +24,10 @@ public class IntakeConstants {
   public static final double ROLLER_TARGET_RPS = 10;
 
   public static final double INTAKE_MIN = -0.09; // INTAKE UP
-  public static final double INTAKE_MAX = -0.445; // INTAKE DOWN 0.44
+  public static final double INTAKE_MAX = -0.452; // INTAKE DOWN 0.44
   public static final double INTAKE_IDLE = -0.4;
   public static final double INTAKE_FEED = -0.25;
-  public static final double INTAKE_DEFAULT = INTAKE_MIN;
+  public static final double INTAKE_DEFAULT = INTAKE_IDLE;
 
   // Roller velocity PID
   public static final double ROLLER_KP = 0.4;
@@ -54,7 +54,7 @@ public class IntakeConstants {
   public static final double WRIST_ROTOR_TO_SENSOR_RATIO = 44.444;
   public static final double WRIST_MM_CRUISE_VELOCITY = 1;
   public static final double WRIST_MM_ACCELERATION = 20;
-  public static final double WRIST_MAGNET_OFFSET_ROTATIONS = 0.036;
+  public static final double WRIST_MAGNET_OFFSET_ROTATIONS = -0.036;
   public static final double WRIST_DISCONTINUITY_POINT_ROTATIONS = 0.5;
 
   public static final List<MotorConfig> WRIST_MOTOR_CONFIGS = List.of(
@@ -73,7 +73,7 @@ public class IntakeConstants {
 
   public static final PositionSubsystemConfig WRIST_CONFIG = new PositionSubsystemConfig(
       WRIST_MOTOR_CONFIGS, WRIST_LEAD_CONFIG, WRIST_CANCODER_CONFIG, WRIST_MOTION_MAGIC_CONFIG,
-      "Intake Wrist", "degrees", Optional.empty()); //Optional.of(INTAKE_DEFAULT));
+      "Intake Wrist", "degrees", Optional.of(INTAKE_DEFAULT));
 
   public static final VelocitySubsystemConfig ROLLER_CONFIG = new VelocitySubsystemConfig(
       ROLLER_MOTOR_CONFIGS, ROLLER_LEAD_CONFIG, ROLLER_MOTION_MAGIC_CONFIG, "Intake Roller");
