@@ -15,7 +15,9 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.lib.team9410.PowerRobotContainer;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelRaceGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.subsystems.StateMachine;
 import frc.robot.subsystems.StateMachine.RobotState;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -97,13 +99,35 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeRoller.brake();
             }));
 
-    driverController.rightTrigger(0.5).onTrue(new InstantCommand(
-        () -> {
-          stateMachine.setWantedState(RobotState.SHOOTING);
-        })).onFalse(new InstantCommand(
-            () -> {
-              stateMachine.setWantedState(RobotState.READY);
-            }));
+    // driverController.rightTrigger(0.5).onTrue(new InstantCommand(
+    //     () -> {
+    //       stateMachine.setWantedState(RobotState.SHOOTING);
+    //     })).onFalse(new InstantCommand(
+    //         () -> {
+    //           stateMachine.setWantedState(RobotState.READY);
+    //         }));
+
+    driverController.rightTrigger(0.5).onTrue(new SequentialCommandGroup(
+        new InstantCommand(() -> stateMachine.shooterHood.setPositionRotations((double) PowerRobotContainer.getData("Shooter HoodTarget"))),
+        new WaitCommand(0.5),
+        new InstantCommand(() -> stateMachine.shooter.setVelocity((double) PowerRobotContainer.getData("ShooterVelocity"))),
+        new WaitCommand(0.5),
+        new InstantCommand(() -> stateMachine.feeder.setVelocity(-((double) PowerRobotContainer.getData("FeederVelocity")))),
+        new WaitCommand(0.5),
+        new InstantCommand(() -> stateMachine.spindexer.setVelocity(75))
+      )
+    ).onFalse(new InstantCommand(() -> {
+      stateMachine.feeder.brake();
+      stateMachine.shooter.brake();
+      stateMachine.spindexer.brake();
+      stateMachine.shooterHood.setPositionRotations(0.0);
+    }));
+
+    driverController.y().onTrue(
+      new InstantCommand(() -> stateMachine.feeder.setVelocity(30))
+      ).onFalse(
+        new InstantCommand(() -> stateMachine.feeder.brake())
+      );
 
     driverController.back().onTrue(new InstantCommand(
         () -> {

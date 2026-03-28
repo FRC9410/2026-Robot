@@ -30,9 +30,9 @@ public class Dashboard extends SubsystemBase {
     testingTable = inst.getTable("Robot Testing");
     
     // velos
-    testingTable.getEntry("spindexerVelocity").setInteger(PowerRobotContainer.getData("SpindexerVelocity", 0));
-    testingTable.getEntry("feederVelocity").setInteger(PowerRobotContainer.getData("FeederVelocity", 0));
-    testingTable.getEntry("shooterVelocity").setInteger(PowerRobotContainer.getData("ShooterVelocity", 0));
+    testingTable.getEntry("spindexerVelocity").setInteger(PowerRobotContainer.getData("SpindexerVelocity", 75));
+    testingTable.getEntry("feederVelocity").setInteger(PowerRobotContainer.getData("FeederVelocity", 80));
+    testingTable.getEntry("shooterVelocity").setInteger(PowerRobotContainer.getData("ShooterVelocity", 50));
     // hood target (rotations); user can edit on dashboard
     testingTable.getEntry("shooterHoodTarget").setDouble(Constants.Shooter.SHOOTER_HOOD_DEFAULT);
   }
@@ -64,23 +64,23 @@ public class Dashboard extends SubsystemBase {
     PowerRobotContainer.setData("Shooter HoodTarget", hoodTarget);
 
     // velo: display from data map and push same values into data map for RobotContainer/others
-    // double shooterVel = testingTable.getEntry("shooterVelocity").getDouble(0.0);
+    double shooterVel = testingTable.getEntry("shooterVelocity").getDouble(0.0);
     // double spindexerVel = testingTable.getEntry("spindexerVelocity").getDouble(0.0);
-    // double feederVel = testingTable.getEntry("feederVelocity").getDouble(0.0);
+    double feederVel = testingTable.getEntry("feederVelocity").getDouble(0.0);
     // double intakeRollerVel = PowerRobotContainer.getData("Intake RollerVelocity", 0.0);
     // double spindexerVel = PowerRobotContainer.getData("SpindexerVelocity", 0.0);
     // double feederVel = PowerRobotContainer.getData("FeederVelocity", 0.0);
-    // testingTable.getEntry("shooterVelocity").setDouble(shooterVel);
+    testingTable.getEntry("shooterVelocity").setDouble(shooterVel);
     // testingTable.getEntry("intakeRollerVelocity").setDouble(intakeRollerVel);
     // testingTable.getEntry("spindexerVelocity").setDouble(spindexerVel);
-    // testingTable.getEntry("feederVelocity").setDouble(feederVel);
-    // PowerRobotContainer.setData("ShooterVelocity", shooterVel);
-    // // PowerRobotContainer.setData("Intake RollerVelocity", intakeRollerVel);
+    testingTable.getEntry("feederVelocity").setDouble(feederVel);
+    PowerRobotContainer.setData("ShooterVelocity", shooterVel);
+    // PowerRobotContainer.setData("Intake RollerVelocity", intakeRollerVel);
     // PowerRobotContainer.setData("SpindexerVelocity", spindexerVel);
-    // PowerRobotContainer.setData("FeederVelocity", feederVel);
+    PowerRobotContainer.setData("FeederVelocity", feederVel);
 
-    // testingTable.getEntry("spindexerVelocity").setDouble(PowerRobotContainer.getData("SpindexerVelocity", 0));
-    // testingTable.getEntry("feederVelocity").setDouble(PowerRobotContainer.getData("FeederVelocity", 0));
-    // testingTable.getEntry("shooterVelocity").setDouble(PowerRobotContainer.getData("ShooterVelocity", 0));
+    // testingTable.getEntry("spindexerVelocity").setDouble(PowerRobotContainer.getData("SpindexerVelocity", 0.0));
+    // testingTable.getEntry("feederVelocity").setDouble(PowerRobotContainer.getData("FeederVelocity", 0.0));
+    // testingTable.getEntry("shooterVelocity").setDouble(PowerRobotContainer.getData("ShooterVelocity", 0.0));
   }
 }

@@ -201,11 +201,11 @@ public class SwerveDriveCommand extends Command {
       double xSpeed = speeds.vxMetersPerSecond * coeff;
       double ySpeed = speeds.vyMetersPerSecond * coeff;
 
-      if (controller.rightTrigger(0.5).getAsBoolean()){
-        final double DRIVE_AND_SHOOT_SPEED = 0.0;
-        xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
-        ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
-      } else 
+      // if (controller.rightTrigger(0.5).getAsBoolean()){
+      //   final double DRIVE_AND_SHOOT_SPEED = 0.0;
+      //   xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
+      //   ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
+      // } else 
       if (controller.leftTrigger(0.5).getAsBoolean()){
         final double DRIVE_AND_INTAKE_SPEED = 0.4;
         xSpeed = xSpeed * DRIVE_AND_INTAKE_SPEED;
@@ -214,38 +214,38 @@ public class SwerveDriveCommand extends Command {
 
       boolean isInverted = SmartDashboard.getBoolean("driveInverted",false);
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
-      System.out.println("isInverted: "+inversionMultiplier);
+      // System.out.println("isInverted: "+inversionMultiplier);
 
-      if (controller.rightTrigger(0.5).getAsBoolean()){
-        Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
-        // Get the robot's current position on the field
-        Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
+      // if (controller.rightTrigger(0.5).getAsBoolean()){
+      //   Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
+      //   // Get the robot's current position on the field
+      //   Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
 
-        // Find the vector from the robot to the target
-        double deltaX = targetPoint.getX() - robotPosition.getX();
-        double deltaY = targetPoint.getY() - robotPosition.getY();
+      //   // Find the vector from the robot to the target
+      //   double deltaX = targetPoint.getX() - robotPosition.getX();
+      //   double deltaY = targetPoint.getY() - robotPosition.getY();
 
-        // Find the angle from the robot to the target in field coordinates
-        double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
+      //   // Find the angle from the robot to the target in field coordinates
+      //   double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
 
-        double targetAngleRobotRelative = isBlueAlliance()
-          ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
-          : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+      //   double targetAngleRobotRelative = isBlueAlliance()
+      //     ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
+      //     : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
 
-      System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
+      // System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
 
-        drivetrain.drive(
-            xSpeed * inversionMultiplier,
-            ySpeed * inversionMultiplier,
-            Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
-            Swerve.DriveMode.ROTATION_LOCK);
-      } else {
+      //   drivetrain.drive(
+      //       xSpeed * inversionMultiplier,
+      //       ySpeed * inversionMultiplier,
+      //       Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
+      //       Swerve.DriveMode.ROTATION_LOCK);
+      // } else {
         drivetrain.drive(
             xSpeed * inversionMultiplier,
             ySpeed * inversionMultiplier,
             -speeds.omegaRadiansPerSecond,
             Swerve.DriveMode.FIELD_RELATIVE);
-      }
+      // }
     }
   }
 

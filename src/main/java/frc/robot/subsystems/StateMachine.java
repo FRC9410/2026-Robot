@@ -73,8 +73,8 @@ public class StateMachine extends SubsystemBase {
 
   @Override
   public void periodic() {
-    handleStateTransitions();
-    executeState();
+    // handleStateTransitions();
+    // executeState();
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
     setRobotPose();
@@ -90,9 +90,9 @@ public class StateMachine extends SubsystemBase {
   
     SmartDashboard.putString("gameZone", FieldUtils.getZone(drivetrain.getState().Pose).name());
 
-    PowerRobotContainer.setData("SpindexerVelocity", spindexer.getVelocityMotor().getVelocity().getValueAsDouble());
-    PowerRobotContainer.setData("ShooterVelocity", shooter.getVelocityMotor().getVelocity().getValueAsDouble());
-    PowerRobotContainer.setData("FeederVelocity", feeder.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("SpindexerVelocity", spindexer.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("ShooterVelocity", shooter.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("FeederVelocity", feeder.getVelocityMotor().getVelocity().getValueAsDouble());
   }
 
   public void resetGyro () {
