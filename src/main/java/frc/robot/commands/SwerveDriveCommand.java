@@ -6,11 +6,16 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.*;
 
+import com.ctre.phoenix6.swerve.SwerveModule;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveModule.ModuleRequest;
+
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
@@ -26,6 +31,7 @@ import frc.robot.constants.LocationConstants;
 import frc.robot.constants.OIConstants;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.Swerve;
+import frc.robot.subsystems.Swerve.DriveMode;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class SwerveDriveCommand extends Command {
@@ -162,8 +168,12 @@ public class SwerveDriveCommand extends Command {
     final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT : 1.0;
     Pose2d targetPose = new Pose2d();
     targetPose = requestedPose;
+    ChassisSpeeds currentChassisSpeeds = drivetrain.getState().Speeds;
+    double currentSpeed = Math.sqrt(Math.pow(currentChassisSpeeds.vxMetersPerSecond,2)+Math.pow(currentChassisSpeeds.vyMetersPerSecond,2));
 
-    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+    if (Math.abs(controller.getLeftX()) < 0.1 && Math.abs(controller.getLeftY()) < 0.1 && Math.abs(controller.getRightX()) < 0.1 && currentSpeed < 0.5) {
+      drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
+    } else if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
       boolean isBlueAlliance = true;
       if (DriverStation.getAlliance().isPresent()) {
         if (DriverStation.getAlliance().get() == Alliance.Red) {
@@ -197,6 +207,7 @@ public class SwerveDriveCommand extends Command {
           disableRotationLock ? 0.0 : targetPose.getRotation().getDegrees(),
           disableRotationLock ? Swerve.DriveMode.FIELD_RELATIVE : Swerve.DriveMode.DRIVE_TO_POINT);
     } else {
+
       final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
       double xSpeed = speeds.vxMetersPerSecond * coeff;

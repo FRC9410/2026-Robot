@@ -81,6 +81,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
           .withRotationalDeadband(MAX_ANGULAR_RATE * 0.1)
           .withDriveRequestType(DriveRequestType.Velocity);
 
+  private final SwerveRequest.SwerveDriveBrake BRAKE = new SwerveRequest.SwerveDriveBrake();
+
   /** Swerve request to apply during robot-centric path following */
   private final SwerveRequest.ApplyRobotSpeeds m_pathApplyRobotSpeeds =
       new SwerveRequest.ApplyRobotSpeeds();
@@ -247,6 +249,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                 .withVelocityY(y)
                 .withTargetDirection(Rotation2d.fromDegrees(rotation))
                 .withMaxAbsRotationalRate(MAX_DRIVE_TO_POINT_ANGULAR_RATE));
+      case BRAKE:
+        applyRequest(BRAKE);
         break;
     }
   }
@@ -351,7 +355,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     FIELD_RELATIVE,
     SYS_ID,
     ROTATION_LOCK,
-    DRIVE_TO_POINT
+    DRIVE_TO_POINT,
+    BRAKE
   }
 
   public void configureAutoBuilder() {
