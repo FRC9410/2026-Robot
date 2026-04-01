@@ -10,6 +10,7 @@ import com.ctre.phoenix6.swerve.SwerveModule;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveModule.ModuleRequest;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -25,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.utils.DriveUtil;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.FieldUtils.GameZone;
+import frc.robot.utils.TurretHelpers;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.robot.Constants;
 import frc.robot.constants.LocationConstants;
@@ -36,18 +38,13 @@ import frc.robot.subsystems.Swerve.DriveMode;
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class SwerveDriveCommand extends Command {
   public double MAX_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond);
-  public double MAX_DRIVE_TO_POINT_SPEED =
-      TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // * 0.75;
-  public double MAX_ANGULAR_RATE =
-      RotationsPerSecond.of(1.5)
-          .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
-  public double MAX_DRIVE_TO_POINT_ANGULAR_RATE =
-      RotationsPerSecond.of(1)
-          .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
-  public double STATIC_FRICTION_CONSTANT =
-        0.085; // Adjust this value based on your robot's characteristics
-  public double SKEW_COMPENSATION =
-      0. - 0.03; // Adjust this value based on your robot's characteristics
+  public double MAX_DRIVE_TO_POINT_SPEED = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // * 0.75;
+  public double MAX_ANGULAR_RATE = RotationsPerSecond.of(1.5)
+      .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
+  public double MAX_DRIVE_TO_POINT_ANGULAR_RATE = RotationsPerSecond.of(1)
+      .in(RadiansPerSecond); // 0.75 rotations per second in radians per second unit
+  public double STATIC_FRICTION_CONSTANT = 0.085; // Adjust this value based on your robot's characteristics
+  public double SKEW_COMPENSATION = 0. - 0.03; // Adjust this value based on your robot's characteristics
 
   private final Swerve drivetrain;
   private final CommandXboxController controller;
@@ -55,7 +52,10 @@ public class SwerveDriveCommand extends Command {
   private final PIDController driveToPointController;
   private Pose2d requestedPose;
   private double poseTolerance;
-  /** If set, scales MAX_DRIVE_TO_POINT_SPEED for drive-to-point (0.0 to 1.0 = 0% to 100%). */
+  /**
+   * If set, scales MAX_DRIVE_TO_POINT_SPEED for drive-to-point (0.0 to 1.0 = 0%
+   * to 100%).
+   */
   private final Double driveToPointSpeedMultiplier;
   private final boolean disableRotationLock;
 
@@ -114,9 +114,12 @@ public class SwerveDriveCommand extends Command {
   }
 
   /**
-   * Creates a new DriveCommand with requested pose, pose tolerance, and drive-to-point speed as a percent of default.
+   * Creates a new DriveCommand with requested pose, pose tolerance, and
+   * drive-to-point speed as a percent of default.
    *
-   * @param driveToPointSpeedMultiplier scale for max drive-to-point speed (0.0 to 1.0 = 0% to 100% of {@link #MAX_DRIVE_TO_POINT_SPEED})
+   * @param driveToPointSpeedMultiplier scale for max drive-to-point speed (0.0 to
+   *                                    1.0 = 0% to 100% of
+   *                                    {@link #MAX_DRIVE_TO_POINT_SPEED})
    */
   public SwerveDriveCommand(
       Swerve drivetrain,
@@ -159,21 +162,23 @@ public class SwerveDriveCommand extends Command {
 
   // Called when the command is initially scheduled.
   @Override
-  public void initialize() {}
+  public void initialize() {
+  }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
-    final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT : 1.0;
+    final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE
+        ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT
+        : 1.0;
     Pose2d targetPose = new Pose2d();
     targetPose = requestedPose;
     ChassisSpeeds currentChassisSpeeds = drivetrain.getState().Speeds;
-    double currentSpeed = Math.sqrt(Math.pow(currentChassisSpeeds.vxMetersPerSecond,2)+Math.pow(currentChassisSpeeds.vyMetersPerSecond,2));
+    double currentSpeed = Math.sqrt(
+        Math.pow(currentChassisSpeeds.vxMetersPerSecond, 2) + Math.pow(currentChassisSpeeds.vyMetersPerSecond, 2));
 
-    if (Math.abs(controller.getLeftX()) < 0.1 && Math.abs(controller.getLeftY()) < 0.1 && Math.abs(controller.getRightX()) < 0.1 && currentSpeed < 0.5) {
-      drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
-    } else if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
       boolean isBlueAlliance = true;
       if (DriverStation.getAlliance().isPresent()) {
         if (DriverStation.getAlliance().get() == Alliance.Red) {
@@ -182,8 +187,7 @@ public class SwerveDriveCommand extends Command {
       }
       final double directionMultiplier = isBlueAlliance ? -1.0 : 1.0;
 
-      final Translation2d translationToPoint =
-          currentPose.getTranslation().minus(targetPose.getTranslation());
+      final Translation2d translationToPoint = currentPose.getTranslation().minus(targetPose.getTranslation());
       final double linearDistance = translationToPoint.getNorm();
       double ff = 0;
       if (linearDistance >= Units.inchesToMeters(3)) {
@@ -196,8 +200,7 @@ public class SwerveDriveCommand extends Command {
       double maxSpeed = MAX_DRIVE_TO_POINT_SPEED * multiplier * speedCoefficient;
 
       final Rotation2d directionOfTravel = translationToPoint.getAngle();
-      final double velocity =
-          Math.min(Math.abs(driveToPointController.calculate(linearDistance, 0)) + ff, maxSpeed);
+      final double velocity = Math.min(Math.abs(driveToPointController.calculate(linearDistance, 0)) + ff, maxSpeed);
       final double xSpeed = velocity * directionOfTravel.getCos() * directionMultiplier;
       final double ySpeed = velocity * directionOfTravel.getSin() * directionMultiplier;
 
@@ -208,27 +211,29 @@ public class SwerveDriveCommand extends Command {
           disableRotationLock ? Swerve.DriveMode.FIELD_RELATIVE : Swerve.DriveMode.DRIVE_TO_POINT);
     } else {
 
-      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain, MAX_ANGULAR_RATE, SKEW_COMPENSATION);
+      final ChassisSpeeds speeds = DriveUtil.calculateSpeedsBasedOnJoystickInputs(controller, drivetrain,
+          MAX_ANGULAR_RATE, SKEW_COMPENSATION);
       final double coeff = speedCoefficient == 1.0 ? OIConstants.MAX_SPEED_COEFFICIENT : speedCoefficient;
       double xSpeed = speeds.vxMetersPerSecond * coeff;
       double ySpeed = speeds.vyMetersPerSecond * coeff;
 
       // if (controller.rightTrigger(0.5).getAsBoolean()){
-      //   final double DRIVE_AND_SHOOT_SPEED = 0.0;
-      //   xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
-      //   ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
-      // } else 
-      if (controller.leftTrigger(0.5).getAsBoolean()){
+      // final double DRIVE_AND_SHOOT_SPEED = 0.0;
+      // xSpeed = xSpeed * DRIVE_AND_SHOOT_SPEED;
+      // ySpeed = ySpeed * DRIVE_AND_SHOOT_SPEED;
+      // } else
+      if (controller.leftTrigger(0.5).getAsBoolean()) {
         final double DRIVE_AND_INTAKE_SPEED = 0.4;
         xSpeed = xSpeed * DRIVE_AND_INTAKE_SPEED;
         ySpeed = ySpeed * DRIVE_AND_INTAKE_SPEED;
       }
 
-      boolean isInverted = SmartDashboard.getBoolean("driveInverted",false);
+      boolean isInverted = SmartDashboard.getBoolean("driveInverted", false);
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
       // System.out.println("isInverted: "+inversionMultiplier);
 
-      if (controller.rightTrigger(0.5).getAsBoolean() && PowerRobotContainer.getData("bestLimelight") == "limelight-turret"){
+      if (controller.rightTrigger(0.5).getAsBoolean()
+          && PowerRobotContainer.getData("bestLimelight") == "limelight-turret") {
         Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
         // Get the robot's current position on the field
         Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
@@ -236,21 +241,34 @@ public class SwerveDriveCommand extends Command {
         // Find the vector from the robot to the target
         double deltaX = targetPoint.getX() - robotPosition.getX();
         double deltaY = targetPoint.getY() - robotPosition.getY();
+        double deltaDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
         // Find the angle from the robot to the target in field coordinates
         double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
 
         double targetAngleRobotRelative = isBlueAlliance()
-          ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
-          : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+            ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
+            : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
 
-      // System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
+        // System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
 
-        drivetrain.drive(
-            xSpeed * inversionMultiplier,
-            ySpeed * inversionMultiplier,
-            Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
-            Swerve.DriveMode.ROTATION_LOCK);
+        Pose2d pose = drivetrain.getState().Pose;
+        double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, targetPoint));
+        double currentDivetrainRotation = pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+        double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
+
+        // TODO: set delta distance is set low, tune to needs
+        // prob should also test it
+        if (angleDiff < 5.0 && deltaDistance < 0.1) {
+          drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
+        } else {
+          drivetrain.drive(
+              xSpeed * inversionMultiplier,
+              ySpeed * inversionMultiplier,
+              Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
+              Swerve.DriveMode.ROTATION_LOCK);
+        }
+
       } else {
         drivetrain.drive(
             xSpeed * inversionMultiplier,
@@ -263,7 +281,8 @@ public class SwerveDriveCommand extends Command {
 
   // Called once the command ends or is interrupted.
   @Override
-  public void end(boolean interrupted) {}
+  public void end(boolean interrupted) {
+  }
 
   // Returns true when the command should end.
   @Override
@@ -275,7 +294,7 @@ public class SwerveDriveCommand extends Command {
     return false;
   }
 
-  private double getFieldRelativeTargetRotation (double degrees) {
+  private double getFieldRelativeTargetRotation(double degrees) {
     Alliance alliance = DriverStation.getAlliance().get();
 
     if (alliance == Alliance.Red) {
@@ -296,17 +315,20 @@ public class SwerveDriveCommand extends Command {
     }
   }
 
-
   private boolean getIsInPosition(Pose2d currentPose, Pose2d targetPose, ChassisSpeeds speeds) {
-    final Translation2d translationToPoint =
-        currentPose.getTranslation().minus(targetPose.getTranslation());
+    final Translation2d translationToPoint = currentPose.getTranslation().minus(targetPose.getTranslation());
     final double linearDistance = translationToPoint.getNorm();
-    final double linearRotation = currentPose.getRotation().getDegrees() - getFieldRelativeTargetRotation(targetPose.getRotation().getDegrees());
+    final double linearRotation = currentPose.getRotation().getDegrees()
+        - getFieldRelativeTargetRotation(targetPose.getRotation().getDegrees());
     final double currentVelocity = Math.hypot(speeds.vxMetersPerSecond, speeds.vyMetersPerSecond);
     final double tolerance = poseTolerance > 0 ? poseTolerance : 1;
-    return linearDistance < Units.inchesToMeters(tolerance) && (Math.abs(linearRotation) < 10 || disableRotationLock); // && currentVelocity < 0.01; // meters
+    return linearDistance < Units.inchesToMeters(tolerance) && (Math.abs(linearRotation) < 10 || disableRotationLock); // &&
+                                                                                                                       // currentVelocity
+                                                                                                                       // <
+                                                                                                                       // 0.01;
+                                                                                                                       // //
+                                                                                                                       // meters
   }
-
 
   //
   //
@@ -314,7 +336,7 @@ public class SwerveDriveCommand extends Command {
   //
   //
   ///////////////////////////////////////////////////////////
-  
+
   private double getRotation(double speed, StrafeSide side, GameZone zone, Pose2d pose) {
     Alliance alliance = DriverStation.getAlliance().get();
     double centerLine = getCenterLine(zone);
@@ -451,12 +473,11 @@ public class SwerveDriveCommand extends Command {
         break;
     }
 
-    
     final Pose2d targetPose = new Pose2d(pose.getX(), strafeLine, pose.getRotation());
     final double directionMultiplier = alliance == Alliance.Blue ? -1.0 : 1.0;
-    
+
     Translation2d velocity = DriveUtil.calculateDriveToPointVelocity(
-      pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
+        pose, targetPose, directionMultiplier, driveToPointController, poseTolerance);
 
     return velocity.getY();
   }
@@ -528,7 +549,10 @@ public class SwerveDriveCommand extends Command {
     BACK
   }
 
-  /** Distance (m) inward from each side when targeting a corner (field: blue right = 0,0, red left = max, max). */
+  /**
+   * Distance (m) inward from each side when targeting a corner (field: blue right
+   * = 0,0, red left = max, max).
+   */
   private static final double CORNER_TARGET_OFFSET_M = 1.0;
 
   /** Convenience: is the robot on the blue alliance? */
