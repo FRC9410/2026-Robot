@@ -25,7 +25,7 @@ public class IntakeConstants {
 
   public static final double INTAKE_MIN = -0.09; // INTAKE UP
   public static final double INTAKE_MAX = -0.452; // INTAKE DOWN 0.44
-  public static final double INTAKE_IDLE = -0.4;
+  public static final double INTAKE_IDLE = -0.41;
   public static final double INTAKE_FEED = -0.25;
   public static final double INTAKE_DEFAULT = INTAKE_IDLE;
 
