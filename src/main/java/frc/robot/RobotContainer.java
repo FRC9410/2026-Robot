@@ -172,8 +172,7 @@ public class RobotContainer implements PowerRobotContainer {
 
     driverController.rightTrigger(0.5)
       .onTrue(new InstantCommand(()->{
-        stateMachine.setWantedState(RobotState.SHOOTING); 
-        stateMachine.resetGyro();
+        stateMachine.setWantedState(RobotState.SHOOTING);
       }))
       .onFalse(new InstantCommand(() -> stateMachine.setWantedState(RobotState.READY)));
 
@@ -193,6 +192,9 @@ public class RobotContainer implements PowerRobotContainer {
         () -> {
           stateMachine.resetGyro();
         }));
+    driverController.a().onTrue(new InstantCommand(
+      () -> stateMachine.resetGyro()
+    ));
 
     driverController.b()
         .onTrue(new InstantCommand(

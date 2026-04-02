@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants;
 import frc.robot.constants.TunerConstants;
 import frc.robot.subsystems.Swerve;
 
@@ -40,14 +41,22 @@ public class TurnToPointCommand extends Command {
     this.drivetrain = drivetrain;
     this.targetPoint = point;
     this.rotationTolerance = tolerance;
-
-    Translation2d currentPosition = drivetrain.getState().Pose.getTranslation();
-    Translation2d positionDelta = targetPoint.minus(currentPosition);
     
-    double rotationFieldRelative = Math.atan2(positionDelta.getY(), positionDelta.getX());
-    double targetAngleRobotRelative = isBlueAlliance()
-            ? Rotation2d.fromRadians(rotationFieldRelative).getDegrees()
-            : Rotation2d.fromRadians(rotationFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+    Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
+    // Get the robot's current position on the field
+    Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
+
+    // Find the vector from the robot to the target
+    double deltaX = targetPoint.getX() - robotPosition.getX();
+    double deltaY = targetPoint.getY() - robotPosition.getY();
+    // double deltaDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    // Find the angle from the robot to the target in field coordinates
+    double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
+
+    double targetAngleRobotRelative = !isBlueAlliance()
+        ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
+        : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
 
     this.targetRotationToPoint = new Rotation2d(targetAngleRobotRelative);
 
@@ -68,11 +77,11 @@ public class TurnToPointCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-      drivetrain.drive(
-          0.0,
-          0.0,
-          targetRotationToPoint.getDegrees(),
-          Swerve.DriveMode.ROTATION_LOCK);
+    drivetrain.drive(
+        0.0,
+        0.0,
+        targetRotationToPoint.getDegrees(),
+        Swerve.DriveMode.ROTATION_LOCK);
   }
 
   // Called once the command ends or is interrupted.
@@ -83,6 +92,7 @@ public class TurnToPointCommand extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return Math.abs(drivetrain.getState().Pose.getRotation().minus(targetRotationToPoint).getDegrees()) < rotationTolerance;
+    return Math
+        .abs(drivetrain.getState().Pose.getRotation().minus(targetRotationToPoint).getDegrees()) < rotationTolerance;
   }
 }

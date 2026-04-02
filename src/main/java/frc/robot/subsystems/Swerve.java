@@ -249,6 +249,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
                 .withVelocityY(y)
                 .withTargetDirection(Rotation2d.fromDegrees(rotation))
                 .withMaxAbsRotationalRate(MAX_DRIVE_TO_POINT_ANGULAR_RATE));
+        break;
       case BRAKE:
         applyRequest(BRAKE);
         break;

@@ -135,7 +135,7 @@ public class StateMachine extends SubsystemBase {
             || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
           // Bad pose; do not reset or add to estimator.
         } else {
-          System.out.println(matchStarted);
+          // System.out.println(matchStarted);
           if (!gyroReset || !matchStarted) {
             // newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
             drivetrain.resetPose(newPose);
@@ -153,8 +153,7 @@ public class StateMachine extends SubsystemBase {
       Translation2d translationToPoint = drivetrain.getState().Pose.getTranslation().minus(Constants.Field.HOPPER_RED);
       double linearDistance = translationToPoint.getNorm();
 
-      PowerRobotContainer.setData("distanceToHopper", linearDistance);
-      SmartDashboard.putNumber("distanceToHopper", linearDistance);
+      // PowerRobotContainer.setData("distanceToHopper", linearDistance);
       SmartDashboard.putNumber("currentPoseX", drivetrain.getState().Pose.getX());
       SmartDashboard.putNumber("currentPoseY", drivetrain.getState().Pose.getY());
       SmartDashboard.putNumber("currentPoseYaw", drivetrain.getState().Pose.getRotation().getDegrees());
@@ -205,8 +204,15 @@ public class StateMachine extends SubsystemBase {
   }
 
   private void executeShooting() {
-    intakeTimer++;
+    String bestLimelight = vision.getBestLimelight();
     Pose2d pose = drivetrain.getState().Pose;
+    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
+
+    if (mt2 != null && mt2.tagCount > 0) {
+        pose = mt2.pose;
+    }
+
+    intakeTimer++;
     GameZone zone = FieldUtils.getZone(pose);
     boolean inOurZone = getAllianceZone() == zone;
 
@@ -214,16 +220,16 @@ public class StateMachine extends SubsystemBase {
         ? (zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED)
         : getTargetCornerLocation();
 
-    if (
-      !(pose.getTranslation().minus(target).getNorm() > 3.5) && 
-      !(vision.getTurretCanSeeTags())
-    ) {
-      feeder.brake();
-      spindexer.brake();
-      shooter.brake();
-      intakeRoller.brake();
-      return;
-    }
+    // if (
+    //   !(pose.getTranslation().minus(target).getNorm() > 3.5) && 
+    //   !(vision.getTurretCanSeeTags())
+    // ) {
+    //   feeder.brake();
+    //   spindexer.brake();
+    //   shooter.brake();
+    //   intakeRoller.brake();
+    //   return;
+    // }
 
     runShootingToTarget(target);
     if (intakeWrist.getSetpointRotations() >= Constants.Intake.INTAKE_IDLE) {
@@ -237,14 +243,24 @@ public class StateMachine extends SubsystemBase {
 
   /** Runs shooter, hood, feeder, and spindexer toward the given target (hopper or corner). */
   private void runShootingToTarget(Translation2d target) {
-    var state = drivetrain.getState();
-    Pose2d pose = state.Pose;
+    String bestLimelight = vision.getBestLimelight();
+    Pose2d pose = drivetrain.getState().Pose;
+    LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
+
+    if (mt2 != null && mt2.tagCount > 0) {
+        pose = mt2.pose;
+    }
 
     double distance = pose.getTranslation().minus(target).getNorm();
+    
+    SmartDashboard.putNumber("distanceToHopper", distance);
 
     double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+
+    SmartDashboard.putNumber("shooterVelocity", shooterVelo);
+    SmartDashboard.putNumber("shooterHoodPos", hoodPos);
     
     // TODO: bring this back if needed
     boolean velocityLock = false; //SmartDashboard.getBoolean("velocityLock", false);
@@ -332,7 +348,7 @@ public class StateMachine extends SubsystemBase {
       Translation2d fromTop = new Translation2d(
           Constants.Field.RED_TOP_CORNER.getX() - CORNER_TARGET_OFFSET_M,
           Constants.Field.RED_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
-      System.out.println(robotPos.getY() > 4 ? fromTop : fromBottom);
+      // System.out.println(robotPos.getY() > 4 ? fromTop : fromBottom);
       return robotPos.getY() > 4 ? fromTop : fromBottom;
     }
   }

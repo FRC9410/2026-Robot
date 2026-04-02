@@ -178,7 +178,9 @@ public class SwerveDriveCommand extends Command {
     double currentSpeed = Math.sqrt(
         Math.pow(currentChassisSpeeds.vxMetersPerSecond, 2) + Math.pow(currentChassisSpeeds.vyMetersPerSecond, 2));
 
-    if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
+    if (controller.rightTrigger(0.5).getAsBoolean()) {
+      drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
+    } else if (currentPose != null && targetPose != null && (autoDrive || requestedPose != null)) {
       boolean isBlueAlliance = true;
       if (DriverStation.getAlliance().isPresent()) {
         if (DriverStation.getAlliance().get() == Alliance.Red) {
@@ -232,8 +234,7 @@ public class SwerveDriveCommand extends Command {
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
       // System.out.println("isInverted: "+inversionMultiplier);
 
-      if (controller.a().getAsBoolean()
-          && PowerRobotContainer.getData("bestLimelight") == "limelight-turret") {
+      if (controller.a().getAsBoolean()) {
         Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
         // Get the robot's current position on the field
         Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
@@ -241,20 +242,20 @@ public class SwerveDriveCommand extends Command {
         // Find the vector from the robot to the target
         double deltaX = targetPoint.getX() - robotPosition.getX();
         double deltaY = targetPoint.getY() - robotPosition.getY();
-        double deltaDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        // double deltaDistance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
         // Find the angle from the robot to the target in field coordinates
         double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
 
-        double targetAngleRobotRelative = isBlueAlliance()
+        double targetAngleRobotRelative = !isBlueAlliance()
             ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
             : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
 
         // System.out.println(Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees());
 
-        Pose2d pose = drivetrain.getState().Pose;
-        double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, targetPoint));
-        double currentDivetrainRotation = pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
+        // Pose2d pose = drivetrain.getState().Pose;
+        // double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, targetPoint));
+        // double currentDivetrainRotation = pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
         // double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
 
         // TODO: set delta distance is set low, tune to needs
@@ -262,10 +263,11 @@ public class SwerveDriveCommand extends Command {
         // if (angleDiff < 5.0 && deltaDistance < 0.1) {
         //   drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
         // } else {
+        System.out.println(targetAngleRobotRelative);
           drivetrain.drive(
               xSpeed * inversionMultiplier,
               ySpeed * inversionMultiplier,
-              Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
+              targetAngleRobotRelative,
               Swerve.DriveMode.ROTATION_LOCK);
         // }
 
