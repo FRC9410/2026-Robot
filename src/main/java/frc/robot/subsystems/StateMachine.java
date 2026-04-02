@@ -15,6 +15,8 @@ import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.util.datalog.StructLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -69,6 +71,11 @@ public class StateMachine extends SubsystemBase {
 
   private boolean matchStarted = false;
 
+
+ private StructLogEntry<Pose2d> m_odometryLog;
+  private StructLogEntry<Translation2d> m_robotPositionLog;
+
+
   public StateMachine() {}
 
   @Override
@@ -78,7 +85,7 @@ public class StateMachine extends SubsystemBase {
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
     setRobotPose();
-
+    logPoseToWpilog(drivetrain.getState().Pose);
     
   
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
@@ -97,6 +104,16 @@ public class StateMachine extends SubsystemBase {
 
   public void resetGyro () {
     gyroReset = false;
+  }
+
+  private void logPoseToWpilog(Pose2d pose) {
+    if (m_odometryLog == null) {
+      var log = DataLogManager.getLog();
+      m_odometryLog = StructLogEntry.create(log, "Odometry", Pose2d.struct);
+      m_robotPositionLog = StructLogEntry.create(log, "RobotPosition", Translation2d.struct);
+    }
+    m_odometryLog.append(pose);
+    m_robotPositionLog.append(pose.getTranslation());
   }
 
   public void setRobotPose () {
