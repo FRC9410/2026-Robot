@@ -6,7 +6,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 
-import edu.wpi.first.wpilibj.DataLogManager;
+// import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -27,8 +27,8 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotInit() {
-    DataLogManager.start();
-    DataLogManager.logNetworkTables(false);
+    // DataLogManager.start();
+    // DataLogManager.logNetworkTables(false);
     SmartDashboard.putBoolean("driveInverted",false);
     SmartDashboard.putBoolean("velocityLock", false);
   }

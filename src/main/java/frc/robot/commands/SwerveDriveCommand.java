@@ -170,7 +170,7 @@ public class SwerveDriveCommand extends Command {
   public void execute() {
     final Pose2d currentPose = drivetrain.getState().Pose;
     final double speedCoefficient = FieldUtils.getZone(currentPose) == GameZone.INTERCHANGE
-        ? OIConstants.INTERCHANGE_SPEED_COEFFICIENT
+        ? 1.0 //? OIConstants.INTERCHANGE_SPEED_COEFFICIENT
         : 1.0;
     Pose2d targetPose = new Pose2d();
     targetPose = requestedPose;
@@ -232,7 +232,7 @@ public class SwerveDriveCommand extends Command {
       double inversionMultiplier = isInverted ? -1.0 : 1.0;
       // System.out.println("isInverted: "+inversionMultiplier);
 
-      if (controller.rightTrigger(0.5).getAsBoolean()
+      if (controller.a().getAsBoolean()
           && PowerRobotContainer.getData("bestLimelight") == "limelight-turret") {
         Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
         // Get the robot's current position on the field
@@ -255,19 +255,19 @@ public class SwerveDriveCommand extends Command {
         Pose2d pose = drivetrain.getState().Pose;
         double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, targetPoint));
         double currentDivetrainRotation = pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
-        double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
+        // double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
 
         // TODO: set delta distance is set low, tune to needs
         // prob should also test it
-        if (angleDiff < 5.0 && deltaDistance < 0.1) {
-          drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
-        } else {
+        // if (angleDiff < 5.0 && deltaDistance < 0.1) {
+        //   drivetrain.drive(0.0, 0.0, 0.0, DriveMode.BRAKE);
+        // } else {
           drivetrain.drive(
               xSpeed * inversionMultiplier,
               ySpeed * inversionMultiplier,
               Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees(),
               Swerve.DriveMode.ROTATION_LOCK);
-        }
+        // }
 
       } else {
         drivetrain.drive(

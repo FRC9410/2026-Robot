@@ -72,8 +72,8 @@ public class StateMachine extends SubsystemBase {
   private boolean matchStarted = false;
 
 
- private StructLogEntry<Pose2d> m_odometryLog;
-  private StructLogEntry<Translation2d> m_robotPositionLog;
+//  private StructLogEntry<Pose2d> m_odometryLog;
+//   private StructLogEntry<Translation2d> m_robotPositionLog;
 
 
   public StateMachine() {}
@@ -85,7 +85,7 @@ public class StateMachine extends SubsystemBase {
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
     setRobotPose();
-    logPoseToWpilog(drivetrain.getState().Pose);
+    // logPoseToWpilog(drivetrain.getState().Pose);
     
   
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
@@ -106,15 +106,15 @@ public class StateMachine extends SubsystemBase {
     gyroReset = false;
   }
 
-  private void logPoseToWpilog(Pose2d pose) {
-    if (m_odometryLog == null) {
-      var log = DataLogManager.getLog();
-      m_odometryLog = StructLogEntry.create(log, "Odometry", Pose2d.struct);
-      m_robotPositionLog = StructLogEntry.create(log, "RobotPosition", Translation2d.struct);
-    }
-    m_odometryLog.append(pose);
-    m_robotPositionLog.append(pose.getTranslation());
-  }
+  // private void logPoseToWpilog(Pose2d pose) {
+  //   if (m_odometryLog == null) {
+  //     var log = DataLogManager.getLog();
+  //     m_odometryLog = StructLogEntry.create(log, "Odometry", Pose2d.struct);
+  //     m_robotPositionLog = StructLogEntry.create(log, "RobotPosition", Translation2d.struct);
+  //   }
+  //   m_odometryLog.append(pose);
+  //   m_robotPositionLog.append(pose.getTranslation());
+  // }
 
   public void setRobotPose () {
     bestLimelight = vision.getBestLimelight();
@@ -256,7 +256,7 @@ public class StateMachine extends SubsystemBase {
       shooter.setVelocity(shooterVelo);
       shooterHood.setPositionRotations(hoodPos -0.005);
     }
-    feeder.setVelocity(-90);
+    feeder.setVelocity(-85);
     // feeder.setVelocity(-feederVelo);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
@@ -268,15 +268,15 @@ public class StateMachine extends SubsystemBase {
       double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
       boolean rotationWithinTolerance = Math.abs(angleDiff) < tol;
       
-      System.out.println("diff: "+ angleDiff);
-      System.out.println("robot: "+ currentDivetrainRotation);
-      System.out.println("target: "+ targetDrivetrainRotation);
+      // System.out.println("diff: "+ angleDiff);
+      // System.out.println("robot: "+ currentDivetrainRotation);
+      // System.out.println("target: "+ targetDrivetrainRotation); 
 
-      if (rotationWithinTolerance) {
-        spindexer.setVelocity(90);
-      } else {
-        spindexer.brake();
-      }
+      // if (rotationWithinTolerance) {
+        spindexer.setVelocity(75);
+      // } else {
+      //   spindexer.brake();
+      // }
     } else {
       feeder.brake();
       spindexer.brake();

@@ -177,11 +177,17 @@ public class RobotContainer implements PowerRobotContainer {
       }))
       .onFalse(new InstantCommand(() -> stateMachine.setWantedState(RobotState.READY)));
 
-    driverController.y().onTrue(
-      new InstantCommand(() -> stateMachine.feeder.setVelocity(30))
-      ).onFalse(
-        new InstantCommand(() -> stateMachine.feeder.brake())
-      );
+    driverController.y()
+        .onTrue(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
+              stateMachine.intakeRoller.setVelocity(-145);
+            }))
+        .onFalse(new InstantCommand(
+            () -> {
+              stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+              stateMachine.intakeRoller.brake();
+            }));
 
     driverController.back().onTrue(new InstantCommand(
         () -> {
@@ -192,7 +198,7 @@ public class RobotContainer implements PowerRobotContainer {
         .onTrue(new InstantCommand(
             () -> {
               stateMachine.intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
-              stateMachine.intakeRoller.setVelocity(-100);
+              stateMachine.intakeRoller.setVelocity(-145);
             }))
         .onFalse(new InstantCommand(
             () -> {
@@ -200,8 +206,6 @@ public class RobotContainer implements PowerRobotContainer {
               stateMachine.intakeRoller.brake();
             }));
 
-    // driverController.a().whileTrue(new StrafeCommand(stateMachine.drivetrain,
-    // driverController));
 
     stateMachine.drivetrain.setDefaultCommand(new SwerveDriveCommand(stateMachine.drivetrain, driverController, false));
 
