@@ -41,7 +41,7 @@ public class TurnToPointCommand extends Command {
     this.drivetrain = drivetrain;
     this.targetPoint = point;
     this.rotationTolerance = tolerance;
-    
+
     Translation2d targetPoint = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
     // Get the robot's current position on the field
     Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
@@ -58,7 +58,7 @@ public class TurnToPointCommand extends Command {
         ? Rotation2d.fromRadians(targetAngleFieldRelative).getDegrees()
         : Rotation2d.fromRadians(targetAngleFieldRelative).rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
 
-    this.targetRotationToPoint = new Rotation2d(targetAngleRobotRelative);
+    this.targetRotationToPoint = Rotation2d.fromDegrees(targetAngleRobotRelative);
 
     addRequirements(drivetrain);
   }
