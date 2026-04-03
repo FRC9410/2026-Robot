@@ -279,10 +279,10 @@ public class StateMachine extends SubsystemBase {
       shooter.setVelocity(shooterVelo);
       shooterHood.setPositionRotations(hoodPos - 0.005);
     }
-    feeder.setVelocity(-105);
+    feeder.setVelocity(-67);
     // feeder.setVelocity(-feederVelo);
 
-    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1;
+    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1.5;
     // System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold) {
       double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
@@ -296,7 +296,7 @@ public class StateMachine extends SubsystemBase {
       // System.out.println("target: "+ targetDrivetrainRotation); 
 
       // if (rotationWithinTolerance) {
-        spindexer.setVelocity(70);
+        spindexer.setVelocity(80);
       // } else {
       //   spindexer.brake();
       // }
