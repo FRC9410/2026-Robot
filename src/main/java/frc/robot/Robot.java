@@ -31,6 +31,10 @@ public class Robot extends TimedRobot {
     // DataLogManager.logNetworkTables(false);
     SmartDashboard.putBoolean("driveInverted",false);
     SmartDashboard.putBoolean("velocityLock", false);
+
+    SmartDashboard.putBoolean("velocityLock1", false);
+    SmartDashboard.putBoolean("velocityLock2", false);
+    SmartDashboard.putBoolean("velocityLock3", false);
   }
 
   @Override

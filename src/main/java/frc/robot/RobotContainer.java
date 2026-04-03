@@ -300,7 +300,7 @@ public class RobotContainer implements PowerRobotContainer {
         new TurnToPointCommand(stateMachine.drivetrain,
             DriverStation.getAlliance().get() == DriverStation.Alliance.Blue ? FieldConstants.HOPPER_BLUE
                 : FieldConstants.HOPPER_RED,
-            5),
+            3),
         new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING)));
   }
 

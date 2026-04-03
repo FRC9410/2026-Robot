@@ -188,13 +188,13 @@ public class StateMachine extends SubsystemBase {
   }
 
   private void executeReady() {
-    shooter.brake();
-    spindexer.brake();
-    feeder.brake();
-    if (intakeWrist.getSetpointRotations() > Constants.Intake.INTAKE_IDLE){
-      intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
-    }
-    intakeTimer = 0;
+    // shooter.brake();
+    // spindexer.brake();
+    // feeder.brake();
+    // if (intakeWrist.getSetpointRotations() > Constants.Intake.INTAKE_IDLE){
+    //   intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+    // }
+    // intakeTimer = 0;
   }
 
   public GameZone getZoneFromPRC () {
@@ -262,11 +262,19 @@ public class StateMachine extends SubsystemBase {
     SmartDashboard.putNumber("shooterVelocity", shooterVelo);
     SmartDashboard.putNumber("shooterHoodPos", hoodPos);
     
-    boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
+    boolean velocityLock1 = SmartDashboard.getBoolean("velocityLock1", false);
+    boolean velocityLock2 = SmartDashboard.getBoolean("velocityLock2", false);
+    boolean velocityLock3 = SmartDashboard.getBoolean("velocityLock3", false);
 
-    if (velocityLock) {
+    if (velocityLock1) {
+      shooter.setVelocity(28.5);
+      shooterHood.setPositionRotations(0.055 - 0.005);
+    } else if (velocityLock2) {
       shooter.setVelocity(29.5);
       shooterHood.setPositionRotations(0.065 - 0.005);
+    } else if (velocityLock3) {
+      shooter.setVelocity(32);
+      shooterHood.setPositionRotations(0.07 - 0.005);
     } else {
       shooter.setVelocity(shooterVelo);
       shooterHood.setPositionRotations(hoodPos -0.005);

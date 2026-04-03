@@ -25,13 +25,13 @@ public class ShooterConstants {
     public static final double SHOOTER_HOOD_DEFAULT = 0.0; // default should be min
 
     // Flywheel velocity PID
-    public static final double FLYWHEEL_KP = 0.5;
+    public static final double FLYWHEEL_KP = 0.0001;
     public static final double FLYWHEEL_KI = 0;
     public static final double FLYWHEEL_KD = 0;
     public static final double FLYWHEEL_KG = 0;
-    public static final double FLYWHEEL_KS = 0.29075; //0.23295;
-    public static final double FLYWHEEL_KV = 0.12455; //0.12161;
-    public static final double FLYWHEEL_KA = 0.0032953; //0.0030738;
+    public static final double FLYWHEEL_KS = 0.29903; //0.23295;
+    public static final double FLYWHEEL_KV = 0.12388; //0.12161;
+    public static final double FLYWHEEL_KA = 0.0034346; //0.0030738;
     public static final double FLYWHEEL_MM_ACCELERATION = 200;
 
     public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
