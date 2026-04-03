@@ -59,7 +59,7 @@ public class IntakeConstants {
 
   public static final List<MotorConfig> WRIST_MOTOR_CONFIGS = List.of(
       MotorConfig.leader(PRIMARY_PIVOT_CAN_ID, NeutralModeValue.Brake),
-      MotorConfig.follower(SECONDARY_PIVOT_CAN_ID, true));
+      MotorConfig.follower(SECONDARY_PIVOT_CAN_ID, NeutralModeValue.Coast, true));
 
   public static final LeadMotorConfig WRIST_LEAD_CONFIG = new LeadMotorConfig(
       WRIST_KP, WRIST_KI, WRIST_KD, WRIST_KG, Optional.empty(), Optional.empty(), Optional.empty(),

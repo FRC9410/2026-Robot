@@ -29,15 +29,15 @@ public class ShooterConstants {
     public static final double FLYWHEEL_KI = 0;
     public static final double FLYWHEEL_KD = 0;
     public static final double FLYWHEEL_KG = 0;
-    public static final double FLYWHEEL_KS = 0.29903; //0.23295;
-    public static final double FLYWHEEL_KV = 0.12388; //0.12161;
-    public static final double FLYWHEEL_KA = 0.0034346; //0.0030738;
+    public static final double FLYWHEEL_KS = 0.28159; //0.23295;
+    public static final double FLYWHEEL_KV = 0.12365; //0.12161;
+    public static final double FLYWHEEL_KA = 0.003086; //0.0030738;
     public static final double FLYWHEEL_MM_ACCELERATION = 200;
 
     public static final List<MotorConfig> FLYWHEEL_MOTOR_CONFIGS = List.of(
             MotorConfig.leader(PRIMARY_FLYWHEELS_CAN_ID, NeutralModeValue.Coast, true),
-            MotorConfig.follower(FOLLOWER_FLYWHEEL_1_CAN_ID, true),
-            MotorConfig.follower(FOLLOWER_FLYWHEEL_2_CAN_ID, true));
+            MotorConfig.follower(FOLLOWER_FLYWHEEL_1_CAN_ID, NeutralModeValue.Coast, true),
+            MotorConfig.follower(FOLLOWER_FLYWHEEL_2_CAN_ID, NeutralModeValue.Coast, true));
 
     public static final LeadMotorConfig FLYWHEEL_LEAD_CONFIG = new LeadMotorConfig(
             FLYWHEEL_KP, FLYWHEEL_KI, FLYWHEEL_KD, FLYWHEEL_KG, Optional.of(FLYWHEEL_KS), Optional.of(FLYWHEEL_KV), Optional.of(FLYWHEEL_KA), 1.0, 1.0);

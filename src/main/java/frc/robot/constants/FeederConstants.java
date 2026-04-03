@@ -27,7 +27,7 @@ public class FeederConstants {
 
     public static final List<MotorConfig> MOTOR_CONFIGS = List.of(
         MotorConfig.leader(PRIMARY_CAN_ID, NeutralModeValue.Coast),
-        MotorConfig.follower(SECONDARY_CAN_ID, true));
+        MotorConfig.follower(SECONDARY_CAN_ID, NeutralModeValue.Coast, true));
 
     public static final LeadMotorConfig FEEDER_LEAD_CONFIG = new LeadMotorConfig(
         FEEDER_KP, FEEDER_KI, FEEDER_KD, FEEDER_KG, Optional.of(FEEDER_KS), Optional.of(FEEDER_KV), Optional.of(FEEDER_KA), 1.0, 1.0);

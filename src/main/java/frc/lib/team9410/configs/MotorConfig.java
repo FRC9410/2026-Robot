@@ -71,7 +71,7 @@ public class MotorConfig {
    *
    * @param canId CAN ID of the follower motor
    */
-  public static MotorConfig follower(int canId, boolean reversed) {
-    return new MotorConfig(canId, NeutralModeValue.Brake, true, reversed);
+  public static MotorConfig follower(int canId, NeutralModeValue neutralMode, boolean reversed) {
+    return new MotorConfig(canId, neutralMode, true, reversed);
   }
 }

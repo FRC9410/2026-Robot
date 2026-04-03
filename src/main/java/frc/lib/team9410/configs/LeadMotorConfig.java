@@ -6,6 +6,8 @@ package frc.lib.team9410.configs;
 
 import java.util.Optional;
 
+import com.ctre.phoenix6.signals.NeutralModeValue;
+
 /**
  * Lead (leader) motor configuration: PID and feedback ratios for the primary position motor.
  * Use with {@link CancoderConfig} and {@link MotionMagicConfig} for full position setup.

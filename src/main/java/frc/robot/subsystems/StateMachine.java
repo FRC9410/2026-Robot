@@ -188,13 +188,13 @@ public class StateMachine extends SubsystemBase {
   }
 
   private void executeReady() {
-    // shooter.brake();
-    // spindexer.brake();
-    // feeder.brake();
-    // if (intakeWrist.getSetpointRotations() > Constants.Intake.INTAKE_IDLE){
-    //   intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
-    // }
-    // intakeTimer = 0;
+    shooter.brake();
+    spindexer.brake();
+    feeder.brake();
+    if (intakeWrist.getSetpointRotations() > Constants.Intake.INTAKE_IDLE){
+      intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+    }
+    intakeTimer = 0;
   }
 
   public GameZone getZoneFromPRC () {
@@ -277,12 +277,12 @@ public class StateMachine extends SubsystemBase {
       shooterHood.setPositionRotations(0.07 - 0.005);
     } else {
       shooter.setVelocity(shooterVelo);
-      shooterHood.setPositionRotations(hoodPos -0.005);
+      shooterHood.setPositionRotations(hoodPos - 0.005);
     }
-    feeder.setVelocity(-90);
+    feeder.setVelocity(-105);
     // feeder.setVelocity(-feederVelo);
 
-    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
+    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1;
     // System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
     if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold) {
       double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
@@ -296,7 +296,7 @@ public class StateMachine extends SubsystemBase {
       // System.out.println("target: "+ targetDrivetrainRotation); 
 
       // if (rotationWithinTolerance) {
-        spindexer.setVelocity(75);
+        spindexer.setVelocity(70);
       // } else {
       //   spindexer.brake();
       // }
