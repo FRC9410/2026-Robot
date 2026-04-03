@@ -25,7 +25,7 @@ public class ShooterConstants {
     public static final double SHOOTER_HOOD_DEFAULT = 0.0; // default should be min
 
     // Flywheel velocity PID
-    public static final double FLYWHEEL_KP = 0.5;
+    public static final double FLYWHEEL_KP = 0.4;
     public static final double FLYWHEEL_KI = 0;
     public static final double FLYWHEEL_KD = 0;
     public static final double FLYWHEEL_KG = 0;

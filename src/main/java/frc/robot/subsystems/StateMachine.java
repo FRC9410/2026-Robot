@@ -262,17 +262,16 @@ public class StateMachine extends SubsystemBase {
     SmartDashboard.putNumber("shooterVelocity", shooterVelo);
     SmartDashboard.putNumber("shooterHoodPos", hoodPos);
     
-    // TODO: bring this back if needed
-    boolean velocityLock = false; //SmartDashboard.getBoolean("velocityLock", false);
+    boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
 
     if (velocityLock) {
-      shooter.setVelocity(-67);
-      shooterHood.setPositionRotations(0.04);
+      shooter.setVelocity(29.5);
+      shooterHood.setPositionRotations(0.065 - 0.005);
     } else {
       shooter.setVelocity(shooterVelo);
       shooterHood.setPositionRotations(hoodPos -0.005);
     }
-    feeder.setVelocity(-85);
+    feeder.setVelocity(-90);
     // feeder.setVelocity(-feederVelo);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
