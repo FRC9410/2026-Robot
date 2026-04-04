@@ -32,9 +32,9 @@ public class Robot extends TimedRobot {
     SmartDashboard.putBoolean("driveInverted",false);
     SmartDashboard.putBoolean("velocityLock", false);
 
-    SmartDashboard.putBoolean("velocityLock1", false);
-    SmartDashboard.putBoolean("velocityLock2", false);
-    SmartDashboard.putBoolean("velocityLock3", false);
+    SmartDashboard.putBoolean("slowSpindexer", false);
+    SmartDashboard.putBoolean("slowShooter", false);
+    SmartDashboard.putBoolean("slowFeeder", false);
   }
 
   @Override

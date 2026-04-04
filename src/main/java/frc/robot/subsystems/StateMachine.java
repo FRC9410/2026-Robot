@@ -257,29 +257,37 @@ public class StateMachine extends SubsystemBase {
 
     double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
     double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
-    double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
 
     SmartDashboard.putNumber("shooterVelocity", shooterVelo);
     SmartDashboard.putNumber("shooterHoodPos", hoodPos);
     
-    boolean velocityLock1 = SmartDashboard.getBoolean("velocityLock1", false);
-    boolean velocityLock2 = SmartDashboard.getBoolean("velocityLock2", false);
-    boolean velocityLock3 = SmartDashboard.getBoolean("velocityLock3", false);
+    // boolean velocityLock1 = SmartDashboard.getBoolean("velocityLock1", false);
+    // boolean velocityLock2 = SmartDashboard.getBoolean("velocityLock2", false);
+    // boolean velocityLock3 = SmartDashboard.getBoolean("velocityLock3", false);
+    boolean slowSpindexer = SmartDashboard.getBoolean("slowSpindexer", false);
+    boolean slowShooter = SmartDashboard.getBoolean("slowShooter", false);
+    boolean slowFeeder = SmartDashboard.getBoolean("slowFeeder", false);
 
-    if (velocityLock1) {
-      shooter.setVelocity(28.5);
-      shooterHood.setPositionRotations(0.055 - 0.005);
-    } else if (velocityLock2) {
-      shooter.setVelocity(29.5);
-      shooterHood.setPositionRotations(0.065 - 0.005);
-    } else if (velocityLock3) {
-      shooter.setVelocity(32);
-      shooterHood.setPositionRotations(0.07 - 0.005);
-    } else {
-      shooter.setVelocity(shooterVelo);
-      shooterHood.setPositionRotations(hoodPos - 0.005);
+    if (!slowShooter) {
+      shooterVelo += 1;
     }
-    feeder.setVelocity(-67);
+
+    // if (velocityLock1) {
+    //   shooter.setVelocity(28.5);
+    //   shooterHood.setPositionRotations(0.055 - 0.005);
+    // } else if (velocityLock2) {
+    //   shooter.setVelocity(29.5);
+    //   shooterHood.setPositionRotations(0.065 - 0.005);
+    // } else if (velocityLock3) {
+    //   shooter.setVelocity(32);
+    //   shooterHood.setPositionRotations(0.07 - 0.005);
+    // } else {
+
+    shooter.setVelocity(shooterVelo);
+    shooterHood.setPositionRotations(hoodPos - 0.005);
+
+    // }
+    feeder.setVelocity(slowFeeder ? -60 : -2 * shooterVelo);
     // feeder.setVelocity(-feederVelo);
 
     double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1.5;
@@ -296,7 +304,7 @@ public class StateMachine extends SubsystemBase {
       // System.out.println("target: "+ targetDrivetrainRotation); 
 
       // if (rotationWithinTolerance) {
-        spindexer.setVelocity(80);
+        spindexer.setVelocity(slowSpindexer ? 70 : 80);
       // } else {
       //   spindexer.brake();
       // }

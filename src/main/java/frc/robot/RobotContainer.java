@@ -297,10 +297,13 @@ public class RobotContainer implements PowerRobotContainer {
             }),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p6, 3.0, 0.75),
         new SwerveDriveCommand(stateMachine.drivetrain, driverController, true, p7, 3.0, 1.0, true),
-        new TurnToPointCommand(stateMachine.drivetrain,
+        new ParallelRaceGroup(
+          new TurnToPointCommand(stateMachine.drivetrain,
             DriverStation.getAlliance().get() == DriverStation.Alliance.Blue ? FieldConstants.HOPPER_BLUE
                 : FieldConstants.HOPPER_RED,
             3),
+          new WaitCommand(1.0) // terminate turn to point after 1 second if it doesnt finish
+        ),
         new InstantCommand(() -> stateMachine.setWantedState(RobotState.SHOOTING)));
   }
 
