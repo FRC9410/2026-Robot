@@ -62,6 +62,8 @@ public class VelocitySubsystem extends PowerSubsystem {
       config.Slot0.kS = leadConfig.kS().get();
       config.Slot0.kV = leadConfig.kV().get();
       config.Slot0.kA = leadConfig.kA().get();
+      config.CurrentLimits.StatorCurrentLimit = 140;
+      config.CurrentLimits.StatorCurrentLimitEnable = true;
     }
 
     MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
