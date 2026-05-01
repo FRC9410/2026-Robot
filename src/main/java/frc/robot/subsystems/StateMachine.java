@@ -4,22 +4,25 @@
 
 package frc.robot.subsystems;
 
-import java.nio.file.FileSystem;
-import java.util.Map;
 import java.util.Optional;
 
-import com.ctre.phoenix6.Utils;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StructArrayPublisher;
+import edu.wpi.first.networktables.StructPublisher;
+
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.firecontrol.ShotCalculator;
 import frc.lib.team9410.PowerRobotContainer;
 import frc.lib.team9410.subsystems.PositionSubsystem;
 import frc.lib.team9410.subsystems.VelocitySubsystem;
@@ -27,40 +30,60 @@ import frc.lib.team9410.subsystems.VelocityTorqueSubsystem;
 import frc.robot.Constants;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TunerConstants;
-import frc.robot.constants.TurretConstants;
+import frc.robot.constants.ShotConstants;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.LimelightHelpers;
-import frc.robot.utils.TurretHelpers;
 
-/** Subsystem that holds high-level robot state and drives transitions. */
+// Subsystem that holds high-level robot state and drives transitions.
 public class StateMachine extends SubsystemBase {
 
   public enum RobotState {
     READY,
-    SHOOTING
+    INTAKING,
+    OUTTAKING,
+    SHOOTING,
+    PASSING
   }
 
   private RobotState wantedState = RobotState.READY;
   private RobotState currentState = RobotState.READY;
   private RobotState previousState = RobotState.READY;
 
-  // --- Position subsystems ---
+  // Position subsystems
   public final PositionSubsystem shooterHood = new PositionSubsystem(Constants.Shooter.HOOD_CONFIG);
   public final PositionSubsystem intakeWrist = new PositionSubsystem(Constants.Intake.WRIST_CONFIG);
 
-  // --- Velocity subsystems ---
+  // Velocity subsystems
   public final VelocitySubsystem shooter = new VelocitySubsystem(Constants.Shooter.FLYWHEEL_CONFIG);
   public final VelocityTorqueSubsystem intakeRoller = new VelocityTorqueSubsystem(Constants.Intake.ROLLER_CONFIG);
   public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.Spindexer.SPINDEXER_CONFIG);
   public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.Feeder.FEEDER_CONFIG);
 
   private final Vision vision = new Vision();
+  @SuppressWarnings("unused")
   private final Dashboard dashboard = new Dashboard();
 
   public final Swerve drivetrain = TunerConstants.createDrivetrain();
 
-  private boolean winAuto = true;
+  // Shoot-on-the-move fire control
+  private final ShotCalculator shotCalc;
+  private ShotCalculator.LaunchParameters lastSOTMResult = ShotCalculator.LaunchParameters.INVALID;
+  // Static aim angle (degrees) toward current target; updated each shooting cycle.
+  private double staticAimAngleDeg = 0.0;
+  // Fixed pass-aim heading (degrees, field frame) toward own alliance side.
+  private double passAimAngleDeg = 0.0;
+
+  // NT pose publishing
+  private final StructPublisher<Pose2d> posePublisher =
+      NetworkTableInstance.getDefault()
+          .getStructTopic("Robot/Pose", Pose2d.struct)
+          .publish();
+  private final StructArrayPublisher<SwerveModuleState> moduleStatePublisher =
+      NetworkTableInstance.getDefault()
+          .getStructArrayTopic("Robot/SwerveStates", SwerveModuleState.struct)
+          .publish();
+
   private boolean gyroReset = false;
 
   private int intakeTimer = 0;
@@ -69,7 +92,18 @@ public class StateMachine extends SubsystemBase {
 
   private boolean matchStarted = false;
 
-  public StateMachine() {}
+
+  public StateMachine() {
+    ShotCalculator.Config cfg = new ShotCalculator.Config();
+    cfg.launcherOffsetX = -0.20;        // negative — shooter is behind robot center
+    cfg.launcherOffsetY = 0.0;
+    cfg.shooterAngleOffsetRad = Math.PI; // shooter faces rear
+    cfg.maxSOTMSpeed = 3.0;
+    cfg.minScoringDistance = 0.5;
+    cfg.maxScoringDistance = 5.0;
+    shotCalc = new ShotCalculator(cfg);
+    shotCalc.loadShotLUT(ShotConstants.SHOT_LUT);
+  }
 
   @Override
   public void periodic() {
@@ -78,7 +112,7 @@ public class StateMachine extends SubsystemBase {
     PowerRobotContainer.setData("robotState", currentState.name());
     PowerRobotContainer.setData("currentZone", getZoneFromPRC());
     setRobotPose();
-
+    // logPoseToWpilog(drivetrain.getState().Pose);
     
   
     // Map<String, Object> robotData = PowerRobotContainer.getAllData();
@@ -89,35 +123,54 @@ public class StateMachine extends SubsystemBase {
 
   
     SmartDashboard.putString("gameZone", FieldUtils.getZone(drivetrain.getState().Pose).name());
+    SmartDashboard.putNumber("passAimDeg", passAimAngleDeg);
+    posePublisher.set(drivetrain.getState().Pose);
+    moduleStatePublisher.set(drivetrain.getState().ModuleStates);
 
-    PowerRobotContainer.setData("SpindexerVelocity", spindexer.getVelocityMotor().getVelocity().getValueAsDouble());
-    PowerRobotContainer.setData("ShooterVelocity", shooter.getVelocityMotor().getVelocity().getValueAsDouble());
-    PowerRobotContainer.setData("FeederVelocity", feeder.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("SpindexerVelocity", spindexer.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("ShooterVelocity", shooter.getVelocityMotor().getVelocity().getValueAsDouble());
+    // PowerRobotContainer.setData("FeederVelocity", feeder.getVelocityMotor().getVelocity().getValueAsDouble());
   }
 
   public void resetGyro () {
     gyroReset = false;
   }
 
+  // private void logPoseToWpilog(Pose2d pose) {
+  //   if (m_odometryLog == null) {
+  //     var log = DataLogManager.getLog();
+  //     m_odometryLog = StructLogEntry.create(log, "Odometry", Pose2d.struct);
+  //     m_robotPositionLog = StructLogEntry.create(log, "RobotPosition", Translation2d.struct);
+  //   }
+  //   m_odometryLog.append(pose);
+  //   m_robotPositionLog.append(pose.getTranslation());
+  // }
+
   public void setRobotPose () {
     bestLimelight = vision.getBestLimelight();
 
-    // Don't use vision when no Limelight has valid data (avoids bad/default pose from empty/wrong table on boot).
+    // Skip vision when no Limelight has valid data.
     if (bestLimelight == null || bestLimelight.isEmpty()) {
-      // Skip vision pose update; dashboard/PRC still use current drivetrain pose below.
     } else {
-      vision.setRobotPose(bestLimelight, drivetrain);
+      // MegaTag2 needs gyro yaw (not vision yaw) to resolve pose correctly on both alliances.
+      double gyroYawDeg = drivetrain.getState().Pose.getRotation().getDegrees();
+      double pitchDeg   = drivetrain.getPigeon2().getPitch().getValueAsDouble();
+      double rollDeg    = drivetrain.getPigeon2().getRoll().getValueAsDouble();
+      LimelightHelpers.SetRobotOrientation(Constants.Vision.LEFT_TABLE,   gyroYawDeg, 0, pitchDeg, 0, rollDeg, 0);
+      LimelightHelpers.SetRobotOrientation(Constants.Vision.RIGHT_TABLE,  gyroYawDeg, 0, pitchDeg, 0, rollDeg, 0);
+      LimelightHelpers.SetRobotOrientation(Constants.Vision.SHOOTER_TABLE, gyroYawDeg, 0, pitchDeg, 0, rollDeg, 0);
 
       LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
       if (mt2 != null && mt2.tagCount > 0) {
         Pose2d newPose = mt2.pose;
-        // Reject poses outside field bounds (e.g. 0,0 or garbage from cold Limelight).
+        // Reject out-of-bounds startup garbage poses.
         double x = newPose.getX();
         double y = newPose.getY();
         if (x < Constants.Field.X_MIN - Constants.Field.TOL || x > Constants.Field.X_MAX + Constants.Field.TOL
             || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
           // Bad pose; do not reset or add to estimator.
         } else {
+          // System.out.println(matchStarted);
           if (!gyroReset || !matchStarted) {
             // newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
             drivetrain.resetPose(newPose);
@@ -128,15 +181,12 @@ public class StateMachine extends SubsystemBase {
           // }
           // drivetrain.resetPose(newPose);
           drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
-          drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
+          drivetrain.addVisionMeasurement(newPose, mt2.timestampSeconds);
         }
       }
     }
-      Translation2d translationToPoint = drivetrain.getState().Pose.getTranslation().minus(Constants.Field.HOPPER_RED);
-      double linearDistance = translationToPoint.getNorm();
 
-      PowerRobotContainer.setData("distanceToHopper", linearDistance);
-      SmartDashboard.putNumber("distanceToHopper", linearDistance);
+      // PowerRobotContainer.setData("distanceToHopper", linearDistance);
       SmartDashboard.putNumber("currentPoseX", drivetrain.getState().Pose.getX());
       SmartDashboard.putNumber("currentPoseY", drivetrain.getState().Pose.getY());
       SmartDashboard.putNumber("currentPoseYaw", drivetrain.getState().Pose.getRotation().getDegrees());
@@ -162,8 +212,17 @@ public class StateMachine extends SubsystemBase {
       case READY:
         executeReady();
         break;
+      case INTAKING:
+        executeIntaking();
+        break;
+      case OUTTAKING:
+        executeOuttaking();
+        break;
       case SHOOTING:
         executeShooting();
+        break;
+      case PASSING:
+        executePassing();
         break;
       default:
         break;
@@ -180,6 +239,41 @@ public class StateMachine extends SubsystemBase {
     intakeTimer = 0;
   }
 
+  private void executeIntaking() {
+    shooter.brake();
+    spindexer.brake();
+    feeder.brake();
+    intakeWrist.setPositionRotations(Constants.Intake.INTAKE_MAX);
+    intakeRoller.setVelocity(145);
+    intakeTimer = 0;
+  }
+
+  private void executeOuttaking() {
+    shooter.brake();
+    spindexer.brake();
+    feeder.brake();
+    intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
+    intakeRoller.setVelocity(-145);
+    intakeTimer = 0;
+  }
+
+  private void executePassing() {
+    intakeTimer++;
+    intakeRoller.brake();
+    // Blue hopper is to the LEFT (low X): robot faces RIGHT (0°) so rear aims left.
+    // Red hopper is to the RIGHT (high X): robot faces LEFT (180°) so rear aims right.
+    passAimAngleDeg = isBlueAlliance() ? 0.0 : 180.0;
+    Translation2d target = isBlueAlliance() ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED;
+    runShootingToTarget(target);
+    if (intakeWrist.getSetpointRotations() >= Constants.Intake.INTAKE_IDLE) {
+      if (intakeTimer % 50 == 0) {
+        intakeWrist.setPositionRotations(Constants.Intake.INTAKE_FEED);
+      } else if (intakeTimer % 25 == 0) {
+        intakeWrist.setPositionRotations(Constants.Intake.INTAKE_IDLE);
+      }
+    }
+  }
+
   public GameZone getZoneFromPRC () {
     Pose2d pose = drivetrain.getState().Pose;
 
@@ -192,16 +286,10 @@ public class StateMachine extends SubsystemBase {
     GameZone zone = FieldUtils.getZone(pose);
     boolean inOurZone = getAllianceZone() == zone;
 
-    // if (inOurZone && !isHubActive()) {
-    //   shooter.brake();
-    //   feeder.brake();
-    //   spindexer.brake();
-    //   return;
-    // }
-
     Translation2d target = inOurZone
         ? (zone == GameZone.BLUE_ALLIANCE ? Constants.Field.HOPPER_BLUE : Constants.Field.HOPPER_RED)
         : getTargetCornerLocation();
+
     runShootingToTarget(target);
     if (intakeWrist.getSetpointRotations() >= Constants.Intake.INTAKE_IDLE) {
       if (intakeTimer % 50 == 0) {
@@ -212,46 +300,105 @@ public class StateMachine extends SubsystemBase {
     }
   }
 
-  /** Runs shooter, hood, feeder, and spindexer toward the given target (hopper or corner). */
+  // Run shooter, hood, feeder, and spindexer for the current target.
   private void runShootingToTarget(Translation2d target) {
-    var state = drivetrain.getState();
-    Pose2d pose = state.Pose;
-
+    Pose2d pose = drivetrain.getState().Pose;
     double distance = pose.getTranslation().minus(target).getNorm();
+    SmartDashboard.putNumber("distanceToHopper", distance);
 
-    double shooterVelo = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
-    double hoodPos = TurretConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
-    double feederVelo = TurretConstants.FEEDER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
-    
-    boolean velocityLock = SmartDashboard.getBoolean("velocityLock", false);
+    // SOTM solver: convert robot-relative speeds into field frame.
+    ChassisSpeeds robotVel = drivetrain.getState().Speeds;
+    ChassisSpeeds fieldVel = ChassisSpeeds.fromRobotRelativeSpeeds(robotVel, pose.getRotation());
 
-    if (velocityLock) {
-      shooter.setVelocity(-67);
-      shooterHood.setPositionRotations(0.04);
+    // (0,0) disables behind-hub rejection for the 2026 hopper target.
+    Translation2d hubForward = new Translation2d(0, 0);
+
+    LimelightHelpers.PoseEstimate latestMT2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
+    double visionConf = (latestMT2 != null && latestMT2.tagCount > 0) ? 1.0 : 0.5;
+    ShotCalculator.ShotInputs inputs = new ShotCalculator.ShotInputs(
+        pose, fieldVel, robotVel, target, hubForward, visionConf);
+    lastSOTMResult = shotCalc.calculate(inputs);
+
+    // Choose shooter speed and hood angle from SOTM or fallback LUT.
+    double shooterVelo;
+    double hoodPos;
+    if (lastSOTMResult.isValid()) {
+      shooterVelo = lastSOTMResult.shooterRps();
+      // ShotCalculator returns degrees; convert to rotations for the motor controller.
+      double hoodDeg = shotCalc.getHoodAngle(lastSOTMResult.solvedDistanceM());
+      hoodPos = hoodDeg / 360.0;
     } else {
-      shooter.setVelocity(-shooterVelo - 1);
-      shooterHood.setPositionRotations(hoodPos);
+      shooterVelo = ShotConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance);
+      hoodPos = ShotConstants.HOOD_ANGLE_INTERPOLATOR.getInterpolatedValue(distance);
     }
-    feeder.setVelocity(-feederVelo);
 
-    double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 2;
-    System.out.println(spindexer.getVelocityMotor().getRotorVelocity());
-    if (shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold) {
-      double targetDrivetrainRotation = Math.toDegrees(TurretHelpers.getRadiansToPoint(pose, target));
-      double currentDivetrainRotation = isBlueAlliance() ? pose.getRotation().getDegrees() : pose.getRotation().rotateBy(Rotation2d.fromDegrees(180)).getDegrees();
-      double tol = 5.0;
-      double angleDiff = MathUtil.inputModulus(targetDrivetrainRotation - currentDivetrainRotation, -180, 180);
-      boolean rotationWithinTolerance = Math.abs(angleDiff) < tol;
+    // Update fallback heading used when SOTM is invalid.
+    staticAimAngleDeg = Math.toDegrees(Math.atan2(
+        target.getY() - pose.getY(), target.getX() - pose.getX())) + 180.0;
 
-      if (rotationWithinTolerance) {
-        spindexer.setVelocity(60);
-      } else {
-        spindexer.brake();
-      }
+    double actualShooterVelo = shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble();
+    SmartDashboard.putNumber("shooterVelocity", shooterVelo);
+    SmartDashboard.putNumber("shooterVelocityActual", actualShooterVelo);
+    SmartDashboard.putNumber("shooterVelocityError", shooterVelo - actualShooterVelo);
+    SmartDashboard.putNumber("shooterHoodPos", hoodPos);
+    SmartDashboard.putNumber("shooterHoodPosActual", shooterHood.getPositionRotations());
+    SmartDashboard.putNumber("rpmOffset", shotCalc.getOffset());
+    SmartDashboard.putNumber("sotmConfidence", lastSOTMResult.confidence());
+    SmartDashboard.putBoolean("sotmValid", lastSOTMResult.isValid());
+
+    boolean slowSpindexer = SmartDashboard.getBoolean("slowSpindexer", false);
+
+    boolean slowFeeder    = SmartDashboard.getBoolean("slowFeeder", false);
+
+    // if (!slowShooter) {
+    //   shooterVelo += 1; // old tuning hack — disabled, FireControl already sets correct RPM
+    // }
+
+    shooter.setVelocity(shooterVelo);
+    shooterHood.setPositionRotations(
+        MathUtil.clamp(hoodPos, ShooterConstants.SHOOTER_HOOD_MIN, ShooterConstants.SHOOTER_HOOD_MAX));
+
+    // Heading gate: only feed/spin when robot is aimed within tolerance
+    double targetHeadingRad = lastSOTMResult.isValid()
+        ? lastSOTMResult.driveAngle().getRadians()
+        : Math.toRadians(staticAimAngleDeg);
+    double headingErrorDeg = Math.abs(Math.toDegrees(
+        MathUtil.angleModulus(pose.getRotation().getRadians() - targetHeadingRad)));
+    boolean headingOK = headingErrorDeg < (lastSOTMResult.isValid() ? 15.0 : 5.0);
+    SmartDashboard.putNumber("headingErrorDeg", headingErrorDeg);
+    SmartDashboard.putBoolean("headingOK", headingOK);
+
+    // double velocityThreshold = TurretConstants.SHOOTER_VELOCITY_INTERPOLATOR.getInterpolatedValue(distance) - 1.5; // old — fought FireControl
+    double velocityThreshold = shooterVelo - 1.5;
+    boolean shooterAtSpeed = shooter.getVelocityMotor().getRotorVelocity().getValueAsDouble() > velocityThreshold;
+
+    if (headingOK && shooterAtSpeed) {
+      feeder.setVelocity(slowFeeder ? -60 : -2 * shooterVelo);
+      spindexer.setVelocity(slowSpindexer ? 70 : 80);
     } else {
       feeder.brake();
       spindexer.brake();
     }
+  }
+
+  // Latest SOTM fire-control result. Updated every shooting cycle. */
+  public ShotCalculator.LaunchParameters getLastSOTMResult() {
+    return lastSOTMResult;
+  }
+
+  // The ShotCalculator instance (used by simulation to query hood angles etc.). */
+  public ShotCalculator getShotCalc() {
+    return shotCalc;
+  }
+
+  // Static aim angle (degrees, field frame) toward the current target. Used as heading fallback.
+  public double getStaticAimAngleDeg() {
+    return staticAimAngleDeg;
+  }
+
+  // Pass aim angle (degrees, field frame) toward our alliance side.
+  public double getPassAimAngleDeg() {
+    return passAimAngleDeg;
   }
 
   public void setWantedState(RobotState state) {
@@ -272,9 +419,7 @@ public class StateMachine extends SubsystemBase {
 
   /** Convenience: is the robot on the blue alliance? */
   public boolean isBlueAlliance() {
-    if (DriverStation.getAlliance().isEmpty())
-      return true;
-    return DriverStation.getAlliance().get() == Alliance.Blue;
+    return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue;
   }
 
   /** Distance (m) inward from each side when targeting a corner (field: blue right = 0,0, red left = max, max). */
@@ -303,7 +448,7 @@ public class StateMachine extends SubsystemBase {
       Translation2d fromTop = new Translation2d(
           Constants.Field.RED_TOP_CORNER.getX() - CORNER_TARGET_OFFSET_M,
           Constants.Field.RED_TOP_CORNER.getY() - CORNER_TARGET_OFFSET_M);
-      System.out.println(robotPos.getY() > 4 ? fromTop : fromBottom);
+      // System.out.println(robotPos.getY() > 4 ? fromTop : fromBottom);
       return robotPos.getY() > 4 ? fromTop : fromBottom;
     }
   }
