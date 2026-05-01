@@ -9,8 +9,6 @@ import static edu.wpi.first.units.Units.*;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import frc.robot.constants.TunerConstants;
@@ -41,40 +39,37 @@ public class TurnToPointCommand extends Command {
     this.targetPoint = point;
     this.rotationTolerance = tolerance;
 
+    Translation2d currentPosition = drivetrain.getState().Pose.getTranslation();
+    Translation2d positionDelta = targetPoint.minus(currentPosition);
+
+    this.targetRotationToPoint = new Rotation2d(Math.toDegrees(Math.atan2(positionDelta.getY(), positionDelta.getX())));
+
     addRequirements(drivetrain);
   }
 
-  public boolean isBlueAlliance() {
-    return DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue;
-  }
-
+  // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    Translation2d robotPosition = drivetrain.getState().Pose.getTranslation();
-    double deltaX = targetPoint.getX() - robotPosition.getX();
-    double deltaY = targetPoint.getY() - robotPosition.getY();
-    double targetAngleFieldRelative = Math.atan2(deltaY, deltaX);
-    // Blue: add 180° so rear faces target. Red: CTRE operator perspective adds 180° for us.
-    double offset = isBlueAlliance() ? Math.PI : 0.0;
-    targetRotationToPoint = Rotation2d.fromRadians(targetAngleFieldRelative + offset);
   }
 
+  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    drivetrain.drive(
-        0.0,
-        0.0,
-        targetRotationToPoint.getDegrees(),
-        Swerve.DriveMode.ROTATION_LOCK);
+      drivetrain.drive(
+          0.0,
+          0.0,
+          targetRotationToPoint.getDegrees(),
+          Swerve.DriveMode.ROTATION_LOCK);
   }
 
+  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
   }
 
+  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return Math
-        .abs(drivetrain.getState().Pose.getRotation().minus(targetRotationToPoint).getDegrees()) < rotationTolerance;
+    return Math.abs(drivetrain.getState().Pose.getRotation().minus(targetRotationToPoint).getDegrees()) < rotationTolerance;
   }
 }

@@ -4,7 +4,6 @@
 
 package frc.lib.team9410.subsystems;
 
-import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.Follower;
@@ -67,8 +66,10 @@ public abstract class PowerSubsystem extends SubsystemBase {
           continue; // Theres no leader to follow so no need to continue
         }
 
-        // Always set follower; inversion is relative to leader alignment.
-        setFollower(motorConfig.canId(), this.leaderCanId, motorConfig.isReversed());
+        // Reverse it relative to the leader
+        if (motorConfig.isReversed()) {
+          setFollower(motorConfig.canId(), this.leaderCanId, true);
+        }
       }
     }
   }

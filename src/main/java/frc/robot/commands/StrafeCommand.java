@@ -6,7 +6,7 @@ package frc.robot.commands;
 
 import static edu.wpi.first.units.Units.*;
 
-// import org.ejml.dense.row.SpecializedOps_DDRM;s
+import org.ejml.dense.row.SpecializedOps_DDRM;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -32,7 +32,7 @@ public class StrafeCommand extends Command {
 
   private final Swerve drivetrain;
   private final CommandXboxController controller;
-  // Set in constructor or in initialize() when using the no-side constructor.
+  /** Set in constructor or in initialize() when using the no-side constructor. */
   private StrafeSide side = null;
   private final PIDController driveToPointController;
   private final double poseTolerance;
@@ -45,24 +45,26 @@ public class StrafeCommand extends Command {
     this.drivetrain = drivetrain;
     this.controller = controller;
     this.side = side;
-    this.driveToPointController = new PIDController(6.0, 0, 0);
-    this.poseTolerance = 6;
+    this.driveToPointController = new PIDController(3.2, 0, 0.2);
+    this.poseTolerance = -1;
     addRequirements(drivetrain);
   }
 
-  
-  //Constructs with no side; the closest side to the robot is chosen when the
-  //command starts.
-   
+  /**
+   * Constructs with no side; the closest side to the robot is chosen when the
+   * command starts.
+   */
   public StrafeCommand(Swerve drivetrain, CommandXboxController controller) {
     this(drivetrain, controller, null);
   }
 
+  // Called when the command is initially scheduled.
   @Override
   public void initialize() {
 
   }
 
+  // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
     StrafeSide thatSide = side;
@@ -94,10 +96,12 @@ public class StrafeCommand extends Command {
 
   }
 
+  // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
   }
 
+  // Returns true when the command should end.
   @Override
   public boolean isFinished() {
     return false;
@@ -182,7 +186,7 @@ public class StrafeCommand extends Command {
   private double getYInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
-    Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    Alliance alliance = DriverStation.getAlliance().get();
     double strafeLine;
 
     if ((alliance == Alliance.Blue && side == StrafeSide.LEFT)
@@ -207,7 +211,7 @@ public class StrafeCommand extends Command {
   private double getXInput(StrafeAxis axis, StrafeSide side) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
-    Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
+    Alliance alliance = DriverStation.getAlliance().get();
     double strafeLine;
 
     switch (zone) {
@@ -261,10 +265,10 @@ public class StrafeCommand extends Command {
     return velocity.getX();
   }
 
-  
-  //Returns the strafe side (wall) closest to the robot's current pose.
-   //Uses alliance and zone to pick the correct wall X/Y constants.
-  
+  /**
+   * Returns the strafe side (wall) closest to the robot's current pose.
+   * Uses alliance and zone to pick the correct wall X/Y constants.
+   */
   private static StrafeSide getClosestSide(Swerve drivetrain) {
     Pose2d pose = drivetrain.getState().Pose;
     GameZone zone = FieldUtils.getZone(pose);
