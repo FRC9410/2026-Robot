@@ -23,7 +23,6 @@ public class DriveUtil {
   public static final double SLOW_DRIVE_TO_POINT_SPEED =
       TunerConstants.kSpeedAt12Volts.in(MetersPerSecond) * 0.75 / 4;
   public static final double STATIC_FRICTION_CONSTANT = 0.085;
-  private static Alliance lastKnownAlliance = Alliance.Blue;
 
   public static boolean isClose(Pose2d currentPose, Pose2d targetPose) {
     final Translation2d translationToPoint =
@@ -76,9 +75,16 @@ public class DriveUtil {
       Swerve drivetrain,
       double maxAngularRate,
       double skewCompensation) {
+    boolean isBlueAlliance = true;
     final Pose2d currentPose = drivetrain.getState().Pose;
-    Alliance alliance = DriverStation.getAlliance().orElse(lastKnownAlliance);
-    lastKnownAlliance = alliance;
+
+    if (DriverStation.getAlliance().isEmpty()) {
+      return new ChassisSpeeds(0, 0, 0);
+    }
+
+    if (DriverStation.getAlliance().get() == Alliance.Blue) {
+      isBlueAlliance = true;
+    }
 
     double xMagnitude = MathUtil.applyDeadband(controller.getLeftY(), 0.1);
     double yMagnitude = MathUtil.applyDeadband(controller.getLeftX(), 0.1);
@@ -88,8 +94,8 @@ public class DriveUtil {
     yMagnitude = Math.copySign(yMagnitude * yMagnitude * yMagnitude, yMagnitude);
     angularMagnitude = Math.copySign(angularMagnitude * angularMagnitude, angularMagnitude);
 
-    double xVelocity = -xMagnitude * MAX_SPEED * 0.95;
-    double yVelocity = -yMagnitude * MAX_SPEED * 0.95;
+    double xVelocity = (isBlueAlliance ? -xMagnitude * MAX_SPEED : xMagnitude * MAX_SPEED) * 0.95;
+    double yVelocity = (isBlueAlliance ? -yMagnitude * MAX_SPEED : yMagnitude * MAX_SPEED) * 0.95;
     double angularVelocity = angularMagnitude * maxAngularRate * 0.95;
 
     Rotation2d skewCompensationFactor =
