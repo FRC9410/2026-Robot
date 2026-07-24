@@ -35,7 +35,7 @@ public class Robot extends TimedRobot {
     SignalLogger.writeDouble("CAN Utilization", RobotController.getCANStatus().percentBusUtilization, "%");
     SignalLogger.writeDouble("CAN Error Count", RobotController.getCANStatus().receiveErrorCount, "#");
     // m_robotContainer.getStateMachine().setRobotPose();
-    m_robotContainer.setAuto();
+    m_robotContainer.updateAutoChooser();
     CommandScheduler.getInstance().run();
   }
 

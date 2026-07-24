@@ -6,7 +6,6 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 import static edu.wpi.first.units.Units.Value;
@@ -26,12 +25,13 @@ import frc.robot.Constants.Auto;
 import frc.robot.commands.StrafeCommand;
 import frc.robot.commands.SwerveDriveCommand;
 import frc.robot.commands.TurnToPointCommand;
+import frc.robot.utils.NTChooser;
 
 public class RobotContainer implements PowerRobotContainer {
 
   // --- Other ---
   private final StateMachine stateMachine = new StateMachine();
-  private AutoPath auto;
+  private final NTChooser<AutoPath> autoChooser = new NTChooser<>("SmartDashboard/Auto Chooser");
   /**
    * Game timer: counts up from 0 to 2 minutes 40 seconds (160 s). Start via
    * {@link #startGameTimer()}.
@@ -49,10 +49,11 @@ public class RobotContainer implements PowerRobotContainer {
   public RobotContainer() {
     configureBindings();
 
-    SmartDashboard.putBoolean("Red Left Auto", true);
-    SmartDashboard.putBoolean("Red Right Auto", false);
-    SmartDashboard.putBoolean("Blue Left Auto", false);
-    SmartDashboard.putBoolean("Blue Right Auto", false);
+    autoChooser.setDefaultOption("None", null);
+    autoChooser.addOption("Red Left", AutoPath.RED_LEFT);
+    autoChooser.addOption("Red Right", AutoPath.RED_RIGHT);
+    autoChooser.addOption("Blue Left", AutoPath.BLUE_LEFT);
+    autoChooser.addOption("Blue Right", AutoPath.BLUE_RIGHT);
 
     // SysId: start log, run 4 tests per mechanism (quasistatic/dynamic, fwd/rev),
     // then stop log
@@ -129,48 +130,20 @@ public class RobotContainer implements PowerRobotContainer {
 
   }
 
-  public AutoPath getAutoPathFromDash() {
-    if (SmartDashboard.getBoolean("Red Left Auto", false) && auto != AutoPath.RED_LEFT) {
-      return AutoPath.RED_LEFT;
-    } else if (SmartDashboard.getBoolean("Red Right Auto", false) && auto != AutoPath.RED_RIGHT) {
-      return AutoPath.RED_RIGHT;
-    } else if (SmartDashboard.getBoolean("Blue Left Auto", false) && auto != AutoPath.BLUE_LEFT) {
-      return AutoPath.BLUE_LEFT;
-    } else if (SmartDashboard.getBoolean("Blue Right Auto", false) && auto != AutoPath.BLUE_RIGHT) {
-      return AutoPath.BLUE_RIGHT;
-    } else {
-      return null;
-    }
-  }
-
-  public void setAuto() {
-    AutoPath newAuto = getAutoPathFromDash();
-    if (newAuto == null) {
-      return;
-    }
-
-    auto = newAuto;
-
-    clearAutoSelections();
-    switch (auto) {
-      case RED_LEFT:
-        SmartDashboard.putBoolean("Red Left Auto", true);
-        break;
-      case RED_RIGHT:
-        SmartDashboard.putBoolean("Red Right Auto", true);
-        break;
-      case BLUE_LEFT:
-        SmartDashboard.putBoolean("Blue Left Auto", true);
-        break;
-      case BLUE_RIGHT:
-        SmartDashboard.putBoolean("Blue Right Auto", true);
-        break;
-    }
+  /** Echoes the resolved selection back to the dashboard. */
+  public void updateAutoChooser() {
+    autoChooser.publishActive();
   }
 
   public Command getAutonomousCommand() {
+    AutoPath selected = autoChooser.get();
 
-    switch (auto) {
+    if (selected == null) {
+      return new InstantCommand(
+          () -> System.out.println("No auto selected"));
+    }
+
+    switch (selected) {
       case RED_LEFT:
         return getRedLeftAuto();
       case RED_RIGHT:
@@ -246,12 +219,5 @@ public class RobotContainer implements PowerRobotContainer {
 
   public StateMachine getStateMachine() {
     return stateMachine;
-  }
-
-  public void clearAutoSelections() {
-    SmartDashboard.putBoolean("Blue Right Auto", false);
-    SmartDashboard.putBoolean("Blue Left Auto", false);
-    SmartDashboard.putBoolean("Red Right Auto", false);
-    SmartDashboard.putBoolean("Red Left Auto", false);
   }
 }
