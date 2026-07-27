@@ -1,14 +1,63 @@
 package frc.robot.constants;
 
-public class VisionConstants {
-  public static final String CAMERA_NAME = "limelight";
-  public static final double CAMERA_FOV_DEGREES = 60.0;
-  public static final int IMAGE_WIDTH = 320;
-  public static final int IMAGE_HEIGHT = 240;
-  public static final double TARGET_AREA_THRESHOLD = 1.0;
-  public static final double MAX_TARGET_DISTANCE_METERS = 5.0;
+import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.subsystems.vision.AcceptanceParams;
+import frc.robot.subsystems.vision.FieldBounds;
+import frc.robot.subsystems.vision.StdDevParams;
+import frc.robot.subsystems.vision.VisionConfig;
+import frc.robot.subsystems.vision.VisionConfig.CameraConfig;
+import java.util.List;
+import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
+public class VisionConstants {
   public static final String LEFT_TABLE = "limelight-left";
   public static final String RIGHT_TABLE = "limelight-right";
   public static final String TURRET_TABLE = "limelight-turret";
+
+  /**
+   * Relative weight per camera. The turret camera sits on a rotating mechanism, so its robot-space
+   * transform is only as good as the turret encoder -- it starts trusted a little less than the
+   * fixed side cameras.
+   */
+  public static final double LEFT_TRUST = 1.0;
+
+  public static final double RIGHT_TRUST = 1.0;
+  public static final double TURRET_TRUST = 0.8;
+
+  /**
+   * Off until bench validation. Several cameras looking at the same tags produce correlated errors,
+   * which makes the estimator more confident than the evidence warrants; with this false only the
+   * single best camera contributes each loop.
+   */
+  public static final boolean FUSE_ALL_CAMERAS = false;
+
+  /**
+   * How far past the field edge a pose may sit and still be believed. A real pose can overhang
+   * slightly when the robot is against a wall; anything further is garbage.
+   */
+  public static final double FIELD_TOLERANCE_METERS = 0.4;
+
+  /** Builds the vision configuration. Suppliers come from the drivetrain. */
+  public static VisionConfig config(
+      DoubleSupplier headingDegrees, DoubleSupplier yawRateDegPerSec, Supplier<Pose2d> currentPose) {
+    return new VisionConfig(
+        List.of(
+            new CameraConfig(LEFT_TABLE, LEFT_TRUST),
+            new CameraConfig(RIGHT_TABLE, RIGHT_TRUST),
+            new CameraConfig(TURRET_TABLE, TURRET_TRUST)),
+        headingDegrees,
+        yawRateDegPerSec,
+        currentPose,
+        new FieldBounds(
+            FieldConstants.X_MIN,
+            FieldConstants.Y_MIN,
+            FieldConstants.X_MAX,
+            FieldConstants.Y_MAX,
+            FIELD_TOLERANCE_METERS),
+        AcceptanceParams.defaults(),
+        StdDevParams.defaults(),
+        FUSE_ALL_CAMERAS,
+        true);
+  }
 }

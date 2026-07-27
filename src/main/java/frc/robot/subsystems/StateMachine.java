@@ -4,11 +4,8 @@
 
 package frc.robot.subsystems;
 
-import java.nio.file.FileSystem;
 import java.util.Map;
 import java.util.Optional;
-
-import com.ctre.phoenix6.Utils;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
@@ -17,7 +14,6 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.team9410.PowerRobotContainer;
@@ -28,9 +24,10 @@ import frc.robot.Constants;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TunerConstants;
 import frc.robot.constants.TurretConstants;
+import frc.robot.constants.VisionConstants;
+import frc.robot.subsystems.vision.VisionMeasurement;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.utils.FieldUtils;
-import frc.robot.utils.LimelightHelpers;
 import frc.robot.utils.TurretHelpers;
 
 /** Subsystem that holds high-level robot state and drives transitions. */
@@ -55,10 +52,21 @@ public class StateMachine extends SubsystemBase {
   public final VelocitySubsystem spindexer = new VelocitySubsystem(Constants.Spindexer.SPINDEXER_CONFIG);
   public final VelocitySubsystem feeder = new VelocitySubsystem(Constants.Feeder.FEEDER_CONFIG);
 
-  private final Vision vision = new Vision();
   private final Dashboard dashboard = new Dashboard();
 
   public final Swerve drivetrain = TunerConstants.createDrivetrain();
+
+  // Declared after drivetrain on purpose: the config below reads it, and Java runs field
+  // initializers in declaration order.
+  private final Vision vision =
+      new Vision(
+          VisionConstants.config(
+              // MegaTag2 wants a field-relative, blue-origin heading. The estimator's rotation is
+              // gyro-driven and carries the reset offset; the raw Pigeon yaw only matches if it
+              // happened to be zeroed facing the red wall.
+              () -> drivetrain.getState().Pose.getRotation().getDegrees(),
+              () -> drivetrain.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
+              () -> drivetrain.getState().Pose));
 
   private boolean winAuto = true;
   private boolean gyroReset = false;
@@ -66,8 +74,6 @@ public class StateMachine extends SubsystemBase {
   private int intakeTimer = 0;
 
   private String bestLimelight = "";
-
-  private boolean matchStarted = false;
 
   public StateMachine() {}
 
@@ -97,41 +103,37 @@ public class StateMachine extends SubsystemBase {
 
   public void resetGyro () {
     gyroReset = false;
+    vision.requestSeed();
   }
 
   public void setRobotPose () {
-    bestLimelight = vision.getBestLimelight();
+    // Explicit, so the poll always happens before anything reads the results. Vision is not a
+    // registered subsystem precisely to keep this ordering out of the scheduler's hands.
+    vision.update();
 
-    // Don't use vision when no Limelight has valid data (avoids bad/default pose from empty/wrong table on boot).
-    if (bestLimelight == null || bestLimelight.isEmpty()) {
-      // Skip vision pose update; dashboard/PRC still use current drivetrain pose below.
-    } else {
-      vision.setRobotPose(bestLimelight, drivetrain);
-
-      LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2(bestLimelight);
-      if (mt2 != null && mt2.tagCount > 0) {
-        Pose2d newPose = mt2.pose;
-        // Reject poses outside field bounds (e.g. 0,0 or garbage from cold Limelight).
-        double x = newPose.getX();
-        double y = newPose.getY();
-        if (x < Constants.Field.X_MIN - Constants.Field.TOL || x > Constants.Field.X_MAX + Constants.Field.TOL
-            || y < Constants.Field.Y_MIN - Constants.Field.TOL || y > Constants.Field.Y_MAX + Constants.Field.TOL) {
-          // Bad pose; do not reset or add to estimator.
-        } else {
-          if (!gyroReset || !matchStarted) {
-            // newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
-            drivetrain.resetPose(newPose);
-            gyroReset = true;
-          }
-          // else {
-          //   newPose = new Pose2d(newPose.getX(), newPose.getY(), drivetrain.getState().Pose.getRotation());
-          // }
-          // drivetrain.resetPose(newPose);
-          drivetrain.setVisionMeasurementStdDevs(VecBuilder.fill(.7, .7, 9999999));
-          drivetrain.addVisionMeasurement(newPose, Utils.fpgaToCurrentTime(mt2.timestampSeconds));
-        }
+    // Seed once from MegaTag1, which is the only source that solves heading from tag geometry.
+    // resetGyro() re-arms this; nothing else hard-resets the pose after that, so the Kalman filter
+    // is left to actually do its job.
+    if (!gyroReset) {
+      Optional<Pose2d> seed = vision.consumeSeedPose();
+      if (seed.isPresent()) {
+        drivetrain.resetPose(seed.get());
+        gyroReset = true;
       }
     }
+
+    for (VisionMeasurement measurement : vision.getAcceptedMeasurements()) {
+      drivetrain.addVisionMeasurement(
+          measurement.pose(),
+          // RAW FPGA seconds. Swerve.addVisionMeasurement already applies Utils.fpgaToCurrentTime;
+          // converting here too would double-apply the offset and skew every measurement.
+          measurement.timestampSeconds(),
+          VecBuilder.fill(
+              measurement.xyStdDev(), measurement.xyStdDev(), measurement.thetaStdDev()));
+    }
+
+    bestLimelight = vision.getBestCamera();
+
       Translation2d translationToPoint = drivetrain.getState().Pose.getTranslation().minus(Constants.Field.HOPPER_RED);
       double linearDistance = translationToPoint.getNorm();
 
@@ -377,9 +379,5 @@ public class StateMachine extends SubsystemBase {
       // End game, hub always active.
       return true;
     }
-  }
-
-  public void setMatchStarted () {
-    matchStarted = true;
   }
 }
