@@ -6,6 +6,9 @@ package frc.robot.subsystems.vision;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.subsystems.vision.VisionConfig.AcceptanceParams;
+import frc.robot.subsystems.vision.VisionConfig.FieldBounds;
+import frc.robot.subsystems.vision.VisionConfig.StdDevParams;
 
 /**
  * Pure decision logic for vision measurements: is this sample trustworthy, how good is it relative

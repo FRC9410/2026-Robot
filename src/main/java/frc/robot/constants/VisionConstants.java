@@ -1,11 +1,11 @@
 package frc.robot.constants;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.subsystems.vision.AcceptanceParams;
-import frc.robot.subsystems.vision.FieldBounds;
-import frc.robot.subsystems.vision.StdDevParams;
 import frc.robot.subsystems.vision.VisionConfig;
+import frc.robot.subsystems.vision.VisionConfig.AcceptanceParams;
 import frc.robot.subsystems.vision.VisionConfig.CameraConfig;
+import frc.robot.subsystems.vision.VisionConfig.FieldBounds;
+import frc.robot.subsystems.vision.VisionConfig.StdDevParams;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;

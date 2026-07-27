@@ -9,6 +9,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import edu.wpi.first.math.geometry.Pose2d;
+import frc.robot.subsystems.vision.VisionConfig.AcceptanceParams;
+import frc.robot.subsystems.vision.VisionConfig.FieldBounds;
+import frc.robot.subsystems.vision.VisionConfig.StdDevParams;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 
