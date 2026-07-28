@@ -110,7 +110,8 @@ public class Vision {
    *
    * @param name its NetworkTables table name, e.g. "limelight-left"
    * @param trust relative weight; 1.0 is nominal, below 1.0 de-weights a camera whose mounting is
-   *     less certain (a turret-mounted camera is only as good as the turret encoder)
+   *     less certain -- one on a moving mechanism is only as good as that mechanism's encoder, and
+   *     one that bench data shows disagreeing with its neighbours has earned a lower number
    * @param enabled false skips the camera entirely without removing it from the list
    */
   public record CameraConfig(String name, double trust, boolean enabled) {

@@ -12,14 +12,14 @@ public class VisionConstants {
   public static final String TURRET_TABLE = "limelight-turret";
 
   /**
-   * Relative weight per camera. The turret camera sits on a rotating mechanism, so its robot-space
-   * transform is only as good as the turret encoder -- it starts trusted a little less than the
-   * fixed side cameras.
+   * Relative weight per camera. All three are rigidly mounted to the chassis, so none has a less
+   * certain robot-space transform than the others and they all start equal. Drop one below 1.0 if
+   * bench data shows it disagreeing with the others.
    */
   public static final double LEFT_TRUST = 1.0;
 
   public static final double RIGHT_TRUST = 1.0;
-  public static final double TURRET_TRUST = 0.8;
+  public static final double TURRET_TRUST = 1.0;
 
   /**
    * Off until bench validation. Several cameras looking at the same tags produce correlated errors,
