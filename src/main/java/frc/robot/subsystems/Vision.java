@@ -526,13 +526,12 @@ public class Vision {
         config.stdDevs().theta());
   }
 
-  /**
-   * Reads MegaTag1 for a pose that can seed a cold estimate. Requires two or more tags: MegaTag2's
-   * rotation is the heading we fed in, so seeding from it can never correct a wrong gyro, and a
-   * single-tag MegaTag1 heading is too poorly conditioned to trust for a hard reset.
-   *
-   * <p>Only called while a seed is armed, so it costs nothing for the rest of the match.
-   */
+  //   Reads MegaTag1 for a pose that can seed a cold estimate. Requires two or more tags: MegaTag2's
+  //   rotation is the heading we fed in, so seeding from it can never correct a wrong gyro, and a
+  //   single-tag MegaTag1 heading is too poorly conditioned to trust for a hard reset.
+  // 
+  //   <p>Only called while a seed is armed, so it costs nothing for the rest of the match.
+  //  
   private Pose2d findSeedPose() {
     Pose2d best = null;
     int bestTagCount = 1;
@@ -590,14 +589,13 @@ public class Vision {
   // Decision logic -- pure functions, no state, no I/O. This is the unit tested part.
   // ===========================================================================================
 
-  /**
-   * Relative quality of a sample. Higher is better; {@link Double#NEGATIVE_INFINITY} means unusable
-   * so an unusable camera can never win a comparison.
-   *
-   * <p>The multi-tag bonus dominates every other term on purpose. Two distant tags give a far
-   * better conditioned solve than one enormous close one, which is exactly the case an area-only
-   * comparison gets backwards.
-   */
+  //   Relative quality of a sample. Higher is better; {@link Double#NEGATIVE_INFINITY} means unusable
+  //   so an unusable camera can never win a comparison.
+  //  
+  //   <p>The multi-tag bonus dominates every other term on purpose. Two distant tags give a far
+  //   better conditioned solve than one enormous close one, which is exactly the case an area-only
+  //   comparison gets backwards.
+
   public static double score(CameraSample s) {
     if (!s.hasTarget()) {
       return Double.NEGATIVE_INFINITY;
