@@ -25,7 +25,6 @@ import frc.robot.constants.ShooterConstants;
 import frc.robot.constants.TunerConstants;
 import frc.robot.constants.TurretConstants;
 import frc.robot.constants.VisionConstants;
-import frc.robot.subsystems.vision.VisionMeasurement;
 import frc.robot.utils.FieldUtils.GameZone;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.TurretHelpers;
@@ -122,7 +121,7 @@ public class StateMachine extends SubsystemBase {
       }
     }
 
-    for (VisionMeasurement measurement : vision.getAcceptedMeasurements()) {
+    for (Vision.Measurement measurement : vision.getAcceptedMeasurements()) {
       drivetrain.addVisionMeasurement(
           measurement.pose(),
           // RAW FPGA seconds. Swerve.addVisionMeasurement already applies Utils.fpgaToCurrentTime;

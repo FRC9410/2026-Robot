@@ -1,11 +1,7 @@
 package frc.robot.constants;
 
 import edu.wpi.first.math.geometry.Pose2d;
-import frc.robot.subsystems.vision.VisionConfig;
-import frc.robot.subsystems.vision.VisionConfig.AcceptanceParams;
-import frc.robot.subsystems.vision.VisionConfig.CameraConfig;
-import frc.robot.subsystems.vision.VisionConfig.FieldBounds;
-import frc.robot.subsystems.vision.VisionConfig.StdDevParams;
+import frc.robot.subsystems.Vision;
 import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
@@ -39,24 +35,24 @@ public class VisionConstants {
   public static final double FIELD_TOLERANCE_METERS = 0.4;
 
   /** Builds the vision configuration. Suppliers come from the drivetrain. */
-  public static VisionConfig config(
+  public static Vision.Config config(
       DoubleSupplier headingDegrees, DoubleSupplier yawRateDegPerSec, Supplier<Pose2d> currentPose) {
-    return new VisionConfig(
+    return new Vision.Config(
         List.of(
-            new CameraConfig(LEFT_TABLE, LEFT_TRUST),
-            new CameraConfig(RIGHT_TABLE, RIGHT_TRUST),
-            new CameraConfig(TURRET_TABLE, TURRET_TRUST)),
+            new Vision.CameraConfig(LEFT_TABLE, LEFT_TRUST),
+            new Vision.CameraConfig(RIGHT_TABLE, RIGHT_TRUST),
+            new Vision.CameraConfig(TURRET_TABLE, TURRET_TRUST)),
         headingDegrees,
         yawRateDegPerSec,
         currentPose,
-        new FieldBounds(
+        new Vision.FieldBounds(
             FieldConstants.X_MIN,
             FieldConstants.Y_MIN,
             FieldConstants.X_MAX,
             FieldConstants.Y_MAX,
             FIELD_TOLERANCE_METERS),
-        AcceptanceParams.defaults(),
-        StdDevParams.defaults(),
+        Vision.AcceptanceParams.defaults(),
+        Vision.StdDevParams.defaults(),
         FUSE_ALL_CAMERAS,
         true);
   }
