@@ -18,65 +18,63 @@ import java.util.Optional;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
-/**
- * Polls every configured Limelight once per loop and reports the pose measurements worth believing.
- *
- * <p>Self-contained on purpose: config, data types, decision logic and NetworkTables plumbing all
- * live here so the class can be dropped into another project as a single file. It holds no
- * reference to a drivetrain -- headings arrive through {@link Config} suppliers and measurements go
- * back out through {@link #getAcceptedMeasurements()} for the caller to apply.
- *
- * <p>Deliberately NOT a {@code SubsystemBase}. {@code SubsystemBase}'s constructor registers with
- * the CommandScheduler and {@code super()} runs before field initializers, so a Vision held as a
- * field of another subsystem registers second and its {@code periodic()} would run *after* its
- * consumer's. An explicit {@link #update()} call makes the ordering guaranteed instead of
- * incidental.
- *
- * <h2>How it works</h2>
- *
- * MegaTag1 solves the full pose from tag geometry alone, but its rotation is poorly conditioned
- * with a single tag. MegaTag2 only solves x/y because we hand it the heading, which is far more
- * accurate -- but its reported rotation is just our own heading echoed back, so it can never
- * correct a wrong gyro. Hence: MegaTag1 once to seed heading, MegaTag2 forever after for position.
- */
+// Polls every configured Limelight once per loop and reports the pose measurements worth believing.
+//
+// Self-contained on purpose: config, data types, decision logic and NetworkTables plumbing all live
+// in this one file so it can be dropped into another project as a single unit. It holds no reference
+// to a drivetrain -- everything it needs about the robot arrives through Config suppliers, and
+// measurements go back out through getAcceptedMeasurements() for the caller to apply.
+//
+// Deliberately NOT a SubsystemBase. SubsystemBase's constructor registers with the CommandScheduler
+// and super() runs before field initializers, so a Vision held as a field of another subsystem
+// registers second and its periodic() would run AFTER its consumer's -- meaning the consumer reads
+// last loop's data. An explicit update() call makes the ordering guaranteed instead of incidental.
+//
+// How the two MegaTag modes are used:
+//   MegaTag1 solves the full pose from tag geometry alone. Self-contained, but with a single tag the
+//     rotation solve is ambiguous and can flip between two plausible answers.
+//   MegaTag2 only solves x/y because we hand it the heading. Far more accurate -- but its reported
+//     rotation is just our own heading echoed back, so it can never correct a wrong gyro.
+// Hence: MegaTag1 once to seed heading, MegaTag2 forever after for position.
 public class Vision {
 
-  /** Loops a camera may publish nothing before it is treated as gone. 10 loops is ~200 ms. */
+  // Loops a camera may publish nothing before it is treated as gone. 10 loops is about 200 ms.
   private static final int STALE_POLL_LIMIT = 10;
 
-  /**
-   * Loops of nothing-but-JUMPED verdicts before the pose seed is re-armed. Odometry that has
-   * drifted past the jump gate would otherwise reject every correction forever -- see
-   * {@link Verdict#JUMPED}.
-   */
+  // Loops of nothing-but-JUMPED verdicts before the pose seed is re-armed. Odometry that has
+  // drifted past the jump gate would otherwise reject every correction forever. See Verdict.JUMPED.
   private static final int JUMP_LOCKOUT_LIMIT = 50;
 
-  /** MegaTag2: pose solved using the heading we push. No absolute heading of its own. */
+  // MegaTag2: pose solved using the heading we push. No absolute heading of its own.
   private static final String MT2_ENTRY = "botpose_orb_wpiblue";
 
-  /** MegaTag1: solves heading from tag geometry. The only thing that can seed a cold gyro. */
+  // MegaTag1: solves heading from tag geometry. The only thing that can seed a cold gyro.
   private static final String MT1_ENTRY = "botpose_wpiblue";
 
-  /** Below this, distance terms stop being meaningful and start blowing up the trust curve. */
+  // Below this, distance terms stop being meaningful and start blowing up the trust curve.
   private static final double MIN_MEANINGFUL_DIST_METERS = 0.5;
 
   // ===========================================================================================
   // Configuration
   // ===========================================================================================
 
-  /**
-   * @param headingDegrees field-relative, blue-origin robot heading for MegaTag2 (0 deg = facing
-   *     the red wall). Use the pose estimator's rotation, not the raw gyro: the estimator carries
-   *     the reset offset, the raw gyro only matches if it happened to be zeroed at the red wall.
-   * @param yawRateDegPerSec angular velocity about world Z; pass {@code () -> 0.0} if the sign
-   *     convention is in doubt, the Limelight documents this input as optional
-   * @param currentPose current best estimate, used only for the jump gate
-   * @param fuseAllCameras when true every accepted camera is reported; when false only the
-   *     highest-scoring one is
-   */
+  // Everything this class needs, with no reference to a specific drivetrain.
+  //
+  // headingDegrees must be field-relative and blue-origin (0 deg = facing the red wall). Use the
+  // pose estimator's rotation, NOT the raw gyro: the estimator carries the reset offset, while the
+  // raw gyro only matches if it happened to be zeroed pointing at the red wall.
+  //
+  // pitch, roll and yaw rate describe what the robot is physically doing. They gate measurements --
+  // a tilted or fast-spinning robot produces poses the camera cannot solve correctly.
+  //
+  // currentPose is the current best estimate, used only for the jump gate.
+  //
+  // fuseAllCameras true reports every accepted camera; false reports only the highest-scoring one.
   public record Config(
       List<CameraConfig> cameras,
       DoubleSupplier headingDegrees,
+      DoubleSupplier pitchDegrees,
+      DoubleSupplier rollDegrees,
       DoubleSupplier yawRateDegPerSec,
       Supplier<Pose2d> currentPose,
       FieldBounds bounds,
@@ -85,16 +83,20 @@ public class Vision {
       boolean fuseAllCameras,
       boolean logTelemetry) {
 
-    /** Sensible defaults: standard acceptance and std devs, single best camera, telemetry on. */
+    // Convenience overload: standard acceptance and std devs, single best camera, telemetry on.
     public Config(
         List<CameraConfig> cameras,
         DoubleSupplier headingDegrees,
+        DoubleSupplier pitchDegrees,
+        DoubleSupplier rollDegrees,
         DoubleSupplier yawRateDegPerSec,
         Supplier<Pose2d> currentPose,
         FieldBounds bounds) {
       this(
           cameras,
           headingDegrees,
+          pitchDegrees,
+          rollDegrees,
           yawRateDegPerSec,
           currentPose,
           bounds,
@@ -105,15 +107,16 @@ public class Vision {
     }
   }
 
-  /**
-   * One Limelight.
-   *
-   * @param name its NetworkTables table name, e.g. "limelight-left"
-   * @param trust relative weight; 1.0 is nominal, below 1.0 de-weights a camera whose mounting is
-   *     less certain -- one on a moving mechanism is only as good as that mechanism's encoder, and
-   *     one that bench data shows disagreeing with its neighbours has earned a lower number
-   * @param enabled false skips the camera entirely without removing it from the list
-   */
+  // One Limelight.
+  //
+  // name is its NetworkTables table name, e.g. "limelight-left". This has to match what the device
+  // itself is configured as in its web UI -- a mismatch shows up as a permanently absent camera.
+  //
+  // trust is a relative weight. 1.0 is nominal. Below 1.0 de-weights a camera whose mounting is
+  // less certain -- one on a moving mechanism is only as good as that mechanism's encoder, and one
+  // that bench data shows disagreeing with its neighbours has earned a lower number.
+  //
+  // enabled false skips the camera entirely without removing it from the list.
   public record CameraConfig(String name, double trust, boolean enabled) {
 
     public CameraConfig(String name) {
@@ -125,14 +128,12 @@ public class Vision {
     }
   }
 
-  /**
-   * Field extents used as a sanity gate on vision poses. Tolerance allows a small amount of
-   * overhang past the field edge (a real pose can sit slightly outside when the robot is against a
-   * wall) without accepting obvious garbage.
-   */
+  // Field extents, used as a sanity gate on vision poses. Tolerance allows a small amount of
+  // overhang past the field edge -- a real pose can sit slightly outside when the robot is pressed
+  // against a wall -- without accepting obvious garbage.
   public record FieldBounds(double xMin, double yMin, double xMax, double yMax, double tolerance) {
 
-    /** Bounds anchored at the origin with the default 0.4 m tolerance. */
+    // Bounds anchored at the origin with the default 0.4 m tolerance.
     public FieldBounds(double xMax, double yMax) {
       this(0.0, 0.0, xMax, yMax, 0.4);
     }
@@ -145,48 +146,47 @@ public class Vision {
     }
   }
 
-  /**
-   * Thresholds deciding whether a {@link CameraSample} is trustworthy enough to hand to the pose
-   * estimator. Single-tag solutions get much tighter gates than multi-tag ones: a single tag has no
-   * baseline, so its solve is poorly conditioned and its pose can flip.
-   *
-   * @param maxSingleTagDist max average tag distance, meters, when only one tag is visible
-   * @param maxMultiTagDist max average tag distance, meters, with two or more tags
-   * @param maxSingleTagAmbiguity max per-tag ambiguity tolerated for a single-tag solution
-   * @param minSingleTagArea min average tag area (fraction of image) for a single-tag solution
-   * @param maxJumpSingleTag max distance, meters, a single-tag pose may sit from the current
-   *     estimate. Multi-tag poses are exempt from this gate entirely.
-   */
+  // Thresholds deciding whether a sample is trustworthy enough to hand to the pose estimator.
+  //
+  // Single-tag solutions get much tighter gates than multi-tag ones: a single tag gives the solver
+  // no baseline, so the solve is poorly conditioned and the pose can flip outright.
+  //
+  //   maxSingleTagDist       max average tag distance, meters, with only one tag visible
+  //   maxMultiTagDist        max average tag distance, meters, with two or more tags
+  //   maxSingleTagAmbiguity  max per-tag ambiguity tolerated for a single-tag solution
+  //   minSingleTagArea       min average tag area, fraction of image, for a single-tag solution
+  //   maxJumpSingleTag       max meters a single-tag pose may sit from the current estimate.
+  //                          Multi-tag poses are exempt from this gate entirely.
+  //   maxTiltDegrees         max absolute pitch or roll before nothing is believed at all
+  //   maxYawRateDegPerSec    max spin rate before nothing is believed at all
   public record AcceptanceParams(
       double maxSingleTagDist,
       double maxMultiTagDist,
       double maxSingleTagAmbiguity,
       double minSingleTagArea,
-      double maxJumpSingleTag) {
+      double maxJumpSingleTag,
+      double maxTiltDegrees,
+      double maxYawRateDegPerSec) {
 
     public static AcceptanceParams defaults() {
-      return new AcceptanceParams(4.0, 6.5, 0.3, 0.08, 1.0);
+      return new AcceptanceParams(4.0, 6.5, 0.3, 0.08, 1.0, 5.0, 720.0);
     }
   }
 
-  /**
-   * Coefficients for the vision measurement standard deviations handed to the pose estimator.
-   *
-   * @param baseXy scales the distance^2 / tagCount trust curve, meters
-   * @param minXy floor on the xy standard deviation, meters
-   * @param maxXy ceiling on the xy standard deviation, meters
-   * @param theta heading standard deviation, radians -- see {@link #defaults()}
-   */
+  // Coefficients for the vision measurement standard deviations handed to the pose estimator.
+  //
+  //   baseXy  scales the distance^2 / tagCount trust curve, meters
+  //   minXy   floor on the xy standard deviation, meters
+  //   maxXy   ceiling on the xy standard deviation, meters
+  //   theta   heading standard deviation, radians -- see defaults() below
   public record StdDevParams(double baseXy, double minXy, double maxXy, double theta) {
 
-    /**
-     * MegaTag2's reported rotation is the heading we pushed to the Limelight, so trusting it back
-     * would be circular -- theta is pinned at a huge value to make the estimator ignore it.
-     *
-     * <p>Deliberately 9_999_999.0 and not {@link Double#POSITIVE_INFINITY}: the estimator squares
-     * these into a measurement covariance and solves for a Kalman gain, and infinity risks
-     * propagating NaN through that computation. The magic number is the standard FRC idiom here.
-     */
+    // MegaTag2's reported rotation is the heading we pushed to the Limelight, so trusting it back
+    // would be circular -- theta is pinned at a huge value to make the estimator ignore it.
+    //
+    // Deliberately 9_999_999.0 and NOT Double.POSITIVE_INFINITY: the estimator squares these into a
+    // measurement covariance and solves for a Kalman gain, and infinity risks propagating NaN
+    // through that computation. The magic number is the standard FRC idiom here -- do not "fix" it.
     public static StdDevParams defaults() {
       return new StdDevParams(0.06, 0.05, 4.0, 9_999_999.0);
     }
@@ -196,15 +196,31 @@ public class Vision {
   // Data
   // ===========================================================================================
 
-  /**
-   * One camera's view of the world for one loop, decoded from the Limelight botpose array. Pose
-   * components are raw doubles rather than a {@code Pose2d} so a rejected sample never builds one.
-   *
-   * @param connected false when the camera has never published or has gone silent
-   * @param freshFrame true only on the loop a new frame actually arrived
-   * @param maxAmbiguity worst per-tag ambiguity in the solution; 0 when unavailable
-   * @param timestampSeconds latency-corrected FPGA timestamp, seconds
-   */
+  // What the robot is physically doing this loop, sampled once and shared by every camera.
+  //
+  // This is the thing tag statistics cannot tell you. A Limelight solving a pose has no idea the
+  // chassis is pitched over a bump or mid-spin; both invalidate its answer, and both are only
+  // visible from the gyro.
+  public record RobotMotion(double pitchDegrees, double rollDegrees, double yawRateDegPerSec) {
+
+    // A stationary, flat robot. Used by tests and as a safe default.
+    public static final RobotMotion LEVEL = new RobotMotion(0.0, 0.0, 0.0);
+
+    // Worst absolute tilt on either axis. Either one being large is disqualifying, so the larger
+    // of the two is all that matters.
+    public double worstTiltDegrees() {
+      return Math.max(Math.abs(pitchDegrees), Math.abs(rollDegrees));
+    }
+  }
+
+  // One camera's view of the world for one loop, decoded from the Limelight botpose array.
+  //
+  // Pose components are raw doubles rather than a Pose2d so a rejected sample never builds one.
+  //
+  //   connected         false when the camera has never published or has gone silent
+  //   freshFrame        true only on the loop a new frame actually arrived
+  //   maxAmbiguity      worst per-tag ambiguity in the solution; 0 when unavailable
+  //   timestampSeconds  latency-corrected FPGA timestamp, seconds
   public record CameraSample(
       String name,
       boolean connected,
@@ -220,13 +236,13 @@ public class Vision {
       double timestampSeconds,
       double trust) {
 
-    /** A camera that is present but currently sees nothing usable. */
+    // A camera that is present but currently sees nothing usable.
     public static CameraSample noTargets(
         String name, boolean connected, boolean freshFrame, double trust) {
       return new CameraSample(name, connected, freshFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, trust);
     }
 
-    /** A camera that has never published, or has gone silent long enough to be considered gone. */
+    // A camera that has never published, or has gone silent long enough to be considered gone.
     public static CameraSample disconnected(String name, double trust) {
       return noTargets(name, false, false, trust);
     }
@@ -235,12 +251,12 @@ public class Vision {
       return connected && tagCount > 0;
     }
 
-    /** True when two or more tags contributed, which is a far better conditioned solve. */
+    // Two or more tags give the solver a baseline, which is a far better conditioned problem.
     public boolean isMultiTag() {
       return tagCount >= 2;
     }
 
-    /** Same sample carried into a loop where no new frame arrived. */
+    // Same sample carried into a loop where no new frame arrived.
     public CameraSample asStale(boolean stillConnected) {
       return new CameraSample(
           name, stillConnected, false, x, y, yawDegrees,
@@ -248,14 +264,12 @@ public class Vision {
     }
   }
 
-  /**
-   * An accepted vision pose, ready to hand to a pose estimator. Standard deviations travel with the
-   * measurement so several cameras with different trust can be applied in the same loop.
-   *
-   * @param timestampSeconds raw FPGA seconds. Callers must NOT convert this -- {@code Swerve}
-   *     already applies {@code Utils.fpgaToCurrentTime} inside its {@code addVisionMeasurement}
-   *     override, and converting here too would double-apply the offset.
-   */
+  // An accepted vision pose, ready to hand to a pose estimator. Standard deviations travel with the
+  // measurement so several cameras with different trust can be applied in the same loop.
+  //
+  // timestampSeconds is RAW FPGA seconds. Callers must NOT convert it -- Swerve already applies
+  // Utils.fpgaToCurrentTime inside its addVisionMeasurement override, and converting here too would
+  // double-apply the offset and skew every measurement's position in the estimator's history.
   public record Measurement(
       String cameraName,
       Pose2d pose,
@@ -265,29 +279,42 @@ public class Vision {
       double xyStdDev,
       double thetaStdDev) {}
 
-  /**
-   * Why a sample was or was not used. Published per camera so a bench session can tell "vision is
-   * broken" apart from "a threshold is too tight", which are otherwise indistinguishable from the
-   * outside.
-   */
+  // Why a sample was or was not used.
+  //
+  // Published per camera so a bench session can tell "vision is broken" apart from "a threshold is
+  // too tight". Those two look identical from the outside and are the most likely source of
+  // confusion on a first run.
   public enum Verdict {
     ACCEPT,
-    /** No tags in view, or the camera is considered disconnected. */
+
+    // No tags in view, or the camera is considered disconnected.
     NO_TARGET,
-    /** No new frame this loop. Normal for a third of loops -- Limelights run slower than 50 Hz. */
+
+    // No new frame this loop. Normal for a third of loops -- Limelights run slower than 50 Hz.
     STALE,
-    /** Exactly (0,0), which a cold Limelight reports and which sits inside the field bounds. */
+
+    // Chassis pitched or rolled too far. The camera is not pointing where the Limelight thinks it
+    // is, so its floor projection is wrong no matter how good the tags look.
+    TILTED,
+
+    // Spinning fast enough that the frame is smeared and the solve is unreliable.
+    SPINNING,
+
+    // Exactly (0,0), which a cold Limelight reports and which sits inside the field bounds.
     ORIGIN,
+
     OUT_OF_BOUNDS,
+
     TOO_FAR,
-    /** Single tag whose pose solution is ambiguous enough to flip. */
+
+    // Single tag whose pose solution is ambiguous enough to flip.
     AMBIGUOUS,
-    /** Single tag too small in frame to localize from. */
+
+    // Single tag too small in frame to localize from.
     TOO_SMALL,
-    /**
-     * Single-tag pose further from the current estimate than the robot could have moved. Sustained
-     * JUMPED verdicts re-arm the seed rather than rejecting forever, so drifted odometry recovers.
-     */
+
+    // Single-tag pose further from the current estimate than the robot could have moved. Sustained
+    // JUMPED verdicts re-arm the seed rather than rejecting forever, so drifted odometry recovers.
     JUMPED
   }
 
@@ -298,19 +325,31 @@ public class Vision {
   private final Config config;
   private final List<CameraConfig> cameras;
 
+  // One cached NetworkTables subscriber per camera. Created once in the constructor, not per read.
   private final DoubleArrayEntry[] mt2Entries;
+
+  // Last NT timestamp seen per camera, used to detect "no new frame".
   private final long[] lastFrameTimestamp;
+
+  // Consecutive loops each camera has published nothing new.
   private final int[] stalePolls;
+
+  // Latest decoded sample and verdict per camera. Index-aligned with the cameras list.
   private final CameraSample[] samples;
   private final Verdict[] verdicts;
 
+  // Rebuilt each loop. The unmodifiable view is what callers get, so they cannot mutate our list.
   private final List<Measurement> accepted = new ArrayList<>();
   private final List<Measurement> acceptedView = Collections.unmodifiableList(accepted);
 
   private CameraSample bestSample = null;
+  private RobotMotion motion = RobotMotion.LEVEL;
+
+  // Counts consecutive loops where every camera with a fresh view returned JUMPED.
   private int jumpLockoutCounter = 0;
 
-  /** While armed, MegaTag1 is polled for a one-shot pose seed. Cleared once a seed is taken. */
+  // While armed, MegaTag1 is polled for a one-shot pose seed. Cleared once a seed is taken.
+  // This class is the ONLY owner of this flag -- see consumeSeedPose().
   private boolean seedArmed = true;
 
   private Pose2d pendingSeed = null;
@@ -326,9 +365,10 @@ public class Vision {
     samples = new CameraSample[n];
     verdicts = new Verdict[n];
 
+    // Set up one cached subscriber per camera and start everything in the disconnected state, so a
+    // camera that never publishes reads as absent rather than as a valid pose at the origin.
     for (int i = 0; i < n; i++) {
       CameraConfig cam = cameras.get(i);
-      // Cached subscriber -- created once per camera, not once per read.
       mt2Entries[i] = LimelightHelpers.getLimelightDoubleArrayEntry(cam.name(), MT2_ENTRY);
       samples[i] = CameraSample.disconnected(cam.name(), cam.trust());
       verdicts[i] = Verdict.NO_TARGET;
@@ -339,46 +379,73 @@ public class Vision {
   // Per-loop pipeline
   // ===========================================================================================
 
-  /** Runs the whole pipeline. Call once per loop, before anything reads the results. */
+  // Runs the whole pipeline. Call once per loop, before anything reads the results.
   public void update() {
-    pushRobotOrientation();
+    // Sample the gyro once and share it. Reading the suppliers repeatedly could hand different
+    // cameras slightly different views of the same instant.
+    motion = readMotion();
+
+    pushRobotOrientation(motion);
     pollCameras();
-    selectMeasurements();
+    selectMeasurements(motion);
+
+    // MegaTag1 is only read while a seed is wanted, so this costs nothing for the rest of the match.
     if (seedArmed) {
       pendingSeed = findSeedPose();
     }
+
     if (config.logTelemetry()) {
       publishTelemetry();
     }
   }
 
-  /**
-   * MegaTag2 is computed on the Limelight from the last orientation we sent it, so every camera
-   * needs the heading every loop -- not just whichever one happens to be winning. A camera that
-   * goes without it publishes a pose built from a stale heading, which is exactly the moment it
-   * would be picked up as "best" and believed.
-   *
-   * <p>Writes are batched with a single flush at the end rather than one flush per camera.
-   */
-  private void pushRobotOrientation() {
+  private RobotMotion readMotion() {
+    return new RobotMotion(
+        config.pitchDegrees().getAsDouble(),
+        config.rollDegrees().getAsDouble(),
+        config.yawRateDegPerSec().getAsDouble());
+  }
+
+  // MegaTag2 is computed ON the Limelight from the last orientation we sent it, so every camera
+  // needs the heading every loop -- not just whichever one happens to be winning. A camera that
+  // goes without it publishes a pose built from a stale heading, which is exactly the moment it
+  // would be picked up as "best" and believed.
+  //
+  // Writes are batched with a single flush at the end. SetRobotOrientation (the non-NoFlush
+  // variant) forces a full NetworkTables flush on every call, which would be three per loop.
+  private void pushRobotOrientation(RobotMotion motion) {
     double heading = config.headingDegrees().getAsDouble();
-    double yawRate = config.yawRateDegPerSec().getAsDouble();
     boolean wroteAny = false;
 
     for (CameraConfig cam : cameras) {
       if (cam.enabled()) {
-        LimelightHelpers.SetRobotOrientation_NoFlush(cam.name(), heading, yawRate, 0, 0, 0, 0);
+        // Pitch and roll are documented by Limelight as unnecessary for MegaTag2, which consumes
+        // only yaw. They are sent anyway because they cost nothing, they match the signature's
+        // intent, and firmware may start using them.
+        LimelightHelpers.SetRobotOrientation_NoFlush(
+            cam.name(),
+            heading,
+            motion.yawRateDegPerSec(),
+            motion.pitchDegrees(),
+            0,
+            motion.rollDegrees(),
+            0);
         wroteAny = true;
       }
     }
+
     if (wroteAny) {
       LimelightHelpers.Flush();
     }
   }
 
+  // Reads each camera's MegaTag2 array and turns it into a sample. Bails out before doing any work
+  // in the common cases where there is nothing new to look at.
   private void pollCameras() {
     for (int i = 0; i < cameras.size(); i++) {
       CameraConfig cam = cameras.get(i);
+
+      // A camera switched off in config never contributes and is never read.
       if (!cam.enabled()) {
         samples[i] = CameraSample.disconnected(cam.name(), cam.trust());
         continue;
@@ -386,52 +453,69 @@ public class Vision {
 
       TimestampedDoubleArray raw = mt2Entries[i].getAtomic();
 
+      // Zero-length array means the camera has never published: not powered, wrong table name, or
+      // still booting.
       if (raw.value.length == 0) {
-        // Camera has never published: not powered, wrong table name, or still booting.
         samples[i] = CameraSample.disconnected(cam.name(), cam.trust());
         continue;
       }
 
+      // Same NT timestamp as last loop means no new frame. This is NORMAL for a third of loops,
+      // since Limelights publish slower than our 20 ms tick -- but a camera that stops entirely
+      // leaves its last array in NetworkTables forever, and without this counter it would keep
+      // looking perfectly valid indefinitely. Re-adding an old frame would also double-count the
+      // same evidence in the Kalman filter, so a stale sample is never accepted either way.
       if (raw.timestamp == lastFrameTimestamp[i]) {
-        // No new frame. Limelights publish slower than the 20 ms loop, so this is normal for a
-        // few loops -- but a camera that stops entirely leaves its last array in NetworkTables
-        // forever, and without this counter it would keep looking valid indefinitely.
         boolean stillConnected = ++stalePolls[i] < STALE_POLL_LIMIT;
         samples[i] = samples[i].asStale(stillConnected);
         continue;
       }
 
+      // Genuinely new frame: remember it and decode.
       lastFrameTimestamp[i] = raw.timestamp;
       stalePolls[i] = 0;
       samples[i] = decode(raw, cam);
     }
   }
 
-  /**
-   * Decodes a Limelight botpose array. Layout mirrors LimelightHelpers v1.14
-   * {@code getBotPoseEstimate} and must be kept in lockstep with it if the vendor file is updated:
-   * [0..5] x, y, z, roll, pitch, yaw; [6] latency ms; [7] tagCount; [8] tagSpan; [9] avgTagDist;
-   * [10] avgTagArea; then 7 values per fiducial with ambiguity last.
-   *
-   * <p>Package-private so it can be unit tested against hand-built arrays -- an index error here
-   * produces poses that look entirely plausible and are wrong.
-   */
+  // Decodes a Limelight botpose array.
+  //
+  // Layout mirrors LimelightHelpers v1.14 getBotPoseEstimate and must be kept in lockstep with it
+  // if the vendor file is ever updated:
+  //   [0..5]  x, y, z, roll, pitch, yaw
+  //   [6]     latency, milliseconds
+  //   [7]     tag count
+  //   [8]     tag span
+  //   [9]     average tag distance
+  //   [10]    average tag area
+  //   then 7 values per fiducial: id, txnc, tync, ta, distToCamera, distToRobot, ambiguity
+  //
+  // Package-private so it can be unit tested against hand-built arrays. An index error here
+  // produces poses that look entirely plausible and are wrong, which is the worst failure mode
+  // available, so this is the one method in the file with dedicated tests.
   static CameraSample decode(TimestampedDoubleArray raw, CameraConfig cam) {
     double[] v = raw.value;
+
+    // Too short to even hold the summary block -- treat as seeing nothing rather than reading off
+    // the end of the array.
     if (v.length < 11) {
       return CameraSample.noTargets(cam.name(), true, true, cam.trust());
     }
 
+    // The camera is alive and publishing, it just has no tags in view.
     int tagCount = (int) v[7];
     if (tagCount <= 0) {
       return CameraSample.noTargets(cam.name(), true, true, cam.trust());
     }
 
+    // The photons hit the sensor before the data reached us, so back the reported latency out of
+    // the NT timestamp. What the estimator needs is when the picture was taken, not when it landed.
     double latencyMs = v[6];
     double timestampSeconds = raw.timestamp / 1_000_000.0 - latencyMs / 1000.0;
 
-    // Stride the fiducial block for the worst ambiguity rather than materializing one object per
-    // tag. Guarded by the same length check LimelightHelpers uses.
+    // Stride the fiducial block for the worst ambiguity rather than materializing an object per
+    // tag. The length guard is the same one LimelightHelpers uses: if the array does not match the
+    // advertised tag count, the block is untrustworthy and is skipped rather than read past.
     double maxAmbiguity = 0.0;
     if (v.length == 11 + 7 * tagCount) {
       for (int i = 0; i < tagCount; i++) {
@@ -455,21 +539,32 @@ public class Vision {
         cam.trust());
   }
 
-  private void selectMeasurements() {
+  // Runs every sample through the acceptance gates, ranks the survivors, and builds this loop's
+  // measurement list.
+  private void selectMeasurements(RobotMotion motion) {
     accepted.clear();
     bestSample = null;
 
     Pose2d current = config.currentPose().get();
+
+    // The jump gate compares against the current estimate, which is only meaningful once the
+    // estimate has actually been seeded. Before that, there is nothing to compare to.
     boolean havePose = !seedArmed;
+
     double bestScore = Double.NEGATIVE_INFINITY;
+
+    // Tracked for the lockout: did any camera have something to say, and was JUMPED the only thing
+    // any of them said?
     boolean sawTarget = false;
     boolean allJumped = true;
 
     for (int i = 0; i < samples.length; i++) {
       CameraSample sample = samples[i];
-      Verdict verdict = verdict(sample, config.acceptance(), config.bounds(), current, havePose);
+      Verdict verdict = verdict(sample, config.acceptance(), config.bounds(), current, havePose, motion);
       verdicts[i] = verdict;
 
+      // Only cameras that actually produced a fresh view this loop count towards the lockout. A
+      // blind or stale camera is not evidence of anything.
       if (sample.hasTarget() && sample.freshFrame()) {
         sawTarget = true;
         if (verdict != Verdict.JUMPED) {
@@ -481,16 +576,21 @@ public class Vision {
         continue;
       }
 
+      // Track the best regardless of fusion mode -- getBestCamera() reports it either way.
       double score = score(sample);
       if (score > bestScore) {
         bestScore = score;
         bestSample = sample;
       }
+
       if (config.fuseAllCameras()) {
         accepted.add(toMeasurement(sample));
       }
     }
 
+    // Single-camera mode: only the winner contributes. Several cameras looking at the SAME tags
+    // produce correlated errors, and feeding all of them makes the filter more confident than the
+    // evidence warrants, so this is the conservative default.
     if (!config.fuseAllCameras() && bestSample != null) {
       accepted.add(toMeasurement(bestSample));
     }
@@ -498,12 +598,14 @@ public class Vision {
     updateJumpLockout(sawTarget && allJumped);
   }
 
-  /**
-   * The jump gate protects against garbage poses, but on its own it is a one-way ratchet: if
-   * odometry ever drifts further than the gate allows, every future correction looks implausible
-   * and is rejected forever. If the cameras have done nothing but disagree for a full second,
-   * believe them and re-arm the seed instead.
-   */
+  // The jump gate protects against garbage poses, but on its own it is a one-way ratchet: if
+  // odometry ever drifts further than the gate allows, every future correction looks implausible
+  // and is rejected forever. If the cameras have done nothing but disagree for a full second,
+  // believe them and re-arm the seed instead.
+  //
+  // Re-arming does two things. It sets havePose false, which disables the gate immediately so
+  // measurements start flowing again this same loop, and it lets the next multi-tag view reseat the
+  // pose properly. Consuming that seed then re-enables the gate.
   private void updateJumpLockout(boolean everythingJumped) {
     if (!everythingJumped) {
       jumpLockoutCounter = 0;
@@ -515,6 +617,7 @@ public class Vision {
     }
   }
 
+  // Turns an accepted sample into a measurement, building the Pose2d and computing confidence.
   private Measurement toMeasurement(CameraSample s) {
     return new Measurement(
         s.name(),
@@ -526,43 +629,55 @@ public class Vision {
         config.stdDevs().theta());
   }
 
-  //   Reads MegaTag1 for a pose that can seed a cold estimate. Requires two or more tags: MegaTag2's
-  //   rotation is the heading we fed in, so seeding from it can never correct a wrong gyro, and a
-  //   single-tag MegaTag1 heading is too poorly conditioned to trust for a hard reset.
-  // 
-  //   <p>Only called while a seed is armed, so it costs nothing for the rest of the match.
-  //  
+  // Reads MegaTag1 for a pose that can seed a cold estimate.
+  //
+  // Requires two or more tags. MegaTag2's rotation is the heading we fed in, so seeding from it can
+  // never correct a wrong gyro, and a single-tag MegaTag1 heading is too poorly conditioned to
+  // trust for a hard pose reset.
   private Pose2d findSeedPose() {
     Pose2d best = null;
+
+    // Starts at 1 so a single-tag solution can never win.
     int bestTagCount = 1;
 
     for (int i = 0; i < cameras.size(); i++) {
       CameraConfig cam = cameras.get(i);
-      // Skip cameras we already know are gone -- their MegaTag1 array is frozen too, and seeding
-      // is a hard pose reset, so it is the last place to trust stale data.
+
+      // Skip cameras we already know are gone. Their MegaTag1 array is frozen right alongside their
+      // MegaTag2 one, and seeding is a hard pose reset -- the last place to trust stale data.
       if (!cam.enabled() || !samples[i].connected()) {
         continue;
       }
+
       double[] v = LimelightHelpers.getLimelightDoubleArrayEntry(cam.name(), MT1_ENTRY).get();
       if (v.length < 11) {
         continue;
       }
+
+      // Prefer whichever camera sees the most tags.
       int tagCount = (int) v[7];
       if (tagCount <= bestTagCount) {
         continue;
       }
+
+      // Same two sanity checks the measurement path uses: reject the cold-Limelight origin and
+      // anything off the field.
       if (v[0] == 0.0 && v[1] == 0.0) {
         continue;
       }
       if (!config.bounds().contains(v[0], v[1])) {
         continue;
       }
+
       best = new Pose2d(v[0], v[1], Rotation2d.fromDegrees(v[5]));
       bestTagCount = tagCount;
     }
+
     return best;
   }
 
+  // Per-camera diagnostics. The verdict string is the important one -- it turns "nothing is being
+  // accepted" from a mystery into a named reason.
   private void publishTelemetry() {
     for (int i = 0; i < samples.length; i++) {
       CameraSample s = samples[i];
@@ -576,72 +691,109 @@ public class Vision {
       SmartDashboard.putNumber(prefix + "score", score(s));
       SmartDashboard.putString(prefix + "verdict", verdicts[i].name());
     }
+
     for (Measurement m : accepted) {
       SmartDashboard.putNumber("Vision/" + m.cameraName() + "/xyStdDev", m.xyStdDev());
     }
+
     SmartDashboard.putString("Vision/bestCamera", getBestCamera());
     SmartDashboard.putNumber("Vision/acceptedCount", accepted.size());
     SmartDashboard.putBoolean("Vision/seedArmed", seedArmed);
     SmartDashboard.putNumber("Vision/jumpLockout", jumpLockoutCounter);
+
+    // Robot motion, so a bench session can see why TILTED or SPINNING is firing.
+    SmartDashboard.putNumber("Vision/tiltDegrees", motion.worstTiltDegrees());
+    SmartDashboard.putNumber("Vision/yawRateDegPerSec", motion.yawRateDegPerSec());
   }
 
   // ===========================================================================================
   // Decision logic -- pure functions, no state, no I/O. This is the unit tested part.
   // ===========================================================================================
 
-  //   Relative quality of a sample. Higher is better; {@link Double#NEGATIVE_INFINITY} means unusable
-  //   so an unusable camera can never win a comparison.
-  //  
-  //   <p>The multi-tag bonus dominates every other term on purpose. Two distant tags give a far
-  //   better conditioned solve than one enormous close one, which is exactly the case an area-only
-  //   comparison gets backwards.
-
+  // Relative quality of a sample. Higher is better. NEGATIVE_INFINITY means unusable, so an
+  // unusable camera can never win a comparison.
+  //
+  // The multi-tag bonus dominates every other term on purpose. Two distant tags give a far better
+  // conditioned solve than one enormous close one, which is exactly the case an area-only
+  // comparison gets backwards.
   public static double score(CameraSample s) {
     if (!s.hasTarget()) {
       return Double.NEGATIVE_INFINITY;
     }
+
     double dist = Math.max(s.avgTagDist(), MIN_MEANINGFUL_DIST_METERS);
+
     double raw =
+        // Having a baseline at all is worth more than everything else combined.
         (s.isMultiTag() ? 100.0 : 0.0)
+            // More tags still help past two, with diminishing returns past four.
             + 15.0 * Math.min(s.tagCount(), 4)
+            // Tags spread wide across the image constrain the solve better than clustered ones.
             + 8.0 * s.tagSpan()
+            // Bigger in frame is better, square-rooted because the benefit tails off.
             + 20.0 * Math.sqrt(Math.max(s.avgTagArea(), 0.0))
+            // Distance hurts.
             - 6.0 * dist
+            // The worst tag drags the whole solution down with it.
             - 30.0 * s.maxAmbiguity();
+
     return raw * s.trust();
   }
 
-  /**
-   * Whether a sample may be handed to the pose estimator, and why not when it may not.
-   *
-   * @param current current pose estimate, for the jump gate
-   * @param havePose false before the estimate has been seeded, which disables the jump gate
-   */
+  // Whether a sample may be handed to the pose estimator, and why not when it may not.
+  //
+  // Order matters. Cheap and universal reasons come first, then whole-robot state, then per-sample
+  // geometry -- so the reported verdict is the most fundamental reason rather than an incidental
+  // one. havePose false disables the jump gate, which is the case before the estimate is seeded.
   public static Verdict verdict(
       CameraSample s,
       AcceptanceParams params,
       FieldBounds bounds,
       Pose2d current,
-      boolean havePose) {
+      boolean havePose,
+      RobotMotion motion) {
+
+    // Nothing to evaluate.
     if (!s.hasTarget()) {
       return Verdict.NO_TARGET;
     }
+
+    // Already-seen frame. Accepting it again would feed the filter the same evidence twice.
     if (!s.freshFrame()) {
       return Verdict.STALE;
     }
-    // A cold or absent Limelight reports exactly (0, 0), which is inside the field and would
-    // otherwise sail through the bounds check.
+
+    // Whole-robot state next. If the chassis is tilted or spinning hard, no camera's answer is
+    // trustworthy, so this overrides anything the tag statistics might suggest. This is the one
+    // class of error tag data cannot reveal on its own -- a pose from a pitched robot looks
+    // perfectly healthy from the inside.
+    if (motion != null) {
+      if (motion.worstTiltDegrees() > params.maxTiltDegrees()) {
+        return Verdict.TILTED;
+      }
+      if (Math.abs(motion.yawRateDegPerSec()) > params.maxYawRateDegPerSec()) {
+        return Verdict.SPINNING;
+      }
+    }
+
+    // A cold or absent Limelight reports exactly (0,0), which is inside the field and would
+    // otherwise sail straight through the bounds check below.
     if (s.x() == 0.0 && s.y() == 0.0) {
       return Verdict.ORIGIN;
     }
+
     if (!bounds.contains(s.x(), s.y())) {
       return Verdict.OUT_OF_BOUNDS;
     }
 
     boolean multi = s.isMultiTag();
+
     if (s.avgTagDist() > (multi ? params.maxMultiTagDist() : params.maxSingleTagDist())) {
       return Verdict.TOO_FAR;
     }
+
+    // Everything below applies to single-tag solutions only. Multi-tag has a baseline, so it is not
+    // vulnerable to the flip that makes these checks necessary.
     if (!multi) {
       if (s.maxAmbiguity() > params.maxSingleTagAmbiguity()) {
         return Verdict.AMBIGUOUS;
@@ -649,8 +801,10 @@ public class Vision {
       if (s.avgTagArea() < params.minSingleTagArea()) {
         return Verdict.TOO_SMALL;
       }
-      // Multi-tag solutions are exempt: they are well conditioned enough to believe even when they
-      // disagree with the current estimate, which is what lets drifted odometry get corrected.
+
+      // Multi-tag is deliberately exempt from this gate: it is well conditioned enough to believe
+      // even when it disagrees with the current estimate, which is what lets drifted odometry get
+      // corrected instead of permanently locked out.
       if (havePose
           && current != null
           && Math.hypot(s.x() - current.getX(), s.y() - current.getY())
@@ -658,28 +812,33 @@ public class Vision {
         return Verdict.JUMPED;
       }
     }
+
     return Verdict.ACCEPT;
   }
 
-  /** Convenience wrapper over {@link #verdict}. */
+  // Convenience wrapper over verdict() for callers that only care yes or no.
   public static boolean isAcceptable(
       CameraSample s,
       AcceptanceParams params,
       FieldBounds bounds,
       Pose2d current,
-      boolean havePose) {
-    return verdict(s, params, bounds, current, havePose) == Verdict.ACCEPT;
+      boolean havePose,
+      RobotMotion motion) {
+    return verdict(s, params, bounds, current, havePose, motion) == Verdict.ACCEPT;
   }
 
-  /**
-   * Translational standard deviation for the pose estimator: trust falls off with the square of
-   * distance and improves with tag count, which is the standard formulation. A camera configured
-   * with lower trust gets a proportionally larger deviation.
-   */
+  // Translational standard deviation for the pose estimator.
+  //
+  // Trust falls off with the SQUARE of distance because a fixed pixel error is an angular error --
+  // the same angle covers more ground the further away the tag is. It improves with tag count
+  // because independent measurements average down. A camera configured with lower trust gets a
+  // proportionally larger deviation.
   public static double xyStdDev(CameraSample s, StdDevParams params) {
     double dist = Math.max(s.avgTagDist(), MIN_MEANINGFUL_DIST_METERS);
+
     double raw =
         params.baseXy() * dist * dist / Math.max(s.tagCount(), 1) / Math.max(s.trust(), 1e-3);
+
     return MathUtil.clamp(raw, params.minXy(), params.maxXy());
   }
 
@@ -687,17 +846,15 @@ public class Vision {
   // Results
   // ===========================================================================================
 
-  /**
-   * Measurements to hand to a pose estimator this loop. Every accepted camera when
-   * {@link Config#fuseAllCameras()} is set, otherwise just the best one.
-   *
-   * <p>The returned list is reused between loops -- read it before the next {@link #update()}.
-   */
+  // Measurements to hand to a pose estimator this loop. Every accepted camera when fuseAllCameras
+  // is set, otherwise just the best one.
+  //
+  // The returned list is reused between loops -- read it before the next update().
   public List<Measurement> getAcceptedMeasurements() {
     return acceptedView;
   }
 
-  /** Name of the highest-scoring accepted camera, or "" when none is usable. */
+  // Name of the highest-scoring accepted camera, or "" when none is usable.
   public String getBestCamera() {
     return bestSample == null ? "" : bestSample.name();
   }
@@ -706,20 +863,18 @@ public class Vision {
     return Optional.ofNullable(bestSample);
   }
 
-  /** Re-arms the one-shot MegaTag1 seed, e.g. when the driver resets the gyro. */
+  // Re-arms the one-shot MegaTag1 seed, e.g. when the driver resets the gyro.
   public void requestSeed() {
     seedArmed = true;
   }
 
-  /**
-   * Returns a MegaTag1 seed pose at most once per arming, disarming the seed as it does. Empty
-   * until a camera sees two or more tags.
-   *
-   * <p>This class is the single owner of whether a seed is wanted -- {@link #requestSeed()} and the
-   * jump lockout both arm it, and only this method disarms it. Callers should invoke this every
-   * loop and act on whatever comes back; do NOT keep a separate "already seeded" flag alongside it,
-   * because a caller-side flag cannot see the lockout re-arming and will suppress the recovery.
-   */
+  // Returns a MegaTag1 seed pose at most once per arming, disarming the seed as it does. Empty
+  // until a camera sees two or more tags.
+  //
+  // This class is the single owner of whether a seed is wanted -- requestSeed() and the jump
+  // lockout both arm it, and only this method disarms it. Callers should invoke this every loop and
+  // act on whatever comes back. Do NOT keep a separate "already seeded" flag alongside it: a
+  // caller-side flag cannot see the lockout re-arming, and will silently suppress the recovery.
   public Optional<Pose2d> consumeSeedPose() {
     if (!seedArmed || pendingSeed == null) {
       return Optional.empty();
@@ -734,7 +889,12 @@ public class Vision {
     return seedArmed;
   }
 
-  /** Latest sample for a camera, or an empty sample if the name is not configured. */
+  // What the gyro said this loop. Useful for logging alongside a rejected measurement.
+  public RobotMotion getMotion() {
+    return motion;
+  }
+
+  // Latest sample for a camera, or an empty sample if the name is not configured.
   public CameraSample getSample(String cameraName) {
     for (CameraSample s : samples) {
       if (s.name().equals(cameraName)) {
@@ -744,7 +904,7 @@ public class Vision {
     return CameraSample.disconnected(cameraName, 0.0);
   }
 
-  /** Why the named camera was or was not used this loop. */
+  // Why the named camera was or was not used this loop.
   public Verdict getVerdict(String cameraName) {
     for (int i = 0; i < samples.length; i++) {
       if (samples[i].name().equals(cameraName)) {

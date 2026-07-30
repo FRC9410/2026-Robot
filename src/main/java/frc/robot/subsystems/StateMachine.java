@@ -56,7 +56,7 @@ public class StateMachine extends SubsystemBase {
   public final Swerve drivetrain = TunerConstants.createDrivetrain();
 
   // Declared after drivetrain on purpose: the config below reads it, and Java runs field
-  // initializers in declaration order.
+  // initializers in declaration order. Declaring it above drivetrain would pass null.
   private final Vision vision =
       new Vision(
           VisionConstants.config(
@@ -64,6 +64,12 @@ public class StateMachine extends SubsystemBase {
               // gyro-driven and carries the reset offset; the raw Pigeon yaw only matches if it
               // happened to be zeroed facing the red wall.
               () -> drivetrain.getState().Pose.getRotation().getDegrees(),
+              // Pitch and roll gate the measurements: over a bump the cameras are not pointing
+              // where the Limelight thinks they are. Straight off the Pigeon, since the pose
+              // estimator only tracks yaw.
+              () -> drivetrain.getPigeon2().getPitch().getValueAsDouble(),
+              () -> drivetrain.getPigeon2().getRoll().getValueAsDouble(),
+              // Spin rate gates them too -- a fast turn smears the frame.
               () -> drivetrain.getPigeon2().getAngularVelocityZWorld().getValueAsDouble(),
               () -> drivetrain.getState().Pose));
 
