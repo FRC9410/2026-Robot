@@ -20,7 +20,7 @@ import frc.robot.subsystems.Vision.Verdict;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** No HAL, no NetworkTables -- everything under test is a pure function. */
+// No HAL, no NetworkTables -- everything under test is a pure function.
 class VisionTest {
 
   private static final AcceptanceParams PARAMS = AcceptanceParams.defaults();
@@ -204,7 +204,7 @@ class VisionTest {
 
   private static final CameraConfig CAM = new CameraConfig("limelight-left", 0.8);
 
-  /** Builds a botpose array: 11 summary values then 7 per fiducial. */
+  // Builds a botpose array: 11 summary values then 7 per fiducial.
   private static TimestampedDoubleArray botpose(
       long ntTimestampMicros,
       double x,

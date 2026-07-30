@@ -68,7 +68,6 @@ public class StateMachine extends SubsystemBase {
               () -> drivetrain.getState().Pose));
 
   private boolean winAuto = true;
-  private boolean gyroReset = false;
 
   private int intakeTimer = 0;
 
@@ -101,7 +100,6 @@ public class StateMachine extends SubsystemBase {
   }
 
   public void resetGyro () {
-    gyroReset = false;
     vision.requestSeed();
   }
 
@@ -110,16 +108,11 @@ public class StateMachine extends SubsystemBase {
     // registered subsystem precisely to keep this ordering out of the scheduler's hands.
     vision.update();
 
-    // Seed once from MegaTag1, which is the only source that solves heading from tag geometry.
-    // resetGyro() re-arms this; nothing else hard-resets the pose after that, so the Kalman filter
-    // is left to actually do its job.
-    if (!gyroReset) {
-      Optional<Pose2d> seed = vision.consumeSeedPose();
-      if (seed.isPresent()) {
-        drivetrain.resetPose(seed.get());
-        gyroReset = true;
-      }
-    }
+    // Seeds from MegaTag1, the only source that solves heading from tag geometry rather than from
+    // the heading we supplied. Unconditional on purpose: Vision owns whether a seed is wanted and
+    // consumeSeedPose() returns at most once per arming. Tracking that here as well let the two
+    // copies disagree, which silently disabled the jump-lockout recovery.
+    vision.consumeSeedPose().ifPresent(drivetrain::resetPose);
 
     for (Vision.Measurement measurement : vision.getAcceptedMeasurements()) {
       drivetrain.addVisionMeasurement(

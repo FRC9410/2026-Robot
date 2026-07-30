@@ -714,6 +714,11 @@ public class Vision {
   /**
    * Returns a MegaTag1 seed pose at most once per arming, disarming the seed as it does. Empty
    * until a camera sees two or more tags.
+   *
+   * <p>This class is the single owner of whether a seed is wanted -- {@link #requestSeed()} and the
+   * jump lockout both arm it, and only this method disarms it. Callers should invoke this every
+   * loop and act on whatever comes back; do NOT keep a separate "already seeded" flag alongside it,
+   * because a caller-side flag cannot see the lockout re-arming and will suppress the recovery.
    */
   public Optional<Pose2d> consumeSeedPose() {
     if (!seedArmed || pendingSeed == null) {
