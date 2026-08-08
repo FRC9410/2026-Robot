@@ -120,6 +120,10 @@ public class StateMachine extends SubsystemBase {
     // copies disagree, which silently disabled the jump-lockout recovery.
     vision.consumeSeedPose().ifPresent(drivetrain::resetPose);
 
+    // Applied after that reset, which is safe rather than merely tolerable. The only gate consulting
+    // the current pose is the single-tag jump gate, and Vision disables it whenever a seed is armed
+    // -- so on the one loop a seed actually lands, nothing in this list was selected by comparing it
+    // against the pose we just threw away.
     for (Vision.Measurement measurement : vision.getAcceptedMeasurements()) {
       drivetrain.addVisionMeasurement(
           measurement.pose(),

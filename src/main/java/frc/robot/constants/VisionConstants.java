@@ -41,6 +41,14 @@ public class VisionConstants {
   // Spin rate beyond which no camera is believed, because the frame is smeared.
   public static final double MAX_YAW_RATE_DEG_PER_SEC = 720.0;
 
+  // Max average tag distance for a MegaTag1 pose seed, meters. Tighter than either measurement
+  // distance limit on purpose: a measurement is one vote into a filter that can outvote it later,
+  // while a seed hard-resets the pose to whatever it says. Error grows with the square of distance,
+  // so this is the knob that decides how wrong a reset is allowed to be. Lower it if seeded poses
+  // land visibly off; raise it only if seeds are too rare to be useful and you have bench data
+  // showing distant multi-tag solutions are accurate on this robot.
+  public static final double MAX_SEED_DIST_METERS = 4.0;
+
   // Builds the vision configuration. Every supplier comes from the drivetrain -- see StateMachine
   // for what gets wired in and why.
   public static Vision.Config config(
@@ -68,10 +76,11 @@ public class VisionConstants {
             FieldConstants.X_MAX,
             FieldConstants.Y_MAX,
             FIELD_TOLERANCE_METERS),
-        // Standard gates, with the two motion limits above substituted in.
+        // Standard gates, with the three limits above substituted in.
         new Vision.AcceptanceParams(
             Vision.AcceptanceParams.defaults().maxSingleTagDist(),
             Vision.AcceptanceParams.defaults().maxMultiTagDist(),
+            MAX_SEED_DIST_METERS,
             Vision.AcceptanceParams.defaults().maxSingleTagAmbiguity(),
             Vision.AcceptanceParams.defaults().minSingleTagArea(),
             Vision.AcceptanceParams.defaults().maxJumpSingleTag(),

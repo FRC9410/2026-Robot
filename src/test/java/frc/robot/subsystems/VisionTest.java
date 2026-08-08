@@ -46,8 +46,10 @@ class VisionTest {
       double x,
       double y,
       double trust) {
+    // ambiguityKnown true: these are hand-built samples, so the ambiguity passed in is a real one.
+    // The unknown case only arises out of decode() and is covered by its own tests below.
     return new CameraSample(
-        name, true, true, x, y, 0.0, tagCount, 1.0, dist, area, ambiguity, 100.0, trust);
+        name, true, true, x, y, 0.0, tagCount, 1.0, dist, area, ambiguity, true, 100.0, trust);
   }
 
   // Default case: flat, still robot with no seeded pose, so the jump gate is inactive.
@@ -97,6 +99,22 @@ class VisionTest {
   void identicalSamplesTieBreakByTrust() {
     CameraSample trusted = sample("left", 2, 0.2, 2.0, 0.0, 8.0, 4.0, 1.0);
     CameraSample doubted = sample("turret", 2, 0.2, 2.0, 0.0, 8.0, 4.0, 0.8);
+
+    assertTrue(Vision.score(trusted) > Vision.score(doubted));
+  }
+
+  @Test
+  @DisplayName("trust still ranks the right way round when the raw score goes negative")
+  void trustRanksCorrectlyForNegativeScores() {
+    // A single tag scraping past every gate at once -- at the 4 m distance cap, at the 0.08 area
+    // floor and at the 0.3 ambiguity cap -- scores below zero while still being perfectly
+    // ACCEPTable. A plain raw * trust makes a negative score LARGER as trust falls, which ranks the
+    // least trusted camera first. This is the regression guard for that.
+    CameraSample trusted = sample("left", 1, 0.08, 4.0, 0.3, 8.0, 4.0, 1.0);
+    CameraSample doubted = sample("turret", 1, 0.08, 4.0, 0.3, 8.0, 4.0, 0.5);
+
+    assertEquals(Verdict.ACCEPT, verdictOf(trusted), "the fixture has to be an accepted sample");
+    assertTrue(Vision.score(trusted) < 0.0, "and its score has to actually be negative");
 
     assertTrue(Vision.score(trusted) > Vision.score(doubted));
   }
@@ -285,6 +303,80 @@ class VisionTest {
   }
 
   // -------------------------------------------------------------------------
+  // isSeedable -- the rules for a HARD POSE RESET
+  //
+  // Stricter than verdict() throughout, because a rejected measurement costs one loop of correction
+  // while a bad seed becomes the pose outright and every MegaTag2 solution afterwards is built on it.
+  // -------------------------------------------------------------------------
+
+  private static boolean seedable(CameraSample s) {
+    return Vision.isSeedable(s, PARAMS, BOUNDS, RobotMotion.LEVEL);
+  }
+
+  @Test
+  void aCloseMultiTagViewIsSeedable() {
+    assertTrue(seedable(sample("left", 2, 0.3, 2.0, 0.0)));
+  }
+
+  @Test
+  @DisplayName("one tag is never seedable, however good it looks")
+  void singleTagIsNeverSeedable() {
+    // A single-tag MegaTag1 rotation can flip between two plausible answers, and a flipped heading
+    // applied as a hard reset poisons every MegaTag2 pose that follows it.
+    assertTrue(seedable(sample("left", 2, 0.9, 1.0, 0.0)), "two tags, same quality, is fine");
+    assertFalse(seedable(sample("left", 1, 0.9, 1.0, 0.0)));
+  }
+
+  @Test
+  @DisplayName("the seed distance limit is tighter than the measurement one")
+  void seedDistanceIsStricterThanMeasurementDistance() {
+    // 5 m clears maxMultiTagDist (6.5) and is accepted as a measurement, but is past maxSeedDist
+    // (4.0). This gap IS the fix -- the two used to be the same check.
+    CameraSample far = sample("left", 2, 0.3, 5.0, 0.0);
+
+    assertEquals(Verdict.ACCEPT, verdictOf(far), "still fine to average into the filter");
+    assertFalse(seedable(far), "but not fine to hard-reset the pose to");
+  }
+
+  @Test
+  void seedRejectsTheColdLimelightOriginAndOffFieldPoses() {
+    assertFalse(seedable(sample("l", 2, 0.3, 2.0, 0.0, 0.0, 0.0, 1.0)), "cold Limelight (0,0)");
+    assertFalse(seedable(sample("l", 2, 0.3, 2.0, 0.0, -1.0, 4.0, 1.0)), "off the field");
+  }
+
+  @Test
+  @DisplayName("a tilted or spinning robot cannot seed, exactly as it cannot measure")
+  void seedIsBlockedByTheMotionGates() {
+    // The asymmetry this covers: these gates used to apply to measurements but NOT to the seed, so
+    // a bump could be rejected as a measurement and simultaneously accepted as a pose reset.
+    CameraSample good = sample("left", 2, 0.3, 2.0, 0.0);
+
+    assertFalse(Vision.isSeedable(good, PARAMS, BOUNDS, new RobotMotion(12.0, 0.0, 0.0)));
+    assertFalse(Vision.isSeedable(good, PARAMS, BOUNDS, new RobotMotion(0.0, -9.0, 0.0)));
+    assertFalse(Vision.isSeedable(good, PARAMS, BOUNDS, new RobotMotion(0.0, 0.0, 900.0)));
+
+    assertTrue(Vision.isSeedable(good, PARAMS, BOUNDS, new RobotMotion(3.0, 2.0, 200.0)));
+  }
+
+  @Test
+  void blindAndDisconnectedCamerasAreNotSeedable() {
+    assertFalse(seedable(CameraSample.noTargets("left", true, true, 1.0)));
+    assertFalse(seedable(CameraSample.disconnected("right", 1.0)));
+  }
+
+  @Test
+  @DisplayName("seeds rank by score, so a close pair beats a distant trio")
+  void seedRankingPrefersCloseOverNumerous() {
+    // findSeedPose() picks by score(), not by tag count. Tag count alone gets this backwards:
+    // position error grows with the SQUARE of distance, so the extra tag does not pay for the range.
+    CameraSample twoClose = sample("left", 2, 0.4, 1.0, 0.0);
+    CameraSample threeFar = sample("right", 3, 0.1, 3.9, 0.0);
+
+    assertTrue(seedable(twoClose) && seedable(threeFar), "both are legal seeds");
+    assertTrue(Vision.score(twoClose) > Vision.score(threeFar), "but the close pair must win");
+  }
+
+  // -------------------------------------------------------------------------
   // xyStdDev -- the confidence handed to the pose estimator
   // -------------------------------------------------------------------------
 
@@ -389,6 +481,7 @@ class VisionTest {
     assertEquals(1.75, s.tagSpan());
     assertEquals(2.5, s.avgTagDist());
     assertEquals(0.42, s.avgTagArea());
+    assertTrue(s.ambiguityKnown(), "the block length matches, so the scan actually ran");
     assertEquals(0.8, s.trust(), "trust comes from config, not the array");
   }
 
@@ -422,15 +515,78 @@ class VisionTest {
   }
 
   @Test
-  @DisplayName("a truncated fiducial block leaves ambiguity at 0 rather than reading past the end")
+  @DisplayName("a truncated fiducial block is skipped, and records that it was skipped")
   void decodeSurvivesAMismatchedArrayLength() {
     // Claims 3 tags but only carries data for 1. The length guard must skip the scan entirely
-    // instead of walking off the array.
+    // instead of walking off the array -- and must record that it skipped, because the 0.0 it leaves
+    // behind is indistinguishable from a genuinely flawless solution.
     double[] v = botpose(1_000_000L, 3.0, 4.0, 0, 0, 3, 1.0, 2.0, 0.3, 0.9).value;
     CameraSample s = Vision.decode(new TimestampedDoubleArray(1_000_000L, 1_000_000L, v), CAM);
 
     assertEquals(3, s.tagCount());
     assertEquals(0.0, s.maxAmbiguity());
+    assertFalse(s.ambiguityKnown(), "0.0 here is a default, not a measurement");
+  }
+
+  @Test
+  @DisplayName("an unreadable ambiguity fails closed instead of scoring as a flawless single tag")
+  void singleTagWithUnknownAmbiguityIsRejected() {
+    // Claims one tag but carries a two-tag block, so the guard skips the scan and maxAmbiguity keeps
+    // its 0.0 default -- the best score the gate can possibly see. Everything else about this sample
+    // is good, so the ONLY thing that can reject it is the flag.
+    double[] v = botpose(1_000_000L, 8.0, 4.0, 0, 0, 1, 1.0, 2.0, 0.3, 0.05, 0.05).value;
+    CameraSample s = Vision.decode(new TimestampedDoubleArray(1_000_000L, 1_000_000L, v), CAM);
+
+    assertEquals(1, s.tagCount());
+    assertFalse(s.ambiguityKnown());
+    assertEquals(0.0, s.maxAmbiguity(), "the value that would otherwise sail through the gate");
+
+    assertEquals(Verdict.AMBIGUITY_UNKNOWN, verdictOf(s));
+  }
+
+  @Test
+  @DisplayName("multi-tag is untouched by unknown ambiguity -- the baseline is what protects it")
+  void multiTagWithUnknownAmbiguityIsStillAccepted() {
+    // Same malformed block, two tags. The ambiguity gate exists to catch single-tag flips and a
+    // multi-tag solve never consults it, so this must not become collateral damage of the fix.
+    double[] v = botpose(1_000_000L, 8.0, 4.0, 0, 0, 2, 1.0, 2.0, 0.3, 0.05).value;
+    CameraSample s = Vision.decode(new TimestampedDoubleArray(1_000_000L, 1_000_000L, v), CAM);
+
+    assertFalse(s.ambiguityKnown());
+    assertEquals(Verdict.ACCEPT, verdictOf(s));
+  }
+
+  @Test
+  @DisplayName("a NaN anywhere in the summary block is refused, because NaN fails every gate open")
+  void decodeRejectsNonFiniteSummaryValues() {
+    // The hazard: every threshold downstream is a > or a < comparison, and NaN makes all of them
+    // false. A NaN distance PASSES the distance check. A NaN yaw reaches the pose estimator and
+    // poisons the filter permanently. Each of these must be caught in decode() instead.
+    int[] poisonable = {0, 1, 5, 6, 8, 9, 10};
+
+    for (int index : poisonable) {
+      double[] v = botpose(1_000_000L, 8.0, 4.0, 0, 0, 2, 1.0, 2.0, 0.3, 0.05, 0.05).value;
+      v[index] = Double.NaN;
+
+      CameraSample s = Vision.decode(new TimestampedDoubleArray(1_000_000L, 1_000_000L, v), CAM);
+
+      assertFalse(s.hasTarget(), "index " + index + " was NaN and still produced a usable sample");
+      assertEquals(Verdict.NO_TARGET, verdictOf(s), "index " + index);
+    }
+  }
+
+  @Test
+  @DisplayName("a NaN ambiguity is routed into the same unknown path as a malformed block")
+  void decodeTreatsNonFiniteAmbiguityAsUnknown() {
+    // Math.max propagates NaN, and a NaN ambiguity would then clear the ambiguity gate. Rather than
+    // invent a second way to express doubt, it reuses ambiguityKnown.
+    double[] v = botpose(1_000_000L, 8.0, 4.0, 0, 0, 1, 1.0, 2.0, 0.3, Double.NaN).value;
+    CameraSample s = Vision.decode(new TimestampedDoubleArray(1_000_000L, 1_000_000L, v), CAM);
+
+    assertTrue(s.hasTarget(), "the pose itself is fine -- only the ambiguity is unusable");
+    assertFalse(s.ambiguityKnown());
+    assertEquals(0.0, s.maxAmbiguity(), "NaN must not survive into the sample");
+    assertEquals(Verdict.AMBIGUITY_UNKNOWN, verdictOf(s));
   }
 
   @Test

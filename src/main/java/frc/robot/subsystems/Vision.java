@@ -35,7 +35,19 @@ import java.util.function.Supplier;
 //     rotation solve is ambiguous and can flip between two plausible answers.
 //   MegaTag2 only solves x/y because we hand it the heading. Far more accurate -- but its reported
 //     rotation is just our own heading echoed back, so it can never correct a wrong gyro.
-// Hence: MegaTag1 once to seed heading, MegaTag2 forever after for position.
+// Hence: MegaTag1 to seed heading, MegaTag2 continuously for position.
+//
+// MegaTag2 is deliberately NOT withheld until that seed lands, even though an unseeded heading makes
+// its x/y wrong too. Withholding it is the obvious-looking fix and it is a trap: seedArmed stays true
+// until some camera sees two tags at once, so gating on it hands a robot that only ever sees single
+// tags a match with no vision whatsoever.
+//
+// That is a judgement call, not a free win. A wrong heading near the middle of the field can still
+// put MegaTag2 somewhere plausible and in bounds, and nothing in here will catch it -- the bounds
+// check only reliably rejects errors large enough to throw the pose off the field entirely. What
+// makes the trade worth taking is the asymmetry in duration: a bad pose is overwritten within a loop
+// of the seed arriving, while gating removes vision for as long as the seed does NOT arrive, which
+// can be the entire match.
 public class Vision {
 
   // Loops a camera may publish nothing before it is treated as gone. 10 loops is about 200 ms.
@@ -153,6 +165,9 @@ public class Vision {
   //
   //   maxSingleTagDist       max average tag distance, meters, with only one tag visible
   //   maxMultiTagDist        max average tag distance, meters, with two or more tags
+  //   maxSeedDist            max average tag distance, meters, for a MegaTag1 pose seed. Tighter
+  //                          than either limit above on purpose -- a measurement gets averaged away
+  //                          by the filter, a seed becomes the pose outright. See isSeedable().
   //   maxSingleTagAmbiguity  max per-tag ambiguity tolerated for a single-tag solution
   //   minSingleTagArea       min average tag area, fraction of image, for a single-tag solution
   //   maxJumpSingleTag       max meters a single-tag pose may sit from the current estimate.
@@ -162,6 +177,7 @@ public class Vision {
   public record AcceptanceParams(
       double maxSingleTagDist,
       double maxMultiTagDist,
+      double maxSeedDist,
       double maxSingleTagAmbiguity,
       double minSingleTagArea,
       double maxJumpSingleTag,
@@ -169,7 +185,7 @@ public class Vision {
       double maxYawRateDegPerSec) {
 
     public static AcceptanceParams defaults() {
-      return new AcceptanceParams(4.0, 6.5, 0.3, 0.08, 1.0, 5.0, 720.0);
+      return new AcceptanceParams(4.0, 6.5, 4.0, 0.3, 0.08, 1.0, 5.0, 720.0);
     }
   }
 
@@ -220,6 +236,9 @@ public class Vision {
   //   connected         false when the camera has never published or has gone silent
   //   freshFrame        true only on the loop a new frame actually arrived
   //   maxAmbiguity      worst per-tag ambiguity in the solution; 0 when unavailable
+  //   ambiguityKnown    false when the fiducial block could not be read, so maxAmbiguity is a
+  //                     default rather than a measurement. Has to be checked before believing that
+  //                     number -- the default reads as a perfect score. See Verdict.AMBIGUITY_UNKNOWN.
   //   timestampSeconds  latency-corrected FPGA timestamp, seconds
   public record CameraSample(
       String name,
@@ -233,13 +252,17 @@ public class Vision {
       double avgTagDist,
       double avgTagArea,
       double maxAmbiguity,
+      boolean ambiguityKnown,
       double timestampSeconds,
       double trust) {
 
     // A camera that is present but currently sees nothing usable.
+    //
+    // Ambiguity counts as known here: there are no tags whose ambiguity could have gone unread, and
+    // flagging it unknown would put a misleading false on the dashboard for every blind camera.
     public static CameraSample noTargets(
         String name, boolean connected, boolean freshFrame, double trust) {
-      return new CameraSample(name, connected, freshFrame, 0, 0, 0, 0, 0, 0, 0, 0, 0, trust);
+      return new CameraSample(name, connected, freshFrame, 0, 0, 0, 0, 0, 0, 0, 0, true, 0, trust);
     }
 
     // A camera that has never published, or has gone silent long enough to be considered gone.
@@ -260,7 +283,8 @@ public class Vision {
     public CameraSample asStale(boolean stillConnected) {
       return new CameraSample(
           name, stillConnected, false, x, y, yawDegrees,
-          tagCount, tagSpan, avgTagDist, avgTagArea, maxAmbiguity, timestampSeconds, trust);
+          tagCount, tagSpan, avgTagDist, avgTagArea, maxAmbiguity, ambiguityKnown,
+          timestampSeconds, trust);
     }
   }
 
@@ -310,6 +334,14 @@ public class Vision {
     // Single tag whose pose solution is ambiguous enough to flip.
     AMBIGUOUS,
 
+    // Single tag whose ambiguity could not be read at all, because the fiducial block length did not
+    // match the advertised tag count. Unread ambiguity decodes as 0.0 -- a PERFECT score -- so this
+    // fails closed rather than letting a malformed array through as the cleanest sighting of the
+    // match. Seeing this steadily means the array layout no longer matches decode(), most likely
+    // after a Limelight firmware or LimelightHelpers update. It is a "fix the decoder" signal, not
+    // a "the tags are bad" one.
+    AMBIGUITY_UNKNOWN,
+
     // Single tag too small in frame to localize from.
     TOO_SMALL,
 
@@ -327,6 +359,13 @@ public class Vision {
 
   // One cached NetworkTables subscriber per camera. Created once in the constructor, not per read.
   private final DoubleArrayEntry[] mt2Entries;
+
+  // MegaTag1 subscribers. Cached alongside the MegaTag2 ones, but only READ while a seed is armed,
+  // so the "costs nothing for the rest of the match" property still holds.
+  private final DoubleArrayEntry[] mt1Entries;
+
+  // Last MegaTag1 NT timestamp actually consumed per camera, so one frame can never seed twice.
+  private final long[] lastSeedFrameTimestamp;
 
   // Last NT timestamp seen per camera, used to detect "no new frame".
   private final long[] lastFrameTimestamp;
@@ -360,6 +399,8 @@ public class Vision {
 
     int n = cameras.size();
     mt2Entries = new DoubleArrayEntry[n];
+    mt1Entries = new DoubleArrayEntry[n];
+    lastSeedFrameTimestamp = new long[n];
     lastFrameTimestamp = new long[n];
     stalePolls = new int[n];
     samples = new CameraSample[n];
@@ -370,6 +411,7 @@ public class Vision {
     for (int i = 0; i < n; i++) {
       CameraConfig cam = cameras.get(i);
       mt2Entries[i] = LimelightHelpers.getLimelightDoubleArrayEntry(cam.name(), MT2_ENTRY);
+      mt1Entries[i] = LimelightHelpers.getLimelightDoubleArrayEntry(cam.name(), MT1_ENTRY);
       samples[i] = CameraSample.disconnected(cam.name(), cam.trust());
       verdicts[i] = Verdict.NO_TARGET;
     }
@@ -508,6 +550,22 @@ public class Vision {
       return CameraSample.noTargets(cam.name(), true, true, cam.trust());
     }
 
+    // Refuse anything non-finite before it can reach a gate. Every threshold downstream is a > or a
+    // < comparison, and NaN makes ALL of them false -- so a NaN distance passes the distance check,
+    // a NaN area passes the area check, and a NaN ambiguity passes the ambiguity check. They fail
+    // open, every one of them. A NaN yaw is worse still: it goes into the pose estimator and poisons
+    // the filter permanently instead of costing one bad loop. This is the same hazard StdDevParams
+    // avoids by refusing to use infinity, applied to the data coming the other way.
+    if (!Double.isFinite(v[0])
+        || !Double.isFinite(v[1])
+        || !Double.isFinite(v[5])
+        || !Double.isFinite(v[6])
+        || !Double.isFinite(v[8])
+        || !Double.isFinite(v[9])
+        || !Double.isFinite(v[10])) {
+      return CameraSample.noTargets(cam.name(), true, true, cam.trust());
+    }
+
     // The photons hit the sensor before the data reached us, so back the reported latency out of
     // the NT timestamp. What the estimator needs is when the picture was taken, not when it landed.
     double latencyMs = v[6];
@@ -516,10 +574,23 @@ public class Vision {
     // Stride the fiducial block for the worst ambiguity rather than materializing an object per
     // tag. The length guard is the same one LimelightHelpers uses: if the array does not match the
     // advertised tag count, the block is untrustworthy and is skipped rather than read past.
+    //
+    // Skipping it leaves maxAmbiguity at 0.0, which reads as a flawless solution -- so whether it
+    // was ever measured has to travel with the sample. Without that flag a malformed array sails
+    // straight through the single-tag ambiguity gate looking better than any real sighting.
+    boolean ambiguityKnown = v.length == 11 + 7 * tagCount;
     double maxAmbiguity = 0.0;
-    if (v.length == 11 + 7 * tagCount) {
+    if (ambiguityKnown) {
       for (int i = 0; i < tagCount; i++) {
         maxAmbiguity = Math.max(maxAmbiguity, v[11 + i * 7 + 6]);
+      }
+
+      // A NaN anywhere in the block propagates through Math.max and would then fail open at the
+      // gate. Route it into the same "we could not measure this" path as a malformed block rather
+      // than inventing a second way to express the same doubt.
+      if (!Double.isFinite(maxAmbiguity)) {
+        ambiguityKnown = false;
+        maxAmbiguity = 0.0;
       }
     }
 
@@ -535,6 +606,7 @@ public class Vision {
         v[9],
         v[10],
         maxAmbiguity,
+        ambiguityKnown,
         timestampSeconds,
         cam.trust());
   }
@@ -603,9 +675,14 @@ public class Vision {
   // and is rejected forever. If the cameras have done nothing but disagree for a full second,
   // believe them and re-arm the seed instead.
   //
-  // Re-arming does two things. It sets havePose false, which disables the gate immediately so
-  // measurements start flowing again this same loop, and it lets the next multi-tag view reseat the
-  // pose properly. Consuming that seed then re-enables the gate.
+  // Re-arming does two things. It sets havePose false, which disables the gate so measurements start
+  // flowing again, and it lets the next multi-tag view reseat the pose properly. Consuming that seed
+  // then re-enables the gate.
+  //
+  // Both take effect on the NEXT loop rather than this one: selectMeasurements() reads havePose at
+  // its top and only calls this at its end. That is one 20 ms loop of lag on the tail of a 50 loop
+  // lockout, so it is left as is rather than restructured -- but do not read the recovery as
+  // instantaneous, and do not write a test that expects it to be.
   private void updateJumpLockout(boolean everythingJumped) {
     if (!everythingJumped) {
       jumpLockoutCounter = 0;
@@ -634,43 +711,57 @@ public class Vision {
   // Requires two or more tags. MegaTag2's rotation is the heading we fed in, so seeding from it can
   // never correct a wrong gyro, and a single-tag MegaTag1 heading is too poorly conditioned to
   // trust for a hard pose reset.
+  //
+  // The rules themselves live in isSeedable(), which is pure and tested. What stays here is only the
+  // NetworkTables plumbing: read, decode, gate, rank. They are TIGHTER than the measurement path's,
+  // not looser, and that asymmetry is the point -- a measurement is one vote into a filter that can
+  // outvote it a loop later, while a seed becomes the pose outright.
   private Pose2d findSeedPose() {
     Pose2d best = null;
-
-    // Starts at 1 so a single-tag solution can never win.
-    int bestTagCount = 1;
+    double bestScore = Double.NEGATIVE_INFINITY;
 
     for (int i = 0; i < cameras.size(); i++) {
       CameraConfig cam = cameras.get(i);
 
-      // Skip cameras we already know are gone. Their MegaTag1 array is frozen right alongside their
-      // MegaTag2 one, and seeding is a hard pose reset -- the last place to trust stale data.
+      // Skip cameras we already know are gone before spending a read on them.
       if (!cam.enabled() || !samples[i].connected()) {
         continue;
       }
 
-      double[] v = LimelightHelpers.getLimelightDoubleArrayEntry(cam.name(), MT1_ENTRY).get();
-      if (v.length < 11) {
+      TimestampedDoubleArray raw = mt1Entries[i].getAtomic();
+      if (raw.value.length == 0) {
         continue;
       }
 
-      // Prefer whichever camera sees the most tags.
-      int tagCount = (int) v[7];
-      if (tagCount <= bestTagCount) {
+      // MegaTag1 gets its OWN freshness check rather than inheriting MegaTag2's. connected() only
+      // proves the MegaTag2 entry has moved recently; nothing actually guarantees the two entries
+      // advance in lockstep, and inferring one from the other is the kind of assumption that holds
+      // right up until a firmware change quietly breaks it. Re-seeding from a frame already spent
+      // would also mean a hard pose reset built on evidence we have used once already.
+      if (raw.timestamp == lastSeedFrameTimestamp[i]) {
+        continue;
+      }
+      lastSeedFrameTimestamp[i] = raw.timestamp;
+
+      // The same decoder the measurement path uses. Hand-indexing this array here as well would put
+      // a SECOND, untested copy of the layout in the file -- and decode() carries dedicated tests
+      // precisely because an index error in it is invisible, permanent, and produces poses that look
+      // entirely reasonable. A duplicate of it drifting out of step is that same bug with no test.
+      CameraSample s = decode(raw, cam);
+
+      if (!isSeedable(s, config.acceptance(), config.bounds(), motion)) {
         continue;
       }
 
-      // Same two sanity checks the measurement path uses: reject the cold-Limelight origin and
-      // anything off the field.
-      if (v[0] == 0.0 && v[1] == 0.0) {
-        continue;
+      // Ranked by the same score the measurement path ranks by, rather than by tag count alone. Tag
+      // count gets this backwards whenever the counts differ: error grows with the SQUARE of
+      // distance, so a two-tag view up close is a far better reset than a three-tag view across the
+      // field, and score() already weighs count, span, area, distance and ambiguity together.
+      double sc = score(s);
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = new Pose2d(s.x(), s.y(), Rotation2d.fromDegrees(s.yawDegrees()));
       }
-      if (!config.bounds().contains(v[0], v[1])) {
-        continue;
-      }
-
-      best = new Pose2d(v[0], v[1], Rotation2d.fromDegrees(v[5]));
-      bestTagCount = tagCount;
     }
 
     return best;
@@ -688,6 +779,11 @@ public class Vision {
       SmartDashboard.putNumber(prefix + "avgTagDist", s.avgTagDist());
       SmartDashboard.putNumber(prefix + "avgTagArea", s.avgTagArea());
       SmartDashboard.putNumber(prefix + "maxAmbiguity", s.maxAmbiguity());
+
+      // Read maxAmbiguity above together with this one -- a 0.0 next to a false is not a clean
+      // solution, it is an unread fiducial block, and it means decode() no longer matches what the
+      // Limelight publishes.
+      SmartDashboard.putBoolean(prefix + "ambiguityKnown", s.ambiguityKnown());
       SmartDashboard.putNumber(prefix + "score", score(s));
       SmartDashboard.putString(prefix + "verdict", verdicts[i].name());
     }
@@ -737,7 +833,12 @@ public class Vision {
             // The worst tag drags the whole solution down with it.
             - 30.0 * s.maxAmbiguity();
 
-    return raw * s.trust();
+    // Trust has to move the score the same direction whatever the sign of raw. raw goes NEGATIVE for
+    // a marginal single-tag sample that still passed every gate -- one tag at the 4 m distance cap,
+    // the 0.08 area floor and the 0.3 ambiguity cap scores about -12 -- and multiplying a negative
+    // by a trust below 1.0 raises it, handing the win to whichever camera we believe least. Dividing
+    // on that branch keeps lower trust ranking lower everywhere. Same zero guard xyStdDev() uses.
+    return raw >= 0.0 ? raw * s.trust() : raw / Math.max(s.trust(), 1e-3);
   }
 
   // Whether a sample may be handed to the pose estimator, and why not when it may not.
@@ -795,6 +896,13 @@ public class Vision {
     // Everything below applies to single-tag solutions only. Multi-tag has a baseline, so it is not
     // vulnerable to the flip that makes these checks necessary.
     if (!multi) {
+      // "Could not measure it" has to be caught BEFORE the threshold test, because an unmeasured
+      // ambiguity is 0.0 and would clear that threshold more cleanly than any real tag. With one tag
+      // this check is the only thing standing between us and a pose that has silently flipped, so
+      // the unknown case is rejected rather than assumed good.
+      if (!s.ambiguityKnown()) {
+        return Verdict.AMBIGUITY_UNKNOWN;
+      }
       if (s.maxAmbiguity() > params.maxSingleTagAmbiguity()) {
         return Verdict.AMBIGUOUS;
       }
@@ -825,6 +933,52 @@ public class Vision {
       boolean havePose,
       RobotMotion motion) {
     return verdict(s, params, bounds, current, havePose, motion) == Verdict.ACCEPT;
+  }
+
+  // Whether a MegaTag1 sample is good enough to HARD RESET the pose from.
+  //
+  // Kept separate from verdict() because it answers a different question with a different cost of
+  // being wrong. A measurement that slips through is one vote into a filter that can outvote it a
+  // loop later; a seed that slips through simply becomes the pose. So this is deliberately stricter
+  // -- and deliberately has no equivalent of the jump gate, because reseating a drifted estimate is
+  // the whole point of a seed. Disagreeing with the current pose is not evidence against a seed.
+  //
+  // Pure and public so the seed rules can actually be tested. findSeedPose() cannot be: it needs a
+  // live NetworkTables to reach a Limelight, which is exactly why the rules do not live inside it.
+  public static boolean isSeedable(
+      CameraSample s, AcceptanceParams params, FieldBounds bounds, RobotMotion motion) {
+
+    // Two or more tags, always. A single-tag MegaTag1 rotation can flip between two plausible
+    // answers, and a flipped heading applied as a hard reset is worse than never seeding at all --
+    // every MegaTag2 pose from then on is built on top of it.
+    if (!s.hasTarget() || !s.isMultiTag()) {
+      return false;
+    }
+
+    // Whole-robot state, same reasoning and same order as verdict(). A pitched or spinning chassis
+    // invalidates MegaTag1 exactly as it invalidates MegaTag2, and neither shows up anywhere in the
+    // tag statistics. Refusing costs nothing: the seed stays armed and simply waits for a better
+    // moment, which on a robot that is mid-bump is milliseconds away.
+    if (motion != null) {
+      if (motion.worstTiltDegrees() > params.maxTiltDegrees()) {
+        return false;
+      }
+      if (Math.abs(motion.yawRateDegPerSec()) > params.maxYawRateDegPerSec()) {
+        return false;
+      }
+    }
+
+    // Tighter than either measurement distance limit -- see AcceptanceParams.maxSeedDist.
+    if (s.avgTagDist() > params.maxSeedDist()) {
+      return false;
+    }
+
+    // The same two sanity checks the measurement path uses: a cold Limelight reports exactly (0,0),
+    // which reads as a perfectly valid in-bounds pose, and anything off the field is garbage.
+    if (s.x() == 0.0 && s.y() == 0.0) {
+      return false;
+    }
+    return bounds.contains(s.x(), s.y());
   }
 
   // Translational standard deviation for the pose estimator.
@@ -885,7 +1039,11 @@ public class Vision {
     return Optional.of(seed);
   }
 
-  public boolean isSeedPending() {
+  // Whether a seed is currently WANTED -- not whether one is ready to hand out. Armed means
+  // requestSeed() or the jump lockout has asked for a reseat and consumeSeedPose() has not yet
+  // delivered one, so this stays true for as long as it takes a camera to see two tags. Named to
+  // match the seedArmed field and the "Vision/seedArmed" telemetry key.
+  public boolean isSeedArmed() {
     return seedArmed;
   }
 
